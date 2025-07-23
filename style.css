@@ -1,0 +1,299 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f0f8ff, #e0eafc); /* Light blue gradient */
+    color: #333;
+    line-height: 1.6;
+    scroll-behavior: smooth;
+}
+
+header {
+    background: linear-gradient(45deg, #6dd5ed, #2193b0); /* Blue gradient */
+    color: #fff;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeInDown 1s ease-out;
+}
+
+header h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+header p {
+    font-size: 1.2em;
+    font-weight: 300;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.day-section {
+    margin-bottom: 40px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 20px;
+}
+
+.day-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.day-title {
+    font-size: 2.2em;
+    color: #2193b0;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #6dd5ed;
+}
+
+.activity-item {
+    background-color: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    padding: 15px 20px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.activity-item:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.activity-name {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+.activity-details {
+    padding-top: 15px;
+    border-top: 1px dashed #e0e0e0;
+    margin-top: 15px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+    opacity: 0;
+}
+
+.activity-details.expanded {
+    max-height: 500px; /* Adjust as needed */
+    opacity: 1;
+}
+
+.activity-item.open .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.map-container {
+    width: 100%;
+    height: 300px; /* Adjusted map height for better visibility */
+    background-color: #e9e9e9;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #666;
+    font-style: italic;
+}
+
+.map-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+.image-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px; /* Space before carousel buttons */
+    /* Custom scrollbar for WebKit browsers */
+    &::-webkit-scrollbar {
+        height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+}
+
+.carousel-image-wrapper {
+    flex: 0 0 auto;
+    width: 200px; /* Fixed width for images in carousel */
+    height: 150px; /* Fixed height for images */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    scroll-snap-align: start;
+}
+
+.carousel-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.carousel-nav {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.carousel-nav button {
+    background-color: #2193b0;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin: 0 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+.carousel-nav button:hover {
+    background-color: #1a7ea1;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    background: #6dd5ed;
+    color: #fff;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.day-section {
+    animation: fadeInUp 0.8s ease-out;
+    animation-fill-mode: backwards; /* Keeps initial state hidden */
+}
+
+/* Delay animation for each day section */
+.day-section:nth-child(1) { animation-delay: 0.2s; }
+.day-section:nth-child(2) { animation-delay: 0.4s; }
+.day-section:nth-child(3) { animation-delay: 0.6s; }
+.day-section:nth-child(4) { animation-delay: 0.8s; }
+.day-section:nth-child(5) { animation-delay: 1.0s; }
+.day-section:nth-child(6) { animation-delay: 1.2s; }
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2.2em;
+    }
+
+    header p {
+        font-size: 1em;
+    }
+
+    .container {
+        margin: 20px 10px;
+        padding: 15px;
+    }
+
+    .day-title {
+        font-size: 1.8em;
+    }
+
+    .activity-name {
+        font-size: 1.2em;
+    }
+
+    .map-container {
+        height: 250px;
+    }
+
+    .carousel-image-wrapper {
+        width: 150px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+
+    header p {
+        font-size: 0.9em;
+    }
+
+    .day-title {
+        font-size: 1.5em;
+    }
+
+    .activity-name {
+        font-size: 1em;
+        flex-direction: column; /* Stack name and icon */
+        align-items: flex-start;
+    }
+    .toggle-icon {
+        margin-top: 5px;
+    }
+}
