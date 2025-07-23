@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summer Holiday Itinerary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      scroll-snap-type: x mandatory;
+    }
+    .carousel img {
+      scroll-snap-align: center;
+      flex: 0 0 auto;
+      width: 300px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4">
+  <div class="max-w-4xl mx-auto space-y-10">
+    <h1 class="text-4xl font-extrabold text-center mb-6">☀️ Summer Holiday Itinerary</h1>
+
+    <!-- Day Template -->
+    <script>
+      const itinerary = [
+        {
+          day: '🏖️ Day 1: Arrival & Summer Beach Bliss',
+          items: [
+            { name: 'Upton Court Hotel', location: 'Upton Court Hotel', images: ['https://lh5.googleusercontent.com/p/AF1QipOgY-3RJ3_1eIhx9xqY0UgJWS1E5D1cfZ5cfaAr=w400-h300'] },
+            { name: "Kate’s Coffee Shop & Deli", location: "Kate’s Coffee Shop & Deli", images: ['https://lh5.googleusercontent.com/p/AF1QipMEHf0z7MQ3cwSy0gfBrMBy4A7gtYxmkdQhDBm-=w400-h300'] },
+            { name: 'Morriscastle Beach', location: 'Morriscastle Beach', images: ['https://lh5.googleusercontent.com/p/AF1QipMpiU2Ggp-npV2pLVlOfyqEFJZukr6EPtVPPzFQ=w400-h300'] },
+            { name: "Lawler’s of Morriscastle", location: "Lawler’s of Morriscastle", images: ['https://lh5.googleusercontent.com/p/AF1QipOozGOb_HFZyGzBpyScsRMtAiEmz-TiPSG6v2rN=w400-h300'] },
+          ]
+        },
+        {
+          day: '🦙 Day 2: Nature Walk & Wildlife Wonders',
+          items: [
+            { name: 'Kilmuckridge-Morriscastle Trail', location: 'Kilmuckridge-Morriscastle Trail', images: ['https://lh5.googleusercontent.com/p/AF1QipP1fl7c7u6ll0ZBdWnR2Y5KkWGlKZnT0mjlGiDg=w400-h300'] },
+            { name: 'Secret Valley Wildlife Park', location: 'Secret Valley Wildlife Park', images: ['https://lh5.googleusercontent.com/p/AF1QipNbdKZyydExdVzfn0Mn2v1kaCSAx_jvWQL4vvdn=w400-h300'] },
+            { name: 'Partridges, Gorey', location: 'Partridges Gorey', images: ['https://lh5.googleusercontent.com/p/AF1QipO3CKZqWm5TuZZSYWglAwOSO8cfOgKjBrTztmUU=w400-h300'] },
+          ]
+        },
+        {
+          day: '🏰 Day 3: Wells House Adventure Day',
+          items: [
+            { name: 'Wells House & Gardens', location: 'Wells House and Gardens', images: ['https://lh5.googleusercontent.com/p/AF1QipO_MKfZPYHOoayopPvJkNRdUEhFoUOgJBEU6LB4=w400-h300'] },
+            { name: 'Brambles Café', location: 'Brambles Café Wells House', images: ['https://lh5.googleusercontent.com/p/AF1QipNIGeY4d0U5pOa-TWvSS0cd4IjksAtcWa5mMQq5=w400-h300'] },
+            { name: 'Glenavon Japanese Garden', location: 'Glenavon Japanese Garden', images: ['https://lh5.googleusercontent.com/p/AF1QipP3C0epKhR8Mu2LC6WFGCJQTxvDxMIm9zKsx7nm=w400-h300'] },
+          ]
+        },
+        // Add remaining days similarly...
+      ];
+
+      window.onload = () => {
+        const container = document.querySelector(".max-w-4xl");
+
+        itinerary.forEach(day => {
+          const dayDiv = document.createElement("div");
+          dayDiv.innerHTML = `<h2 class="text-2xl font-bold mb-4">${day.day}</h2>`;
+
+          day.items.forEach((item, index) => {
+            const id = `${day.day.replace(/\W/g, '')}-${index}`;
+            dayDiv.innerHTML += `
+              <div class="mb-4">
+                <button class="w-full text-left px-4 py-3 bg-white shadow rounded-lg hover:bg-gray-50" onclick="togglePanel('${id}')">
+                  <span class="font-semibold">${item.name}</span>
+                </button>
+                <div id="${id}" class="hidden mt-2 ml-4">
+                  <iframe
+                    src="https://www.google.com/maps?q=${encodeURIComponent(item.location)}&output=embed"
+                    class="w-full h-64 rounded-lg border mb-2"
+                    allowfullscreen=""
+                    loading="lazy">
+                  </iframe>
+                  <div class="carousel">
+                    ${item.images.map(url => `<img src="${url}" alt="${item.name}">`).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+
+          container.appendChild(dayDiv);
+        });
+      }
+
+      function togglePanel(id) {
+        const panel = document.getElementById(id);
+        panel.classList.toggle("hidden");
+      }
+    </script>
+  </div>
+</body>
+</html>
