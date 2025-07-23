@@ -11,6 +11,7 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #f0f4f8, #d9e2ec);
     }
     .carousel {
       display: flex;
@@ -25,19 +26,34 @@
       height: 200px;
       object-fit: cover;
       border-radius: 0.75rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .carousel img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
     .activity-panel {
-      display: none;
-      transition: all 0.4s ease;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
     }
     .activity-panel.open {
-      display: block;
+      max-height: 1500px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    button:focus {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-4">
-  <div class="max-w-4xl mx-auto space-y-10">
-    <h1 class="text-4xl font-extrabold text-center mb-6">☀️ Summer Holiday Itinerary</h1>
+<body class="text-gray-800 p-6">
+  <div class="max-w-5xl mx-auto space-y-12">
+    <h1 class="text-5xl font-extrabold text-center mb-12 text-indigo-700 drop-shadow-lg">☀️ Summer Holiday Itinerary</h1>
     <div id="itineraryContainer"></div>
     <script>
       const itinerary = [
@@ -48,25 +64,140 @@
               name: 'Upton Court Hotel',
               description: 'Check into Upton Court Hotel or a seaside cottage.',
               location: 'Upton Court Hotel',
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Country_house_in_Ireland.jpg/640px-Country_house_in_Ireland.jpg']
+              images: ['https://source.unsplash.com/featured/?hotel']
             },
             {
               name: "Kate’s Coffee Shop & Deli",
               description: 'Cool off with smoothies and treats.',
               location: "Kate’s Coffee Shop & Deli",
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Coffee_shop_coffee_and_scones.jpg/640px-Coffee_shop_coffee_and_scones.jpg']
+              images: ['https://source.unsplash.com/featured/?coffee-shop']
             },
             {
               name: 'Morriscastle Beach',
               description: 'Great for paddling, sandcastle building, and seashell hunting.',
               location: 'Morriscastle Beach',
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Morriscastle_Beach%2C_County_Wexford_-_geograph.org.uk_-_2472274.jpg/640px-Morriscastle_Beach%2C_County_Wexford_-_geograph.org.uk_-_2472274.jpg']
+              images: ['https://source.unsplash.com/featured/?beach']
             },
             {
               name: "Lawler’s of Morriscastle",
               description: 'Evening family dinner (outdoor seating available!)',
               location: "Lawler’s of Morriscastle",
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Outdoor_cafe_seating_London.jpg/640px-Outdoor_cafe_seating_London.jpg']
+              images: ['https://source.unsplash.com/featured/?restaurant']
+            }
+          ]
+        },
+        {
+          day: '🦙 Day 2: Nature Walk & Wildlife Wonders',
+          items: [
+            {
+              name: 'Kilmuckridge-Morriscastle Trail',
+              description: 'Morning stroll on the buggy-friendly trail.',
+              location: 'Kilmuckridge-Morriscastle Trail',
+              images: ['https://source.unsplash.com/featured/?nature-trail']
+            },
+            {
+              name: 'Secret Valley Wildlife Park',
+              description: 'Interactive animal sessions and pony rides.',
+              location: 'Secret Valley Wildlife Park',
+              images: ['https://source.unsplash.com/featured/?petting-zoo']
+            },
+            {
+              name: 'Partridges, Gorey',
+              description: 'Grab ice cream with local flavors.',
+              location: 'Partridges Gorey',
+              images: ['https://source.unsplash.com/featured/?ice-cream']
+            }
+          ]
+        },
+        {
+          day: '🏰 Day 3: Wells House Adventure Day',
+          items: [
+            {
+              name: 'Wells House & Gardens',
+              description: 'Fairy trails, petting farm, archery, treasure hunts.',
+              location: 'Wells House and Gardens',
+              images: ['https://source.unsplash.com/featured/?castle-gardens']
+            },
+            {
+              name: 'Brambles Café',
+              description: 'Lunch on-site at Brambles Café.',
+              location: 'Brambles Café Wells House',
+              images: ['https://source.unsplash.com/featured/?cafe']
+            },
+            {
+              name: 'Glenavon Japanese Garden',
+              description: 'Optional quick detour to the serene garden.',
+              location: 'Glenavon Japanese Garden',
+              images: ['https://source.unsplash.com/featured/?japanese-garden']
+            }
+          ]
+        },
+        {
+          day: '🚴 Day 4: Castle Explorers & Crafts',
+          items: [
+            {
+              name: 'Enniscorthy Castle',
+              description: 'Visit historic Enniscorthy Castle (25 minutes drive).',
+              location: 'Enniscorthy Castle',
+              images: ['https://source.unsplash.com/featured/?castle']
+            },
+            {
+              name: 'Tinnaberna Sandhills',
+              description: 'Cycle or walk around the scenic sandhills.',
+              location: 'Tinnaberna Sandhills',
+              images: ['https://source.unsplash.com/featured/?dunes']
+            },
+            {
+              name: 'Claymazing / Art It',
+              description: 'Afternoon pottery painting or craft workshop for kids.',
+              location: 'Claymazing Gorey',
+              images: ['https://source.unsplash.com/featured/?pottery']
+            }
+          ]
+        },
+        {
+          day: '🎉 Day 5: Festivities & Free Play',
+          items: [
+            {
+              name: 'Summer Market Stalls',
+              description: 'Browse weekend market stalls in nearby towns.',
+              location: 'Kilmuckridge Market',
+              images: ['https://source.unsplash.com/featured/?street-market']
+            },
+            {
+              name: 'The Greenhouse Café',
+              description: 'Drop-in kids craft sessions and snacks.',
+              location: 'The Greenhouse Café',
+              images: ['https://source.unsplash.com/featured/?family-cafe']
+            },
+            {
+              name: 'Ballinoulart Beach',
+              description: 'Late afternoon beach play—kite flying and digging.',
+              location: 'Ballinoulart Beach',
+              images: ['https://source.unsplash.com/featured/?family-beach']
+            }
+          ]
+        },
+        {
+          day: '🎭 Day 6: Farewell Fun',
+          items: [
+            {
+              name: 'Kilmuckridge Drama Festival',
+              description: 'Catch a short family-friendly performance.',
+              location: 'Kilmuckridge',
+              images: ['https://source.unsplash.com/featured/?theatre']
+            },
+            {
+              name: 'Da Paolo Italian Restaurant',
+              description: 'Brunch at Da Paolo before heading home.',
+              location: 'Da Paolo Italian Restaurant',
+              images: ['https://source.unsplash.com/featured/?italian-restaurant']
+            },
+            {
+              name: 'Wexford Town',
+              description: 'Stop by for a final stroll and ice cream.',
+              location: 'Wexford',
+              images: ['https://source.unsplash.com/featured/?irish-town']
             }
           ]
         }
@@ -87,25 +218,25 @@
 
         itinerary.forEach(day => {
           const dayDiv = document.createElement("div");
-          dayDiv.innerHTML = `<h2 class="text-2xl font-bold mb-4">${day.day}</h2>`;
+          dayDiv.innerHTML = `<h2 class="text-3xl font-bold text-indigo-600 mb-6 border-b pb-2">${day.day}</h2>`;
 
           day.items.forEach((item, index) => {
             const id = `${day.day.replace(/\W/g, '')}-${index}`;
             dayDiv.innerHTML += `
-              <div class="mb-4">
-                <button class="w-full text-left px-4 py-3 bg-white shadow rounded-lg hover:bg-gray-50" onclick="togglePanel('${id}')">
-                  <span class="font-semibold">${item.name}</span>
+              <div class="mb-6">
+                <button class="w-full text-left px-6 py-4 bg-white shadow-lg rounded-xl hover:bg-gray-100 transition" onclick="togglePanel('${id}')">
+                  <span class="text-lg font-semibold">${item.name}</span>
                 </button>
-                <div id="${id}" class="activity-panel mt-2 ml-4">
+                <div id="${id}" class="activity-panel mt-3 pl-6">
                   <p class="mb-2 text-sm italic">${item.description}</p>
                   <iframe
                     src="https://www.google.com/maps?q=${encodeURIComponent(item.location)}&output=embed"
-                    class="w-full h-64 rounded-lg border mb-2"
+                    class="w-full h-64 rounded-lg border mb-3"
                     allowfullscreen=""
                     loading="lazy">
                   </iframe>
                   <div class="carousel">
-                    ${item.images.map(url => `<img src="${url}" alt="${item.name}">`).join('')}
+                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" loading="lazy">`).join('')}
                   </div>
                 </div>
               </div>
