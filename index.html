@@ -28,10 +28,15 @@
       border-radius: 0.75rem;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: #e2e8f0;
     }
     .carousel img:hover {
       transform: scale(1.05);
       box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .carousel img:before {
+      content: 'Image loading...';
+      display: block;
     }
     .activity-panel {
       max-height: 0;
@@ -121,7 +126,7 @@
                     loading="lazy">
                   </iframe>
                   <div class="carousel">
-                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" loading="lazy" referrerpolicy="no-referrer">`).join('')}
+                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Unavailable'">`).join('')}
                   </div>
                 </div>
               </div>
