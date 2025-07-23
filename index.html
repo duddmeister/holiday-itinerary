@@ -6,6 +6,8 @@
     <title>Wexford Family Fun</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (e.g., map icon, carousel arrows) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -25,7 +27,7 @@
             background-color: #ffffff;
             border-radius: 1rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+            overflow: hidden; /* Ensures content inside doesn't spill out */
             transition: transform 0.2s ease-in-out;
             display: flex;
             flex-direction: column;
@@ -33,13 +35,6 @@
         }
         .activity-card:hover {
             transform: translateY(-5px);
-        }
-        .activity-card img {
-            width: 100%;
-            height: 200px; /* Fixed height for images */
-            object-fit: cover; /* Cover the area, crop if necessary */
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
         }
         .activity-content {
             padding: 1.5rem;
@@ -55,26 +50,137 @@
         .activity-content p {
             font-size: 0.95rem;
             line-height: 1.5;
-            flex-grow: 1; /* Allow description to take available space */
+            max-height: 4.5em; /* Approximately 3 lines for initial view */
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-bottom: 0.5rem;
         }
-        .activity-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid for images */
-            gap: 0.5rem; /* Smaller gap for image grid */
-            padding: 1rem;
-            border-top: 1px solid #e2e8f0;
-            margin-top: 1rem;
+        .activity-content p.expanded {
+            max-height: 500px; /* Arbitrarily large to show full content when expanded */
+        }
+        .read-more-btn {
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            align-self: flex-start; /* Align button to start */
+            margin-top: 0.5rem;
+        }
+        .read-more-btn:hover {
+            background-color: #4338ca; /* Darker indigo */
+        }
+
+        /* Collapsible Content Container (Map and Carousel) */
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-in-out, padding 0.7s ease-in-out; /* Slower transition for smoother reveal */
+            display: flex;
+            flex-direction: column;
             background-color: #f8fafc;
             border-bottom-left-radius: 1rem;
             border-bottom-right-radius: 1rem;
+            /* Initial padding is 0 for vertical, keep horizontal */
+            padding: 0 1.5rem;
+            border-top: none; /* No border initially */
         }
-        .activity-images img {
+
+        .collapsible-content.expanded {
+            /* Set a generous fixed max-height to ensure all content is visible */
+            max-height: 700px; /* Adjusted to reliably fit map + carousel + padding */
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Map Embed Styles */
+        .map-embed-container {
+            position: relative;
             width: 100%;
-            height: 100px; /* Smaller fixed height for image grid */
-            object-fit: cover;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem; /* Space below map */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+        .map-embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            border-radius: 0.75rem;
+        }
+
+        /* Carousel Styles */
+        .activity-carousel-container {
+            position: relative;
+            width: 100%;
+            height: 200px; /* Fixed height for the carousel area */
+            overflow: hidden;
+            border-radius: 0.75rem; /* Rounded corners for the carousel itself */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .carousel-slides {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+        .carousel-slides img {
+            min-width: 100%; /* Each image takes full width of the container */
+            height: 100%;
+            object-fit: cover;
+        }
+        .carousel-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .carousel-button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .carousel-button.prev {
+            left: 0.5rem;
+        }
+        .carousel-button.next {
+            right: 0.5rem;
+        }
+        .carousel-dots {
+            position: absolute;
+            bottom: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .dot.active {
+            background-color: #4f46e5; /* Indigo */
+            transform: scale(1.2);
+        }
+
         .day-section {
             background-color: #cbd5e1; /* Medium gray for day headers */
             color: #1e293b;
@@ -101,76 +207,120 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Upton Court Hotel, Gorey, Co. Wexford</h3>
-                    <p>Check into the charming Upton Court Hotel, your cozy base for the week. Settle in and prepare for your Wexford adventure!</p>
+                    <p class="activity-description">Check into the charming Upton Court Hotel, your cozy base for the week. Settle in and prepare for your Wexford adventure! The hotel offers comfortable rooms, friendly service, and is conveniently located near many local attractions. Enjoy a relaxing evening and get ready for a week of exploration and fun with the whole family.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=1" alt="Upton Court Hotel exterior 1">
-                    <img src="https://picsum.photos/800/600?random=2" alt="Upton Court Hotel interior 1">
-                    <img src="https://picsum.photos/800/600?random=3" alt="Upton Court Hotel lobby 1">
-                    <img src="https://picsum.photos/800/600?random=4" alt="Upton Court Hotel room 1">
-                    <img src="https://picsum.photos/800/600?random=5" alt="Upton Court Hotel exterior 2">
-                    <img src="https://picsum.photos/800/600?random=6" alt="Upton Court Hotel interior 2">
-                    <img src="https://picsum.photos/800/600?random=7" alt="Upton Court Hotel lobby 2">
-                    <img src="https://picsum.photos/800/600?random=8" alt="Upton Court Hotel room 2">
-                    <img src="https://picsum.photos/800/600?random=9" alt="Upton Court Hotel garden">
-                    <img src="https://picsum.photos/800/600?random=10" alt="Upton Court Hotel dining">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sUpton%20Court%20Hotel!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=1" alt="Upton Court Hotel exterior 1">
+                            <img src="https://picsum.photos/800/600?random=2" alt="Upton Court Hotel interior 1">
+                            <img src="https://picsum.photos/800/600?random=3" alt="Upton Court Hotel lobby 1">
+                            <img src="https://picsum.photos/800/600?random=4" alt="Upton Court Hotel room 1">
+                            <img src="https://picsum.photos/800/600?random=5" alt="Upton Court Hotel exterior 2">
+                            <img src="https://picsum.photos/800/600?random=6" alt="Upton Court Hotel interior 2">
+                            <img src="https://picsum.photos/800/600?random=7" alt="Upton Court Hotel lobby 2">
+                            <img src="https://picsum.photos/800/600?random=8" alt="Upton Court Hotel room 2">
+                            <img src="https://picsum.photos/800/600?random=9" alt="Upton Court Hotel garden">
+                            <img src="https://picsum.photos/800/600?random=10" alt="Upton Court Hotel dining">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Kate's Coffee Shop & Deli, Kilmuckridge, Co. Wexford</h3>
-                    <p>Enjoy a delightful lunch at Kate's, known for its fresh sandwiches, pastries, and excellent coffee.</p>
+                    <p class="activity-description">Enjoy a delightful lunch at Kate's, known for its fresh sandwiches, pastries, and excellent coffee. It's a perfect spot for a quick and tasty bite before heading to the beach, offering a relaxed atmosphere for families.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=11" alt="Kate's Coffee Shop exterior 1">
-                    <img src="https://picsum.photos/800/600?random=12" alt="Kate's Coffee Shop interior 1">
-                    <img src="https://picsum.photos/800/600?random=13" alt="Deli counter 1">
-                    <img src="https://picsum.photos/800/600?random=14" alt="Coffee cup 1">
-                    <img src="https://picsum.photos/800/600?random=15" alt="Kate's Coffee Shop exterior 2">
-                    <img src="https://picsum.photos/800/600?random=16" alt="Kate's Coffee Shop interior 2">
-                    <img src="https://picsum.photos/800/600?random=17" alt="Deli counter 2">
-                    <img src="https://picsum.photos/800/600?random=18" alt="Coffee cup 2">
-                    <img src="https://picsum.photos/800/600?random=19" alt="Pastries display">
-                    <img src="https://picsum.photos/800/600?random=20" alt="Sandwich close-up">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sKate's%20Coffee%20Shop%20%26%20Deli!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=11" alt="Kate's Coffee Shop exterior 1">
+                            <img src="https://picsum.photos/800/600?random=12" alt="Kate's Coffee Shop interior 1">
+                            <img src="https://picsum.photos/800/600?random=13" alt="Deli counter 1">
+                            <img src="https://picsum.photos/800/600?random=14" alt="Coffee cup 1">
+                            <img src="https://picsum.photos/800/600?random=15" alt="Kate's Coffee Shop exterior 2">
+                            <img src="https://picsum.photos/800/600?random=16" alt="Kate's Coffee Shop interior 2">
+                            <img src="https://picsum.photos/800/600?random=17" alt="Deli counter 2">
+                            <img src="https://picsum.photos/800/600?random=18" alt="Coffee cup 2">
+                            <img src="https://picsum.photos/800/600?random=19" alt="Pastries display">
+                            <img src="https://picsum.photos/800/600?random=20" alt="Sandwich close-up">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Morriscastle Beach, Kilmuckridge, Co. Wexford</h3>
-                    <p>Spend the afternoon building sandcastles, splashing in the waves, and enjoying the golden sands of Morriscastle Beach.</p>
+                    <p class="activity-description">Spend the afternoon building sandcastles, splashing in the waves, and enjoying the golden sands of Morriscastle Beach. Known as "The Golden Mile," it's one of Ireland's longest beaches, perfect for family fun and relaxation.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=21" alt="Morriscastle Beach view 1">
-                    <img src="https://picsum.photos/800/600?random=22" alt="Morriscastle Beach sandcastles 1">
-                    <img src="https://picsum.photos/800/600?random=23" alt="Morriscastle Beach waves 1">
-                    <img src="https://picsum.photos/800/600?random=24" alt="Morriscastle Beach family 1">
-                    <img src="https://picsum.photos/800/600?random=25" alt="Morriscastle Beach view 2">
-                    <img src="https://picsum.photos/800/600?random=26" alt="Morriscastle Beach sandcastles 2">
-                    <img src="https://picsum.photos/800/600?random=27" alt="Morriscastle Beach waves 2">
-                    <img src="https://picsum.photos/800/600?random=28" alt="Morriscastle Beach family 2">
-                    <img src="https://picsum.photos/800/600?random=29" alt="Morriscastle Beach sunset">
-                    <img src="https://picsum.photos/800/600?random=30" alt="Morriscastle Beach dunes">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sMorriscastle%20Beach!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=21" alt="Morriscastle Beach view 1">
+                            <img src="https://picsum.photos/800/600?random=22" alt="Morriscastle Beach sandcastles 1">
+                            <img src="https://picsum.photos/800/600?random=23" alt="Morriscastle Beach waves 1">
+                            <img src="https://picsum.photos/800/600?random=24" alt="Morriscastle Beach family 1">
+                            <img src="https://picsum.photos/800/600?random=25" alt="Morriscastle Beach view 2">
+                            <img src="https://picsum.photos/800/600?random=26" alt="Morriscastle Beach sandcastles 2">
+                            <img src="https://picsum.photos/800/600?random=27" alt="Morriscastle Beach waves 2">
+                            <img src="https://picsum.photos/800/600?random=28" alt="Morriscastle Beach family 2">
+                            <img src="https://picsum.photos/800/600?random=29" alt="Morriscastle Beach sunset">
+                            <img src="https://picsum.photos/800/600?random=30" alt="Morriscastle Beach dunes">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Lawler's of Morriscastle, Kilmuckridge, Co. Wexford</h3>
-                    <p>Savour a delicious dinner at Lawler's, a popular local spot with a warm atmosphere and great food.</p>
+                    <p class="activity-description">Savour a delicious dinner at Lawler's, a popular local spot with a warm atmosphere and great food. It's the perfect place to unwind after a day at the beach, offering a menu that caters to all tastes, including kid-friendly options.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=31" alt="Lawler's of Morriscastle exterior 1">
-                    <img src="https://picsum.photos/800/600?random=32" alt="Lawler's of Morriscastle interior 1">
-                    <img src="https://picsum.photos/800/600?random=33" alt="Lawler's food dish 1">
-                    <img src="https://picsum.photos/800/600?random=34" alt="Lawler's dining area 1">
-                    <img src="https://picsum.photos/800/600?random=35" alt="Lawler's of Morriscastle exterior 2">
-                    <img src="https://picsum.photos/800/600?random=36" alt="Lawler's of Morriscastle interior 2">
-                    <img src="https://picsum.photos/800/600?random=37" alt="Lawler's food dish 2">
-                    <img src="https://picsum.photos/800/600?random=38" alt="Lawler's dining area 2">
-                    <img src="https://picsum.photos/800/600?random=39" alt="Lawler's bar area">
-                    <img src="https://picsum.photos/800/600?random=40" alt="Lawler's cozy corner">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sLawler's%20of%20Morriscastle!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=31" alt="Lawler's of Morriscastle exterior 1">
+                            <img src="https://picsum.photos/800/600?random=32" alt="Lawler's of Morriscastle interior 1">
+                            <img src="https://picsum.photos/800/600?random=33" alt="Lawler's food dish 1">
+                            <img src="https://picsum.photos/800/600?random=34" alt="Lawler's dining area 1">
+                            <img src="https://picsum.photos/800/600?random=35" alt="Lawler's of Morriscastle exterior 2">
+                            <img src="https://picsum.photos/800/600?random=36" alt="Lawler's of Morriscastle interior 2">
+                            <img src="https://picsum.photos/800/600?random=37" alt="Lawler's food dish 2">
+                            <img src="https://picsum.photos/800/600?random=38" alt="Lawler's dining area 2">
+                            <img src="https://picsum.photos/800/600?random=39" alt="Lawler's bar area">
+                            <img src="https://picsum.photos/800/600?random=40" alt="Lawler's cozy corner">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -181,76 +331,120 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Kilmuckridge-Morriscastle Trail, Kilmuckridge, Co. Wexford</h3>
-                    <p>Enjoy a refreshing morning walk along this scenic trail, perfect for taking in the fresh air and beautiful coastal views.</p>
+                    <p class="activity-description">Enjoy a refreshing morning walk along this scenic trail, perfect for taking in the fresh air and beautiful coastal views. The trail offers a gentle path suitable for families, with opportunities to spot local wildlife and enjoy the serene Irish countryside.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=41" alt="Coastal trail 1">
-                    <img src="https://picsum.photos/800/600?random=42" alt="Nature path 1">
-                    <img src="https://picsum.photos/800/600?random=43" alt="Scenic view 1">
-                    <img src="https://picsum.photos/800/600?random=44" alt="Walking trail 1">
-                    <img src="https://picsum.photos/800/600?random=45" alt="Coastal trail 2">
-                    <img src="https://picsum.photos/800/600?random=46" alt="Nature path 2">
-                    <img src="https://picsum.photos/800/600?random=47" alt="Scenic view 2">
-                    <img src="https://picsum.photos/800/600?random=48" alt="Walking trail 2">
-                    <img src="https://picsum.photos/800/600?random=49" alt="Green fields">
-                    <img src="https://picsum.photos/800/600?random=50" alt="Trail sign">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sKilmuckridge-Morriscastle%20Trail!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=41" alt="Coastal trail 1">
+                            <img src="https://picsum.photos/800/600?random=42" alt="Nature path 1">
+                            <img src="https://picsum.photos/800/600?random=43" alt="Scenic view 1">
+                            <img src="https://picsum.photos/800/600?random=44" alt="Walking trail 1">
+                            <img src="https://picsum.photos/800/600?random=45" alt="Coastal trail 2">
+                            <img src="https://picsum.photos/800/600?random=46" alt="Nature path 2">
+                            <img src="https://picsum.photos/800/600?random=47" alt="Scenic view 2">
+                            <img src="https://picsum.photos/800/600?random=48" alt="Walking trail 2">
+                            <img src="https://picsum.photos/800/600?random=49" alt="Green fields">
+                            <img src="https://picsum.photos/800/600?random=50" alt="Trail sign">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Secret Valley Wildlife Park, Clonroche, Enniscorthy, Co. Wexford</h3>
-                    <p>Explore a variety of animals and enjoy interactive experiences at this fantastic wildlife park.</p>
+                    <p class="activity-description">Explore a variety of animals and enjoy interactive experiences at this fantastic wildlife park. From exotic species to farm animals, there's something for everyone. Don't miss the daily feeding times and keeper talks for an even more engaging visit!</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=51" alt="Wildlife Park entrance 1">
-                    <img src="https://picsum.photos/800/600?random=52" alt="Animal enclosure 1">
-                    <img src="https://picsum.photos/800/600?random=53" alt="Kids with animals 1">
-                    <img src="https://picsum.photos/800/600?random=54" alt="Park landscape 1">
-                    <img src="https://picsum.photos/800/600?random=55" alt="Wildlife Park entrance 2">
-                    <img src="https://picsum.photos/800/600?random=56" alt="Animal enclosure 2">
-                    <img src="https://picsum.photos/800/600?random=57" alt="Kids with animals 2">
-                    <img src="https://picsum.photos/800/600?random=58" alt="Park landscape 2">
-                    <img src="https://picsum.photos/800/600?random=59" alt="Exotic bird">
-                    <img src="https://picsum.photos/800/600?random=60" alt="Farm animals">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sSecret%20Valley%20Wildlife%20Park!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=51" alt="Wildlife Park entrance 1">
+                            <img src="https://picsum.photos/800/600?random=52" alt="Animal enclosure 1">
+                            <img src="https://picsum.photos/800/600?random=53" alt="Kids with animals 1">
+                            <img src="https://picsum.photos/800/600?random=54" alt="Park landscape 1">
+                            <img src="https://picsum.photos/800/600?random=55" alt="Wildlife Park entrance 2">
+                            <img src="https://picsum.photos/800/600?random=56" alt="Animal enclosure 2">
+                            <img src="https://picsum.photos/800/600?random=57" alt="Kids with animals 2">
+                            <img src="https://picsum.photos/800/600?random=58" alt="Park landscape 2">
+                            <img src="https://picsum.photos/800/600?random=59" alt="Exotic bird">
+                            <img src="https://picsum.photos/800/600?random=60" alt="Farm animals">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Secret Valley Wildlife Park (Reptile Zone/Pony Rides)</h3>
-                    <p>Get up close with fascinating reptiles and let the kids enjoy a fun pony ride.</p>
+                    <p class="activity-description">Get up close with fascinating reptiles in the dedicated zone and let the kids enjoy a fun pony ride. These hands-on experiences are highlights for many visitors, providing unique memories and photo opportunities.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=61" alt="Reptile Zone exhibit 1">
-                    <img src="https://picsum.photos/800/600?random=62" alt="Pony ride 1">
-                    <img src="https://picsum.photos/800/600?random=63" alt="Snake close-up">
-                    <img src="https://picsum.photos/800/600?random=64" alt="Kids petting pony">
-                    <img src="https://picsum.photos/800/600?random=65" alt="Reptile Zone exhibit 2">
-                    <img src="https://picsum.photos/800/600?random=66" alt="Pony ride 2">
-                    <img src="https://picsum.photos/800/600?random=67" alt="Lizard on rock">
-                    <img src="https://picsum.photos/800/600?random=68" alt="Horse stable">
-                    <img src="https://picsum.photos/800/600?random=69" alt="Tortoise">
-                    <img src="https://picsum.photos/800/600?random=70" alt="Pony with child">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sSecret%20Valley%20Wildlife%20Park!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=61" alt="Reptile Zone exhibit 1">
+                            <img src="https://picsum.photos/800/600?random=62" alt="Pony ride 1">
+                            <img src="https://picsum.photos/800/600?random=63" alt="Snake close-up">
+                            <img src="https://picsum.photos/800/600?random=64" alt="Kids petting pony">
+                            <img src="https://picsum.photos/800/600?random=65" alt="Reptile Zone exhibit 2">
+                            <img src="https://picsum.photos/800/600?random=66" alt="Pony ride 2">
+                            <img src="https://picsum.photos/800/600?random=67" alt="Lizard on rock">
+                            <img src="https://picsum.photos/800/600?random=68" alt="Horse stable">
+                            <img src="https://picsum.photos/800/600?random=69" alt="Tortoise">
+                            <img src="https://picsum.photos/800/600?random=70" alt="Pony with child">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Partridges, Main Street, Gorey, Co. Wexford (Ice Cream)</h3>
-                    <p>Cool down with a delicious ice cream treat at Partridges after a day of adventure.</p>
+                    <p class="activity-description">Cool down with a delicious ice cream treat at Partridges after a day of adventure. This local favourite offers a wide selection of flavours, perfect for a sweet ending to your wildlife park visit.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=71" alt="Ice cream shop exterior 1">
-                    <img src="https://picsum.photos/800/600?random=72" alt="Ice cream cone 1">
-                    <img src="https://picsum.photos/800/600?random=73" alt="Kids eating ice cream 1">
-                    <img src="https://picsum.photos/800/600?random=74" alt="Ice cream display 1">
-                    <img src="https://picsum.photos/800/600?random=75" alt="Ice cream shop exterior 2">
-                    <img src="https://picsum.photos/800/600?random=76" alt="Ice cream cone 2">
-                    <img src="https://picsum.photos/800/600?random=77" alt="Kids eating ice cream 2">
-                    <img src="https://picsum.photos/800/600?random=78" alt="Ice cream display 2">
-                    <img src="https://picsum.photos/800/600?random=79" alt="Sundae">
-                    <img src="https://picsum.photos/800/600?random=80" alt="Gelato scoops">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sPartridges!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=71" alt="Ice cream shop exterior 1">
+                            <img src="https://picsum.photos/800/600?random=72" alt="Ice cream cone 1">
+                            <img src="https://picsum.photos/800/600?random=73" alt="Kids eating ice cream 1">
+                            <img src="https://picsum.photos/800/600?random=74" alt="Ice cream display 1">
+                            <img src="https://picsum.photos/800/600?random=75" alt="Ice cream shop exterior 2">
+                            <img src="https://picsum.photos/800/600?random=76" alt="Ice cream cone 2">
+                            <img src="https://picsum.photos/800/600?random=77" alt="Kids eating ice cream 2">
+                            <img src="https://picsum.photos/800/600?random=78" alt="Ice cream display 2">
+                            <img src="https://picsum.photos/800/600?random=79" alt="Sundae">
+                            <img src="https://picsum.photos/800/600?random=80" alt="Gelato scoops">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -261,57 +455,90 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Wells House & Gardens, Ballyedmond, Gorey, Co. Wexford</h3>
-                    <p>Spend a full day exploring the historic house, extensive gardens, and woodlands of Wells House.</p>
+                    <p class="activity-description">Spend a full day exploring the historic house, extensive gardens, and woodlands of Wells House. This grand estate offers beautiful walks, a children's playground, and various attractions, ensuring a day full of discovery for the entire family.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=81" alt="Wells House exterior 1">
-                    <img src="https://picsum.photos/800/600?random=82" alt="Wells House gardens 1">
-                    <img src="https://picsum.photos/800/600?random=83" alt="Wells House interior 1">
-                    <img src="https://picsum.photos/800/600?random=84" alt="Wells House woodland 1">
-                    <img src="https://picsum.photos/800/600?random=85" alt="Wells House exterior 2">
-                    <img src="https://picsum.photos/800/600?random=86" alt="Wells House gardens 2">
-                    <img src="https://picsum.photos/800/600?random=87" alt="Wells House interior 2">
-                    <img src="https://picsum.photos/800/600?random=88" alt="Wells House woodland 2">
-                    <img src="https://picsum.photos/800/600?random=89" alt="Wells House fountain">
-                    <img src="https://picsum.photos/800/600?random=90" alt="Wells House archway">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sWells%20House%20%26%20Gardens!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=81" alt="Wells House exterior 1">
+                            <img src="https://picsum.photos/800/600?random=82" alt="Wells House gardens 1">
+                            <img src="https://picsum.photos/800/600?random=83" alt="Wells House interior 1">
+                            <img src="https://picsum.photos/800/600?random=84" alt="Wells House woodland 1">
+                            <img src="https://picsum.photos/800/600?random=85" alt="Wells House exterior 2">
+                            <img src="https://picsum.photos/800/600?random=86" alt="Wells House gardens 2">
+                            <img src="https://picsum.photos/800/600?random=87" alt="Wells House interior 2">
+                            <img src="https://picsum.photos/800/600?random=88" alt="Wells House woodland 2">
+                            <img src="https://picsum.photos/800/600?random=89" alt="Wells House fountain">
+                            <img src="https://picsum.photos/800/600?random=90" alt="Wells House archway">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Brambles Café, Wells House & Gardens</h3>
-                    <p>Enjoy a lovely lunch or snack at Brambles Café, located within the beautiful Wells House grounds.</p>
+                    <p class="activity-description">Enjoy a lovely lunch or snack at Brambles Café, located within the beautiful Wells House grounds. It's a convenient and pleasant spot to refuel during your exploration of the estate.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=91" alt="Brambles Café exterior 1">
-                    <img src="https://picsum.photos/800/600?random=92" alt="Brambles Café interior 1">
-                    <img src="https://picsum.photos/800/600?random=93" alt="Cafe food 1">
-                    <img src="https://picsum.photos/800/600?random=94" alt="Cafe seating 1">
-                    <img src="https://picsum.photos/800/600?random=95" alt="Brambles Café exterior 2">
-                    <img src="https://picsum.photos/800/600?random=96" alt="Brambles Café interior 2">
-                    <img src="https://picsum.photos/800/600?random=97" alt="Cafe food 2">
-                    <img src="https://picsum.photos/800/600?random=98" alt="Cafe seating 2">
-                    <img src="https://picsum.photos/800/600?random=99" alt="Outdoor cafe">
-                    <img src="https://picsum.photos/800/600?random=100" alt="Coffee and cake">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sBrambles%20Cafe!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=91" alt="Brambles Café exterior 1">
+                            <img src="https://picsum.photos/800/600?random=92" alt="Brambles Café interior 1">
+                            <img src="https://picsum.photos/800/600?random=93" alt="Cafe food 1">
+                            <img src="https://picsum.photos/800/600?random=94" alt="Cafe seating 1">
+                            <img src="https://picsum.photos/800/600?random=95" alt="Brambles Café exterior 2">
+                            <img src="https://picsum.photos/800/600?random=96" alt="Brambles Café interior 2">
+                            <img src="https://picsum.photos/800/600?random=97" alt="Cafe food 2">
+                            <img src="https://picsum.photos/800/600?random=98" alt="Cafe seating 2">
+                            <img src="https://picsum.photos/800/600?random=99" alt="Outdoor cafe">
+                            <img src="https://picsum.photos/800/600?random=100" alt="Coffee and cake">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Glenavon Japanese Garden, Wells House & Gardens</h3>
-                    <p>Discover tranquility in the serene Glenavon Japanese Garden, a peaceful oasis within Wells House.</p>
+                    <p class="activity-description">Discover tranquility in the serene Glenavon Japanese Garden, a peaceful oasis within Wells House. This beautifully designed garden offers a calming escape, perfect for quiet reflection amidst your busy family day.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=101" alt="Japanese Garden bridge 1">
-                    <img src="https://picsum.photos/800/600?random=102" alt="Japanese Garden pond 1">
-                    <img src="https://picsum.photos/800/600?random=103" alt="Zen garden 1">
-                    <img src="https://picsum.photos/800/600?random=104" alt="Japanese Garden plants 1">
-                    <img src="https://picsum.photos/800/600?random=105" alt="Japanese Garden bridge 2">
-                    <img src="https://picsum.photos/800/600?random=106" alt="Japanese Garden pond 2">
-                    <img src="https://picsum.photos/800/600?random=107" alt="Zen garden 2">
-                    <img src="https://picsum.photos/800/600?random=108" alt="Japanese Garden plants 2">
-                    <img src="https://picsum.photos/800/600?random=109" alt="Stone lantern">
-                    <img src="https://picsum.photos/800/600?random=110" alt="Bamboo grove">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sGlenavon%20Japanese%20Garden!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=101" alt="Japanese Garden bridge 1">
+                            <img src="https://picsum.photos/800/600?random=102" alt="Japanese Garden pond 1">
+                            <img src="https://picsum.photos/800/600?random=103" alt="Zen garden 1">
+                            <img src="https://picsum.photos/800/600?random=104" alt="Japanese Garden plants 1">
+                            <img src="https://picsum.photos/800/600?random=105" alt="Japanese Garden bridge 2">
+                            <img src="https://picsum.photos/800/600?random=106" alt="Japanese Garden pond 2">
+                            <img src="https://picsum.photos/800/600?random=107" alt="Zen garden 2">
+                            <img src="https://picsum.photos/800/600?random=108" alt="Japanese Garden plants 2">
+                            <img src="https://picsum.photos/800/600?random=109" alt="Stone lantern">
+                            <img src="https://picsum.photos/800/600?random=110" alt="Bamboo grove">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -322,57 +549,90 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Enniscorthy Castle, Enniscorthy, Co. Wexford</h3>
-                    <p>Step back in time at Enniscorthy Castle, a historic landmark with fascinating exhibits and panoramic views.</p>
+                    <p class="activity-description">Step back in time at Enniscorthy Castle, a historic landmark with fascinating exhibits and panoramic views. Explore its dungeons, climb to the rooftop, and learn about the rich history of the area, including its role in the 1798 Rebellion.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=111" alt="Enniscorthy Castle exterior 1">
-                    <img src="https://picsum.photos/800/600?random=112" alt="Enniscorthy Castle interior 1">
-                    <img src="https://picsum.photos/800/600?random=113" alt="Castle battlements 1">
-                    <img src="https://picsum.photos/800/600?random=114" alt="Castle museum 1">
-                    <img src="https://picsum.photos/800/600?random=115" alt="Enniscorthy Castle exterior 2">
-                    <img src="https://picsum.photos/800/600?random=116" alt="Enniscorthy Castle interior 2">
-                    <img src="https://picsum.photos/800/600?random=117" alt="Castle battlements 2">
-                    <img src="https://picsum.photos/800/600?random=118" alt="Castle museum 2">
-                    <img src="https://picsum.photos/800/600?random=119" alt="Castle grounds">
-                    <img src="https://picsum.photos/800/600?random=120" alt="Castle tower">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sEnniscorthy%20Castle!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=111" alt="Enniscorthy Castle exterior 1">
+                            <img src="https://picsum.photos/800/600?random=112" alt="Enniscorthy Castle interior 1">
+                            <img src="https://picsum.photos/800/600?random=113" alt="Castle battlements 1">
+                            <img src="https://picsum.photos/800/600?random=114" alt="Castle museum 1">
+                            <img src="https://picsum.photos/800/600?random=115" alt="Enniscorthy Castle exterior 2">
+                            <img src="https://picsum.photos/800/600?random=116" alt="Enniscorthy Castle interior 2">
+                            <img src="https://picsum.photos/800/600?random=117" alt="Castle battlements 2">
+                            <img src="https://picsum.photos/800/600?random=118" alt="Castle museum 2">
+                            <img src="https://picsum.photos/800/600?random=119" alt="Castle grounds">
+                            <img src="https://picsum.photos/800/600?random=120" alt="Castle tower">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Tinnaberna Sandhills, Kilmuckridge, Co. Wexford</h3>
-                    <p>Explore the unique natural landscape of Tinnaberna Sandhills, perfect for a breezy walk and dune exploration.</p>
+                    <p class="activity-description">Explore the unique natural landscape of Tinnaberna Sandhills, perfect for a breezy walk and dune exploration. This beautiful coastal area is a hidden gem, offering stunning views and a chance to connect with nature.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=121" alt="Sandhills view 1">
-                    <img src="https://picsum.photos/800/600?random=122" alt="Dune landscape 1">
-                    <img src="https://picsum.photos/800/600?random=123" alt="Beach and dunes 1">
-                    <img src="https://picsum.photos/800/600?random=124" alt="Coastal plants 1">
-                    <img src="https://picsum.photos/800/600?random=125" alt="Sandhills view 2">
-                    <img src="https://picsum.photos/800/600?random=126" alt="Dune landscape 2">
-                    <img src="https://picsum.photos/800/600?random=127" alt="Beach and dunes 2">
-                    <img src="https://picsum.photos/800/600?random=128" alt="Coastal plants 2">
-                    <img src="https://picsum.photos/800/600?random=129" alt="Footprints in sand">
-                    <img src="https://picsum.photos/800/600?random=130" alt="Seagrass">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sTinnaberna%20Sandhills!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=121" alt="Sandhills view 1">
+                            <img src="https://picsum.photos/800/600?random=122" alt="Dune landscape 1">
+                            <img src="https://picsum.photos/800/600?random=123" alt="Beach and dunes 1">
+                            <img src="https://picsum.photos/800/600?random=124" alt="Coastal plants 1">
+                            <img src="https://picsum.photos/800/600?random=125" alt="Sandhills view 2">
+                            <img src="https://picsum.photos/800/600?random=126" alt="Dune landscape 2">
+                            <img src="https://picsum.photos/800/600?random=127" alt="Beach and dunes 2">
+                            <img src="https://picsum.photos/800/600?random=128" alt="Coastal plants 2">
+                            <img src="https://picsum.photos/800/600?random=129" alt="Footprints in sand">
+                            <img src="https://picsum.photos/800/600?random=130" alt="Seagrass">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Gorey (Pottery Painting or Craft Workshop)</h3>
-                    <p>Unleash your creativity with a fun pottery painting or craft workshop in Gorey, perfect for all ages.</p>
+                    <p class="activity-description">Unleash your creativity with a fun pottery painting or craft workshop in Gorey, perfect for all ages. It's a wonderful indoor activity, especially on a rainy day, allowing everyone to create a unique souvenir.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=131" alt="Pottery painting studio 1">
-                    <img src="https://picsum.photos/800/600?random=132" alt="Kids crafting 1">
-                    <img src="https://picsum.photos/800/600?random=133" alt="Painted pottery 1">
-                    <img src="https://picsum.photos/800/600?random=134" alt="Craft supplies 1">
-                    <img src="https://picsum.photos/800/600?random=135" alt="Pottery painting studio 2">
-                    <img src="https://picsum.photos/800/600?random=136" alt="Kids crafting 2">
-                    <img src="https://picsum.photos/800/600?random=137" alt="Painted pottery 2">
-                    <img src="https://picsum.photos/800/600?random=138" alt="Craft supplies 2">
-                    <img src="https://picsum.photos/800/600?random=139" alt="Art project">
-                    <img src="https://picsum.photos/800/600?random=140" alt="Creative hands">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sGorey%20Community%20School%20(example%20craft%20location)!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=131" alt="Pottery painting studio 1">
+                            <img src="https://picsum.photos/800/600?random=132" alt="Kids crafting 1">
+                            <img src="https://picsum.photos/800/600?random=133" alt="Painted pottery 1">
+                            <img src="https://picsum.photos/800/600?random=134" alt="Craft supplies 1">
+                            <img src="https://picsum.photos/800/600?random=135" alt="Pottery painting studio 2">
+                            <img src="https://picsum.photos/800/600?random=136" alt="Kids crafting 2">
+                            <img src="https://picsum.photos/800/600?random=137" alt="Painted pottery 2">
+                            <img src="https://picsum.photos/800/600?random=138" alt="Craft supplies 2">
+                            <img src="https://picsum.photos/800/600?random=139" alt="Art project">
+                            <img src="https://picsum.photos/800/600?random=140" alt="Creative hands">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -383,57 +643,90 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Gorey (Summer Market Stalls)</h3>
-                    <p>Wander through the vibrant summer market stalls in Gorey, browsing local crafts and delicious treats.</p>
+                    <p class="activity-description">Wander through the vibrant summer market stalls in Gorey, browsing local crafts and delicious treats. Depending on the time of year, you might find various local markets offering unique goods, entertainment, and a lively atmosphere.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=141" alt="Market stall 1">
-                    <img src="https://picsum.photos/800/600?random=142" alt="Outdoor market 1">
-                    <img src="https://picsum.photos/800/600?random=143" alt="Crafts display 1">
-                    <img src="https://picsum.photos/800/600?random=144" alt="Food stall 1">
-                    <img src="https://picsum.photos/800/600?random=145" alt="Market stall 2">
-                    <img src="https://picsum.photos/800/600?random=146" alt="Outdoor market 2">
-                    <img src="https://picsum.photos/800/600?random=147" alt="Crafts display 2">
-                    <img src="https://picsum.photos/800/600?random=148" alt="Food stall 2">
-                    <img src="https://picsum.photos/800/600?random=149" alt="People at market">
-                    <img src="https://picsum.photos/800/600?random=150" alt="Fresh produce">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sGorey%20Main%20Street%20(example%20market%20location)!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=141" alt="Market stall 1">
+                            <img src="https://picsum.photos/800/600?random=142" alt="Outdoor market 1">
+                            <img src="https://picsum.photos/800/600?random=143" alt="Crafts display 1">
+                            <img src="https://picsum.photos/800/600?random=144" alt="Food stall 1">
+                            <img src="https://picsum.photos/800/600?random=145" alt="Market stall 2">
+                            <img src="https://picsum.photos/800/600?random=146" alt="Outdoor market 2">
+                            <img src="https://picsum.photos/800/600?random=147" alt="Crafts display 2">
+                            <img src="https://picsum.photos/800/600?random=148" alt="Food stall 2">
+                            <img src="https://picsum.photos/800/600?random=149" alt="People at market">
+                            <img src="https://picsum.photos/800/600?random=150" alt="Fresh produce">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>The Greenhouse Café, Kilmuckridge, Co. Wexford (Kids Crafts)</h3>
-                    <p>Enjoy a relaxing break at The Greenhouse Café while the kids engage in fun craft activities.</p>
+                    <p class="activity-description">Enjoy a relaxing break at The Greenhouse Café while the kids engage in fun craft activities. This charming café often hosts creative sessions, making it a great spot for both parents and children to relax and play.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=151" alt="Greenhouse cafe interior 1">
-                    <img src="https://picsum.photos/800/600?random=152" alt="Kids craft table 1">
-                    <img src="https://picsum.photos/800/600?random=153" alt="Cafe garden 1">
-                    <img src="https://picsum.photos/800/600?random=154" alt="Craft materials 1">
-                    <img src="https://picsum.photos/800/600?random=155" alt="Greenhouse cafe interior 2">
-                    <img src="https://picsum.photos/800/600?random=156" alt="Kids craft table 2">
-                    <img src="https://picsum.photos/800/600?random=157" alt="Cafe garden 2">
-                    <img src="https://picsum.photos/800/600?random=158" alt="Craft materials 2">
-                    <img src="https://picsum.photos/800/600?random=159" alt="Child drawing">
-                    <img src="https://picsum.photos/800/600?random=160" alt="Art supplies">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sThe%20Greenhouse%20Cafe!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=151" alt="Greenhouse cafe interior 1">
+                            <img src="https://picsum.photos/800/600?random=152" alt="Kids craft table 1">
+                            <img src="https://picsum.photos/800/600?random=153" alt="Cafe garden 1">
+                            <img src="https://picsum.photos/800/600?random=154" alt="Craft materials 1">
+                            <img src="https://picsum.photos/800/600?random=155" alt="Greenhouse cafe interior 2">
+                            <img src="https://picsum.photos/800/600?random=156" alt="Kids craft table 2">
+                            <img src="https://picsum.photos/800/600?random=157" alt="Cafe garden 2">
+                            <img src="https://picsum.photos/800/600?random=158" alt="Craft materials 2">
+                            <img src="https://picsum.photos/800/600?random=159" alt="Child drawing">
+                            <img src="https://picsum.photos/800/600?random=160" alt="Art supplies">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Ballinoulart Beach, Kilmuckridge, Co. Wexford</h3>
-                    <p>Discover the serene beauty of Ballinoulart Beach, a perfect spot for a quiet stroll and enjoying nature.</p>
+                    <p class="activity-description">Discover the serene beauty of Ballinoulart Beach, a perfect spot for a quiet stroll and enjoying nature. This less-crowded beach offers a peaceful escape, ideal for collecting seashells or simply enjoying the coastal breeze.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=161" alt="Ballinoulart Beach view 1">
-                    <img src="https://picsum.photos/800/600?random=162" alt="Ballinoulart Beach waves 1">
-                    <img src="https://picsum.photos/800/600?random=163" alt="Ballinoulart Beach rocks 1">
-                    <img src="https://picsum.photos/800/600?random=164" alt="Ballinoulart Beach sunset 1">
-                    <img src="https://picsum.photos/800/600?random=165" alt="Ballinoulart Beach view 2">
-                    <img src="https://picsum.photos/800/600?random=166" alt="Ballinoulart Beach waves 2">
-                    <img src="https://picsum.photos/800/600?random=167" alt="Ballinoulart Beach rocks 2">
-                    <img src="https://picsum.photos/800/600?random=168" alt="Ballinoulart Beach sunset 2">
-                    <img src="https://picsum.photos/800/600?random=169" alt="Seaside tranquility">
-                    <img src="https://picsum.photos/800/600?random=170" alt="Coastal flora">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sBallinoulart%20Beach!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=161" alt="Ballinoulart Beach view 1">
+                            <img src="https://picsum.photos/800/600?random=162" alt="Ballinoulart Beach waves 1">
+                            <img src="https://picsum.photos/800/600?random=163" alt="Ballinoulart Beach rocks 1">
+                            <img src="https://picsum.photos/800/600?random=164" alt="Ballinoulart Beach sunset 1">
+                            <img src="https://picsum.photos/800/600?random=165" alt="Ballinoulart Beach view 2">
+                            <img src="https://picsum.photos/800/600?random=166" alt="Ballinoulart Beach waves 2">
+                            <img src="https://picsum.photos/800/600?random=167" alt="Ballinoulart Beach rocks 2">
+                            <img src="https://picsum.photos/800/600?random=168" alt="Ballinoulart Beach sunset 2">
+                            <img src="https://picsum.photos/800/600?random=169" alt="Seaside tranquility">
+                            <img src="https://picsum.photos/800/600?random=170" alt="Coastal flora">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -444,57 +737,90 @@
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Kilmuckridge Drama Festival</h3>
-                    <p>Experience the local culture with an evening at the Kilmuckridge Drama Festival, showcasing local talent.</p>
+                    <p class="activity-description">Experience the local culture with an evening at the Kilmuckridge Drama Festival, showcasing local talent. Check local listings for performance schedules during your visit for an entertaining night out.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=171" alt="Drama Festival stage 1">
-                    <img src="https://picsum.photos/800/600?random=172" alt="Drama Festival audience 1">
-                    <img src="https://picsum.photos/800/600?random=173" alt="Actors on stage 1">
-                    <img src="https://picsum.photos/800/600?random=174" alt="Theater interior 1">
-                    <img src="https://picsum.photos/800/600?random=175" alt="Drama Festival stage 2">
-                    <img src="https://picsum.photos/800/600?random=176" alt="Drama Festival audience 2">
-                    <img src="https://picsum.photos/800/600?random=177" alt="Actors on stage 2">
-                    <img src="https://picsum.photos/800/600?random=178" alt="Theater interior 2">
-                    <img src="https://picsum.photos/800/600?random=179" alt="Curtain call">
-                    <img src="https://picsum.photos/800/600?random=180" alt="Spotlight">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sKilmuckridge%20Drama%20Festival!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=171" alt="Drama Festival stage 1">
+                            <img src="https://picsum.photos/800/600?random=172" alt="Drama Festival audience 1">
+                            <img src="https://picsum.photos/800/600?random=173" alt="Actors on stage 1">
+                            <img src="https://picsum.photos/800/600?random=174" alt="Theater interior 1">
+                            <img src="https://picsum.photos/800/600?random=175" alt="Drama Festival stage 2">
+                            <img src="https://picsum.photos/800/600?random=176" alt="Drama Festival audience 2">
+                            <img src="https://picsum.photos/800/600?random=177" alt="Actors on stage 2">
+                            <img src="https://picsum.photos/800/600?random=178" alt="Theater interior 2">
+                            <img src="https://picsum.photos/800/600?random=179" alt="Curtain call">
+                            <img src="https://picsum.photos/800/600?random=180" alt="Spotlight">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Da Paolo Italian Restaurant, Main Street, Gorey, Co. Wexford</h3>
-                    <p>Enjoy a final family meal with authentic Italian cuisine at Da Paolo in Gorey.</p>
+                    <p class="activity-description">Enjoy a final family meal with authentic Italian cuisine at Da Paolo in Gorey. This popular restaurant offers a delightful menu with classic dishes, perfect for a memorable last dinner in Wexford.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=181" alt="Italian Restaurant exterior 1">
-                    <img src="https://picsum.photos/800/600?random=182" alt="Italian Restaurant interior 1">
-                    <img src="https://picsum.photos/800/600?random=183" alt="Pasta dish 1">
-                    <img src="https://picsum.photos/800/600?random=184" alt="Pizza 1">
-                    <img src="https://picsum.photos/800/600?random=185" alt="Italian Restaurant exterior 2">
-                    <img src="https://picsum.photos/800/600?random=186" alt="Italian Restaurant interior 2">
-                    <img src="https://picsum.photos/800/600?random=187" alt="Pasta dish 2">
-                    <img src="https://picsum.photos/800/600?random=188" alt="Pizza 2">
-                    <img src="https://picsum.photos/800/600?random=189" alt="Tiramisu">
-                    <img src="https://picsum.photos/800/600?random=190" alt="Wine glass">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sDa%20Paolo%20Italian%20Restaurant!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=181" alt="Italian Restaurant exterior 1">
+                            <img src="https://picsum.photos/800/600?random=182" alt="Italian Restaurant interior 1">
+                            <img src="https://picsum.photos/800/600?random=183" alt="Pasta dish 1">
+                            <img src="https://picsum.photos/800/600?random=184" alt="Pizza 1">
+                            <img src="https://picsum.photos/800/600?random=185" alt="Italian Restaurant exterior 2">
+                            <img src="https://picsum.photos/800/600?random=186" alt="Italian Restaurant interior 2">
+                            <img src="https://picsum.photos/800/600?random=187" alt="Pasta dish 2">
+                            <img src="https://picsum.photos/800/600?random=188" alt="Pizza 2">
+                            <img src="https://picsum.photos/800/600?random=189" alt="Tiramisu">
+                            <img src="https://picsum.photos/800/600?random=190" alt="Wine glass">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="activity-card">
                 <div class="activity-content">
                     <h3>Wexford Town, Co. Wexford</h3>
-                    <p>Before heading home, take some time to explore the historic and charming streets of Wexford Town.</p>
+                    <p class="activity-description">Before heading home, take some time to explore the historic and charming streets of Wexford Town. Visit the iconic Selskar Abbey, stroll along the quays, or explore the local shops for souvenirs of your trip.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="activity-images">
-                    <img src="https://picsum.photos/800/600?random=191" alt="Wexford Town street 1">
-                    <img src="https://picsum.photos/800/600?random=192" alt="Wexford Town waterfront 1">
-                    <img src="https://picsum.photos/800/600?random=193" alt="Wexford Town historic building 1">
-                    <img src="https://picsum.photos/800/600?random=194" alt="Wexford Town colorful houses 1">
-                    <img src="https://picsum.photos/800/600?random=195" alt="Wexford Town street 2">
-                    <img src="https://picsum.photos/800/600?random=196" alt="Wexford Town waterfront 2">
-                    <img src="https://picsum.photos/800/600?random=197" alt="Wexford Town historic building 2">
-                    <img src="https://picsum.photos/800/600?random=198" alt="Wexford Town colorful houses 2">
-                    <img src="https://picsum.photos/800/600?random=199" alt="Wexford Town harbor">
-                    <img src="https://picsum.photos/800/600?random=200" alt="Wexford Town alleyway">
+                <div class="collapsible-content">
+                    <div class="map-embed-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sWexford%20Town!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="activity-carousel-container">
+                        <div class="carousel-slides">
+                            <img src="https://picsum.photos/800/600?random=191" alt="Wexford Town street 1">
+                            <img src="https://picsum.photos/800/600?random=192" alt="Wexford Town waterfront 1">
+                            <img src="https://picsum.photos/800/600?random=193" alt="Wexford Town historic building 1">
+                            <img src="https://picsum.photos/800/600?random=194" alt="Wexford Town colorful houses 1">
+                            <img src="https://picsum.photos/800/600?random=195" alt="Wexford Town street 2">
+                            <img src="https://picsum.photos/800/600?random=196" alt="Wexford Town waterfront 2">
+                            <img src="https://picsum.photos/800/600?random=197" alt="Wexford Town historic building 2">
+                            <img src="https://picsum.photos/800/600?random=198" alt="Wexford Town colorful houses 2">
+                            <img src="https://picsum.photos/800/600?random=199" alt="Wexford Town harbor">
+                            <img src="https://picsum.photos/800/600?random=200" alt="Wexford Town alleyway">
+                        </div>
+                        <button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-dots"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -503,5 +829,122 @@
     <footer class="bg-gray-800 text-white text-center p-4 mt-8 rounded-t-lg">
         <p>&copy; 2025 Wexford Family Fun. All rights reserved. Images from Lorem Picsum.</p>
     </footer>
+
+    <script>
+        // JavaScript for Expandable Activity Descriptions and Collapsible Content
+        document.querySelectorAll('.activity-card').forEach(card => {
+            const description = card.querySelector('.activity-description');
+            const button = card.querySelector('.read-more-btn');
+            const collapsibleContent = card.querySelector('.collapsible-content');
+
+            // Initially hide the collapsible content
+            collapsibleContent.style.maxHeight = '0';
+            collapsibleContent.style.paddingTop = '0';
+            collapsibleContent.style.paddingBottom = '0';
+            collapsibleContent.style.borderTop = 'none';
+
+            // Function to initialize a carousel
+            function initializeCarousel(container) {
+                const slides = container.querySelector('.carousel-slides');
+                const images = slides.querySelectorAll('img');
+                const prevButton = container.querySelector('.carousel-button.prev');
+                const nextButton = container.querySelector('.carousel-button.next');
+                const dotsContainer = container.querySelector('.carousel-dots');
+
+                let currentIndex = 0;
+
+                // Clear existing dots to prevent duplicates on re-initialization
+                dotsContainer.innerHTML = '';
+
+                // Create dots
+                images.forEach((_, index) => {
+                    const dot = document.createElement('span');
+                    dot.classList.add('dot');
+                    if (index === 0) {
+                        dot.classList.add('active');
+                    }
+                    dot.addEventListener('click', () => {
+                        showSlide(index);
+                    });
+                    dotsContainer.appendChild(dot);
+                });
+
+                const dots = dotsContainer.querySelectorAll('.dot');
+
+                function showSlide(index) {
+                    if (index < 0) {
+                        currentIndex = images.length - 1;
+                    } else if (index >= images.length) {
+                        currentIndex = 0;
+                    } else {
+                        currentIndex = index;
+                    }
+
+                    const offset = -currentIndex * 100; // 100% for each slide
+                    slides.style.transform = `translateX(${offset}%)`;
+
+                    // Update active dot
+                    dots.forEach((dot, i) => {
+                        if (i === currentIndex) {
+                            dot.classList.add('active');
+                        } else {
+                            dot.classList.remove('active');
+                        }
+                    });
+                }
+
+                prevButton.addEventListener('click', () => {
+                    showSlide(currentIndex - 1);
+                });
+
+                nextButton.addEventListener('click', () => {
+                    showSlide(currentIndex + 1);
+                });
+
+                // Show the first slide initially
+                showSlide(0);
+            }
+
+            // Event listener for the "Read More" button
+            button.addEventListener('click', () => {
+                const isExpanded = description.classList.toggle('expanded');
+                collapsibleContent.classList.toggle('expanded');
+
+                if (isExpanded) {
+                    button.textContent = 'Read Less';
+                    // Set a fixed max-height that is large enough to contain map + carousel
+                    collapsibleContent.style.maxHeight = '700px'; // Adjust this value if content is taller
+                    collapsibleContent.style.paddingTop = '1.5rem';
+                    collapsibleContent.style.paddingBottom = '1.5rem';
+                    collapsibleContent.style.borderTop = '1px solid #e2e8f0';
+
+                    // Initialize carousel when expanded
+                    const carouselContainer = collapsibleContent.querySelector('.activity-carousel-container');
+                    // Only initialize if not already initialized
+                    if (carouselContainer && !carouselContainer.dataset.initialized) {
+                        initializeCarousel(carouselContainer);
+                        carouselContainer.dataset.initialized = 'true';
+                    }
+
+                } else {
+                    button.textContent = 'Read More';
+                    collapsibleContent.style.maxHeight = '0';
+                    collapsibleContent.style.paddingTop = '0';
+                    collapsibleContent.style.paddingBottom = '0';
+                    collapsibleContent.style.borderTop = 'none';
+                }
+            });
+
+            // Initial check for description overflow (if needed, though now always shown)
+            // A small timeout ensures rendering has completed for accurate scrollHeight
+            setTimeout(() => {
+                if (description.scrollHeight > description.clientHeight) {
+                    button.style.display = 'block';
+                } else {
+                    button.style.display = 'none';
+                }
+            }, 100); // Small delay to allow content to render
+        });
+    </script>
 </body>
 </html>
