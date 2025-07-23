@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapContainer = item.querySelector('.map-container');
         const imageCarousel = item.querySelector('.image-carousel');
         const location = item.dataset.location;
-        const images = JSON.parse(item.dataset.images || '[]'); // Parse image URLs from data-images
+        const images = JSON.parse(item.dataset.images || '[]');
 
         activityName.addEventListener('click', () => {
             const isOpen = item.classList.contains('open');
@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (openItem !== item) {
                     openItem.classList.remove('open');
                     openItem.querySelector('.activity-details').classList.remove('expanded');
-                    // Clear map and images from closed items
                     openItem.querySelector('.map-container').innerHTML = '';
                     openItem.querySelector('.image-carousel').innerHTML = '';
                     if (openItem.querySelector('.carousel-nav')) {
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activityDetails.classList.toggle('expanded');
 
             if (item.classList.contains('open')) {
-                // Load map
+                // Load map without API key
                 loadMap(mapContainer, location);
                 // Load images
                 loadImageCarousel(imageCarousel, images);
@@ -47,17 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function loadMap(container, location) {
-        // Using Google Maps Embed API for simplicity.
-        // For interactive map via JS API, you'd need the Google Maps JS API loaded
-        // with your API key, and then use new google.maps.Map() etc.
-        // This solution opens map in a new tab for interaction.
-        // A direct iframe embed for a static map is possible but less interactive.
+        // Using Google Maps' standard embed URL. No API key needed for basic embeds.
+        // The 'q' parameter is for query, which can be an address or place name.
         const encodedLocation = encodeURIComponent(location);
         container.innerHTML = `<iframe
             width="100%"
             height="100%"
             frameborder="0" style="border:0"
-            src="https://www.google.com/maps/embed/v1/place?key=YOUR_Maps_API_KEY&q=${encodedLocation}"
+            src="https://maps.google.com/maps?q=${encodedLocation}&amp;output=embed"
             allowfullscreen>
         </iframe>`;
     }
@@ -97,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             navContainer.appendChild(prevButton);
             navContainer.appendChild(nextButton);
+            // Insert navContainer after imageCarousel within the same parent (activity-details)
             container.parentNode.insertBefore(navContainer, container.nextSibling);
         }
     }
