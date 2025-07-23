@@ -9,18 +9,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      color-scheme: light dark;
+    }
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .dark body {
+      background: #1f2937;
+      color: #f3f4f6;
     }
     .carousel {
       display: flex;
-      overflow-x: auto;
+      overflow-x: scroll;
       gap: 1rem;
       scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
     }
     .carousel img {
-      scroll-snap-align: center;
+      scroll-snap-align: start;
       flex: 0 0 auto;
       width: 300px;
       height: 200px;
@@ -52,87 +64,255 @@
     }
   </style>
 </head>
-<body class="text-gray-800 p-6">
+<body class="text-gray-800 p-6 dark:bg-gray-900 dark:text-white">
   <div class="max-w-5xl mx-auto space-y-12">
-    <h1 class="text-5xl font-extrabold text-center mb-12 text-indigo-700 drop-shadow-lg">☀️ Summer Holiday Itinerary</h1>
+    <div class="flex justify-between items-center">
+      <h1 class="text-5xl font-extrabold text-indigo-700 drop-shadow-lg dark:text-indigo-300">☀️ Summer Holiday Itinerary</h1>
+      <button onclick="toggleDarkMode()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">Toggle Theme</button>
+    </div>
     <div id="itineraryContainer"></div>
-    <script>
-      const itinerary = [
-        {
-          day: '🏖️ Day 1: Arrival & Summer Beach Bliss',
-          items: [
-            {
-              name: 'Upton Court Hotel',
-              description: 'Check into Upton Court Hotel or a seaside cottage.',
-              location: 'Upton Court Hotel',
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Hotel_Belvedere_in_Montreux.jpg/640px-Hotel_Belvedere_in_Montreux.jpg']
-            },
-            {
-              name: "Kate’s Coffee Shop & Deli",
-              description: 'Cool off with smoothies and treats.',
-              location: "Kate’s Coffee Shop & Deli",
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Inside_a_coffee_shop.jpg/640px-Inside_a_coffee_shop.jpg']
-            },
-            {
-              name: 'Morriscastle Beach',
-              description: 'Great for paddling, sandcastle building, and seashell hunting.',
-              location: 'Morriscastle Beach',
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Morriscastle_Beach%2C_County_Wexford_-_geograph.org.uk_-_2472274.jpg/640px-Morriscastle_Beach%2C_County_Wexford_-_geograph.org.uk_-_2472274.jpg']
-            },
-            {
-              name: "Lawler’s of Morriscastle",
-              description: 'Evening family dinner (outdoor seating available!)',
-              location: "Lawler’s of Morriscastle",
-              images: ['https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Outdoor_cafe_seating_London.jpg/640px-Outdoor_cafe_seating_London.jpg']
-            }
-          ]
-        }
-      ];
+  </div>
 
-      function togglePanel(id) {
-        document.querySelectorAll('.activity-panel').forEach(panel => {
-          if (panel.id !== id) {
-            panel.classList.remove('open');
-          }
-        });
-        const panel = document.getElementById(id);
-        panel.classList.toggle("open");
+  <script>
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    const itinerary = [
+  {
+    day: '🏖️ Day 1: Arrival & Summer Beach Bliss',
+    items: [
+      {
+        name: 'Upton Court Hotel',
+        description: 'Check into Upton Court Hotel or a seaside cottage.',
+        location: 'Upton Court Hotel',
+        images: [
+          'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/07/56/10/77/sean-ogs-hotel.jpg?w=600&h=-1&s=1',
+          'https://media-cdn.tripadvisor.com/media/photo-s/0e/c5/5f/1a/family-room.jpg',
+          'https://media-cdn.tripadvisor.com/media/photo-s/07/56/10/89/sean-ogs-hotel.jpg'
+        ]
+      },
+      {
+        name: "Kate’s Coffee Shop & Deli",
+        description: 'Cool off with smoothies and treats.',
+        location: "Kate’s Coffee Shop & Deli",
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/1b/27/ca/73/counter-in-kate-s-coffee.jpg',
+          'https://media-cdn.tripadvisor.com/media/photo-s/1b/27/ca/6e/kate-s-coffee-shop.jpg'
+        ]
+      },
+      {
+        name: 'Morriscastle Beach',
+        description: 'Great for paddling, sandcastle building, and seashell hunting.',
+        location: 'Morriscastle Beach',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/0f/4d/27/f2/morriscastle-beach.jpg',
+          'https://media-cdn.tripadvisor.com/media/photo-s/16/7c/7f/aa/morriscastle-beach.jpg'
+        ]
+      },
+      {
+        name: "Lawler’s of Morriscastle",
+        description: 'Evening family dinner (outdoor seating available!)',
+        location: "Lawler’s of Morriscastle",
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/0a/8e/07/f2/lawlers-of-morriscastle.jpg',
+          'https://media-cdn.tripadvisor.com/media/photo-s/0a/8e/07/e9/lawlers-of-morriscastle.jpg'
+        ]
       }
+    ]
+  },
+  {
+    day: '🦙 Day 2: Nature Walk & Wildlife Wonders',
+    items: [
+      {
+        name: 'Kilmuckridge-Morriscastle Trail',
+        description: 'Morning stroll on the buggy-friendly trail.',
+        location: 'Kilmuckridge-Morriscastle Trail',
+        images: [
+          'https://www.visitwexford.ie/wp-content/uploads/2020/06/Kilmuckridge-Walk.jpeg'
+        ]
+      },
+      {
+        name: 'Secret Valley Wildlife Park',
+        description: 'Extended hours and animal sessions in August.',
+        location: 'Secret Valley Wildlife Park',
+        images: [
+          'https://www.secretvalley.ie/wp-content/uploads/2022/03/secret-valley-wildlife-park-camel.jpg',
+          'https://www.secretvalley.ie/wp-content/uploads/2022/03/secret-valley-wildlife-park-animals.jpg'
+        ]
+      },
+      {
+        name: 'Partridges, Gorey',
+        description: 'Grab ice cream on the way back in Gorey.',
+        location: 'Partridges Gorey',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/17/00/9d/10/ice-cream.jpg'
+        ]
+      }
+    ]
+  },
+  {
+    day: '🏰 Day 3: Wells House Adventure Day',
+    items: [
+      {
+        name: 'Wells House & Gardens',
+        description: 'Fairy woodland trails, petting farm, archery, and treasure hunts.',
+        location: 'Wells House and Gardens',
+        images: [
+          'https://www.wellshouse.ie/wp-content/uploads/2022/01/Wells_House.jpg',
+          'https://www.wellshouse.ie/wp-content/uploads/2022/01/Fairy-Walk.jpg'
+        ]
+      },
+      {
+        name: 'Brambles Café',
+        description: 'Lunch at the on-site Brambles Café.',
+        location: 'Brambles Café Wells House',
+        images: [
+          'https://brambles.ie/wp-content/uploads/2018/11/brambles-wells-house.jpg'
+        ]
+      },
+      {
+        name: 'Glenavon Japanese Garden',
+        description: 'Quick detour if not too tired.',
+        location: 'Glenavon Japanese Garden',
+        images: [
+          'https://www.glenavonjapanesegarden.ie/wp-content/uploads/2019/03/japanese-garden-gorey-3.jpg'
+        ]
+      }
+    ]
+  },
+  {
+    day: '🚴 Day 4: Castle Explorers & Crafts',
+    items: [
+      {
+        name: 'Enniscorthy Castle',
+        description: 'Explore this historical castle (25 min drive).',
+        location: 'Enniscorthy Castle',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/05/5a/15/41/enniscorthy-castle.jpg'
+        ]
+      },
+      {
+        name: 'Tinnaberna Sandhills',
+        description: 'Cycle or walk around the dunes.',
+        location: 'Tinnaberna Sandhills',
+        images: [
+          'https://www.askaboutireland.ie/reading-room/environment-geography/physical-landscape/coastal-landscapes/images/800pxSandDunes.jpg'
+        ]
+      },
+      {
+        name: 'Claymazing / Art It',
+        description: 'Pottery or craft workshop in Gorey.',
+        location: 'Claymazing Gorey',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/1b/f6/61/09/claymazing-pottery-studio.jpg'
+        ]
+      }
+    ]
+  },
+  {
+    day: '🎉 Day 5: Festivities & Free Play',
+    items: [
+      {
+        name: 'Local Market Stalls',
+        description: 'Browse the summer market stalls.',
+        location: 'Gorey Market',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/18/36/f0/82/stalls-at-gorey-market.jpg'
+        ]
+      },
+      {
+        name: 'The Greenhouse Café',
+        description: 'Drop-in kids craft sessions.',
+        location: 'The Greenhouse Café Gorey',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/17/e6/f2/4e/the-greenhouse-cafe.jpg'
+        ]
+      },
+      {
+        name: 'Ballinoulart Beach',
+        description: 'Kite flying, frisbee, or lazy digging.',
+        location: 'Ballinoulart Beach',
+        images: [
+          'https://www.beachguide.ie/wp-content/uploads/2020/05/ballinoulart_beach.jpg'
+        ]
+      }
+    ]
+  },
+  {
+    day: '🎭 Day 6: Farewell Fun',
+    items: [
+      {
+        name: 'Kilmuckridge Drama Festival',
+        description: 'Catch a daytime show if mid-August.',
+        location: 'Kilmuckridge Drama Festival',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/1c/e6/8b/53/inside-kilmuckridge-theatre.jpg'
+        ]
+      },
+      {
+        name: 'Da Paolo Italian Restaurant',
+        description: 'Farewell brunch at Da Paolo.',
+        location: 'Da Paolo Gorey',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/14/e4/9e/c5/da-paolo.jpg'
+        ]
+      },
+      {
+        name: 'Wexford Town',
+        description: 'Stroll and get one last ice cream.',
+        location: 'Wexford Town',
+        images: [
+          'https://media-cdn.tripadvisor.com/media/photo-s/1a/5e/59/3a/wexford-town.jpg'
+        ]
+      }
+    ]
+  }
+];
 
-      window.onload = () => {
-        const container = document.getElementById("itineraryContainer");
+    function togglePanel(id) {
+      document.querySelectorAll('.activity-panel').forEach(panel => {
+        if (panel.id !== id) {
+          panel.classList.remove('open');
+        }
+      });
+      const panel = document.getElementById(id);
+      panel.classList.toggle("open");
+    }
 
-        itinerary.forEach(day => {
-          const dayDiv = document.createElement("div");
-          dayDiv.innerHTML = `<h2 class="text-3xl font-bold text-indigo-600 mb-6 border-b pb-2">${day.day}</h2>`;
+    window.onload = () => {
+      const container = document.getElementById("itineraryContainer");
 
-          day.items.forEach((item, index) => {
-            const id = `${day.day.replace(/\W/g, '')}-${index}`;
-            dayDiv.innerHTML += `
-              <div class="mb-6">
-                <button class="w-full text-left px-6 py-4 bg-white shadow-lg rounded-xl hover:bg-gray-100 transition" onclick="togglePanel('${id}')">
-                  <span class="text-lg font-semibold">${item.name}</span>
-                </button>
-                <div id="${id}" class="activity-panel mt-3 pl-6">
-                  <p class="mb-2 text-sm italic">${item.description}</p>
-                  <iframe
-                    src="https://www.google.com/maps?q=${encodeURIComponent(item.location)}&output=embed"
-                    class="w-full h-64 rounded-lg border mb-3"
-                    allowfullscreen=""
-                    loading="lazy">
-                  </iframe>
-                  <div class="carousel">
-                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Unavailable'">`).join('')}
-                  </div>
+      itinerary.forEach(day => {
+        const dayDiv = document.createElement("div");
+        dayDiv.innerHTML = `<h2 class="text-3xl font-bold text-indigo-600 mb-6 border-b pb-2 dark:text-indigo-300">${day.day}</h2>`;
+
+        day.items.forEach((item, index) => {
+          const id = `${day.day.replace(/\W/g, '')}-${index}`;
+          dayDiv.innerHTML += `
+            <div class="mb-6">
+              <button class="w-full text-left px-6 py-4 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition" onclick="togglePanel('${id}')">
+                <span class="text-lg font-semibold">${item.name}</span>
+              </button>
+              <div id="${id}" class="activity-panel mt-3 pl-6">
+                <p class="mb-2 text-sm italic">${item.description}</p>
+                <iframe
+                  src="https://www.google.com/maps?q=${encodeURIComponent(item.location)}&output=embed"
+                  class="w-full h-64 rounded-lg border mb-3"
+                  allowfullscreen=""
+                  loading="lazy">
+                </iframe>
+                <div class="carousel">
+                  ${item.images.map(url => `<img src="${url}" alt="${item.name}" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Unavailable'">`).join('')}
                 </div>
               </div>
-            `;
-          });
-
-          container.appendChild(dayDiv);
+            </div>
+          `;
         });
-      };
-    </script>
-  </div>
+
+        container.appendChild(dayDiv);
+      });
+    };
+  </script>
 </body>
 </html>
