@@ -64,140 +64,25 @@
               name: 'Upton Court Hotel',
               description: 'Check into Upton Court Hotel or a seaside cottage.',
               location: 'Upton Court Hotel',
-              images: ['https://source.unsplash.com/featured/?hotel']
+              images: ['https://images.unsplash.com/photo-1582719478170-2d9a0173b7e6?auto=format&fit=crop&w=800&q=80']
             },
             {
               name: "Kate’s Coffee Shop & Deli",
               description: 'Cool off with smoothies and treats.',
               location: "Kate’s Coffee Shop & Deli",
-              images: ['https://source.unsplash.com/featured/?coffee-shop']
+              images: ['https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80']
             },
             {
               name: 'Morriscastle Beach',
               description: 'Great for paddling, sandcastle building, and seashell hunting.',
               location: 'Morriscastle Beach',
-              images: ['https://source.unsplash.com/featured/?beach']
+              images: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80']
             },
             {
               name: "Lawler’s of Morriscastle",
               description: 'Evening family dinner (outdoor seating available!)',
               location: "Lawler’s of Morriscastle",
-              images: ['https://source.unsplash.com/featured/?restaurant']
-            }
-          ]
-        },
-        {
-          day: '🦙 Day 2: Nature Walk & Wildlife Wonders',
-          items: [
-            {
-              name: 'Kilmuckridge-Morriscastle Trail',
-              description: 'Morning stroll on the buggy-friendly trail.',
-              location: 'Kilmuckridge-Morriscastle Trail',
-              images: ['https://source.unsplash.com/featured/?nature-trail']
-            },
-            {
-              name: 'Secret Valley Wildlife Park',
-              description: 'Interactive animal sessions and pony rides.',
-              location: 'Secret Valley Wildlife Park',
-              images: ['https://source.unsplash.com/featured/?petting-zoo']
-            },
-            {
-              name: 'Partridges, Gorey',
-              description: 'Grab ice cream with local flavors.',
-              location: 'Partridges Gorey',
-              images: ['https://source.unsplash.com/featured/?ice-cream']
-            }
-          ]
-        },
-        {
-          day: '🏰 Day 3: Wells House Adventure Day',
-          items: [
-            {
-              name: 'Wells House & Gardens',
-              description: 'Fairy trails, petting farm, archery, treasure hunts.',
-              location: 'Wells House and Gardens',
-              images: ['https://source.unsplash.com/featured/?castle-gardens']
-            },
-            {
-              name: 'Brambles Café',
-              description: 'Lunch on-site at Brambles Café.',
-              location: 'Brambles Café Wells House',
-              images: ['https://source.unsplash.com/featured/?cafe']
-            },
-            {
-              name: 'Glenavon Japanese Garden',
-              description: 'Optional quick detour to the serene garden.',
-              location: 'Glenavon Japanese Garden',
-              images: ['https://source.unsplash.com/featured/?japanese-garden']
-            }
-          ]
-        },
-        {
-          day: '🚴 Day 4: Castle Explorers & Crafts',
-          items: [
-            {
-              name: 'Enniscorthy Castle',
-              description: 'Visit historic Enniscorthy Castle (25 minutes drive).',
-              location: 'Enniscorthy Castle',
-              images: ['https://source.unsplash.com/featured/?castle']
-            },
-            {
-              name: 'Tinnaberna Sandhills',
-              description: 'Cycle or walk around the scenic sandhills.',
-              location: 'Tinnaberna Sandhills',
-              images: ['https://source.unsplash.com/featured/?dunes']
-            },
-            {
-              name: 'Claymazing / Art It',
-              description: 'Afternoon pottery painting or craft workshop for kids.',
-              location: 'Claymazing Gorey',
-              images: ['https://source.unsplash.com/featured/?pottery']
-            }
-          ]
-        },
-        {
-          day: '🎉 Day 5: Festivities & Free Play',
-          items: [
-            {
-              name: 'Summer Market Stalls',
-              description: 'Browse weekend market stalls in nearby towns.',
-              location: 'Kilmuckridge Market',
-              images: ['https://source.unsplash.com/featured/?street-market']
-            },
-            {
-              name: 'The Greenhouse Café',
-              description: 'Drop-in kids craft sessions and snacks.',
-              location: 'The Greenhouse Café',
-              images: ['https://source.unsplash.com/featured/?family-cafe']
-            },
-            {
-              name: 'Ballinoulart Beach',
-              description: 'Late afternoon beach play—kite flying and digging.',
-              location: 'Ballinoulart Beach',
-              images: ['https://source.unsplash.com/featured/?family-beach']
-            }
-          ]
-        },
-        {
-          day: '🎭 Day 6: Farewell Fun',
-          items: [
-            {
-              name: 'Kilmuckridge Drama Festival',
-              description: 'Catch a short family-friendly performance.',
-              location: 'Kilmuckridge',
-              images: ['https://source.unsplash.com/featured/?theatre']
-            },
-            {
-              name: 'Da Paolo Italian Restaurant',
-              description: 'Brunch at Da Paolo before heading home.',
-              location: 'Da Paolo Italian Restaurant',
-              images: ['https://source.unsplash.com/featured/?italian-restaurant']
-            },
-            {
-              name: 'Wexford Town',
-              description: 'Stop by for a final stroll and ice cream.',
-              location: 'Wexford',
-              images: ['https://source.unsplash.com/featured/?irish-town']
+              images: ['https://images.unsplash.com/photo-1555992336-03a23c3bf6c6?auto=format&fit=crop&w=800&q=80']
             }
           ]
         }
@@ -236,7 +121,7 @@
                     loading="lazy">
                   </iframe>
                   <div class="carousel">
-                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" loading="lazy">`).join('')}
+                    ${item.images.map(url => `<img src="${url}" alt="${item.name}" loading="lazy" referrerpolicy="no-referrer">`).join('')}
                   </div>
                 </div>
               </div>
