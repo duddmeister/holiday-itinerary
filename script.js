@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const activityDetails = item.querySelector('.activity-details');
         const mapContainer = item.querySelector('.map-container');
         const imageCarousel = item.querySelector('.image-carousel');
+        const carouselNav = item.querySelector('.carousel-nav'); // Select the nav container
         const location = item.dataset.location;
         const images = JSON.parse(item.dataset.images || '[]');
 
@@ -17,11 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (openItem !== item) {
                     openItem.classList.remove('open');
                     openItem.querySelector('.activity-details').classList.remove('expanded');
+                    // Clear map and images from closed items
                     openItem.querySelector('.map-container').innerHTML = '';
                     openItem.querySelector('.image-carousel').innerHTML = '';
-                    if (openItem.querySelector('.carousel-nav')) {
-                        openItem.querySelector('.carousel-nav').remove();
-                    }
+                    openItem.querySelector('.carousel-nav').innerHTML = ''; // Clear nav buttons
                 }
             });
 
@@ -33,14 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Load map without API key
                 loadMap(mapContainer, location);
                 // Load images
-                loadImageCarousel(imageCarousel, images);
+                loadImageCarousel(imageCarousel, carouselNav, images); // Pass carouselNav
             } else {
                 // Clear map and images when closing
                 mapContainer.innerHTML = '';
                 imageCarousel.innerHTML = '';
-                if (item.querySelector('.carousel-nav')) {
-                    item.querySelector('.carousel-nav').remove();
-                }
+                carouselNav.innerHTML = ''; // Clear nav buttons
             }
         });
     });
@@ -53,15 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
             width="100%"
             height="100%"
             frameborder="0" style="border:0"
-            src="https://maps.google.com/maps?q=${encodedLocation}&amp;output=embed"
+            src="https://maps.google.com/maps?q=${encodedLocation}&output=embed"
             allowfullscreen>
         </iframe>`;
     }
 
-    function loadImageCarousel(container, imageUrls) {
-        container.innerHTML = ''; // Clear previous images
+    function loadImageCarousel(imageContainer, navContainer, imageUrls) {
+        imageContainer.innerHTML = ''; // Clear previous images
+        navContainer.innerHTML = ''; // Clear previous buttons
+
         if (imageUrls.length === 0) {
-            container.innerHTML = '<p>No images available.</p>';
+            imageContainer.innerHTML = '<p>No images available.</p>';
             return;
         }
 
@@ -71,30 +71,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = document.createElement('img');
             img.src = url;
             img.alt = 'Venue image';
+            // Add error handling for images (optional, but good practice)
+            img.onerror = () => { img.src = 'https://via.placeholder.com/200x150?text=Image+Not+Found'; img.alt = 'Image failed to load'; };
             imgWrapper.appendChild(img);
-            container.appendChild(imgWrapper);
+            imageContainer.appendChild(imgWrapper);
         });
 
         // Add carousel navigation if more than one image
         if (imageUrls.length > 1) {
-            const navContainer = document.createElement('div');
-            navContainer.classList.add('carousel-nav');
             const prevButton = document.createElement('button');
             prevButton.textContent = 'Previous';
             const nextButton = document.createElement('button');
             nextButton.textContent = 'Next';
 
             prevButton.addEventListener('click', () => {
-                container.scrollBy({ left: -container.offsetWidth, behavior: 'smooth' });
+                imageContainer.scrollBy({ left: -imageContainer.offsetWidth, behavior: 'smooth' });
             });
             nextButton.addEventListener('click', () => {
-                container.scrollBy({ left: container.offsetWidth, behavior: 'smooth' });
+                imageContainer.scrollBy({ left: imageContainer.offsetWidth, behavior: 'smooth' });
             });
 
             navContainer.appendChild(prevButton);
             navContainer.appendChild(nextButton);
-            // Insert navContainer after imageCarousel within the same parent (activity-details)
-            container.parentNode.insertBefore(navContainer, container.nextSibling);
         }
     }
 });
