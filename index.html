@@ -3,273 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Summer Holiday Itinerary</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Wexford Family Fun</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #334155; /* Darker text */
+        }
+        .header {
+            background-color: #1e293b; /* Dark slate blue */
+            color: #e2e8f0; /* Off-white text */
+            padding: 1.5rem 0;
+            text-align: center;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .activity-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Ensure cards fill height in grid */
+        }
+        .activity-card:hover {
+            transform: translateY(-5px);
+        }
+        .activity-card img {
+            width: 100%;
+            height: 200px; /* Fixed height for images */
+            object-fit: cover; /* Cover the area, crop if necessary */
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        .activity-content {
+            padding: 1.5rem;
+            flex-grow: 1; /* Allow content to grow */
+            display: flex;
+            flex-direction: column;
+        }
+        .activity-content h3 {
+            color: #1e293b;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .activity-content p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            flex-grow: 1; /* Allow description to take available space */
+        }
+        .activity-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid for images */
+            gap: 0.5rem; /* Smaller gap for image grid */
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 1rem;
+            background-color: #f8fafc;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+        .activity-images img {
+            width: 100%;
+            height: 100px; /* Smaller fixed height for image grid */
+            object-fit: cover;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .day-section {
+            background-color: #cbd5e1; /* Medium gray for day headers */
+            color: #1e293b;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <h1>🏖️ My Awesome Summer Holiday! ☀️</h1>
-        <p>Get ready for an unforgettable adventure!</p>
+<body class="min-h-screen flex flex-col">
+    <header class="header">
+        <h1 class="text-4xl font-extrabold">Wexford Family Fun Itinerary</h1>
+        <p class="mt-2 text-lg">Your guide to an unforgettable family adventure in County Wexford!</p>
     </header>
 
-    <main class="container">
-        <section class="day-section">
-            <h2 class="day-title">🏖️ Day 1: Arrival & Summer Beach Bliss</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Upton Court Hotel, Gorey, Co. Wexford" data-images='["images/upton-court-1.jpg", "images/upton-court-2.jpg"]'>
-                    <h3 class="activity-name">Check into Upton Court Hotel or a seaside cottage <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+    <main class="container mx-auto p-6 flex-grow">
+        <!-- Day 1 -->
+        <div class="day-section">Day 1: Arrival & Summer Beach Bliss</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Upton Court Hotel, Gorey, Co. Wexford</h3>
+                    <p>Check into the charming Upton Court Hotel, your cozy base for the week. Settle in and prepare for your Wexford adventure!</p>
                 </div>
-
-                <div class="activity-item" data-location="Kate's Coffee Shop & Deli, Kilmuckridge, Co. Wexford" data-images='["images/kates-coffee-1.jpg", "images/kates-coffee-2.jpg"]'>
-                    <h3 class="activity-name">Cool off with smoothies and treats at Kate’s Coffee Shop & Deli <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Morriscastle Beach, Kilmuckridge, Co. Wexford" data-images='["images/morriscastle-beach-1.jpg", "images/morriscastle-beach-2.jpg"]'>
-                    <h3 class="activity-name">Spend the afternoon at Morriscastle Beach <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Lawler's of Morriscastle, Kilmuckridge, Co. Wexford" data-images='["images/lawlers-morriscastle-1.jpg", "images/lawlers-morriscastle-2.jpg"]'>
-                    <h3 class="activity-name">Evening family dinner at Lawler’s of Morriscastle <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=1" alt="Upton Court Hotel exterior 1">
+                    <img src="https://picsum.photos/800/600?random=2" alt="Upton Court Hotel interior 1">
+                    <img src="https://picsum.photos/800/600?random=3" alt="Upton Court Hotel lobby 1">
+                    <img src="https://picsum.photos/800/600?random=4" alt="Upton Court Hotel room 1">
+                    <img src="https://picsum.photos/800/600?random=5" alt="Upton Court Hotel exterior 2">
+                    <img src="https://picsum.photos/800/600?random=6" alt="Upton Court Hotel interior 2">
+                    <img src="https://picsum.photos/800/600?random=7" alt="Upton Court Hotel lobby 2">
+                    <img src="https://picsum.photos/800/600?random=8" alt="Upton Court Hotel room 2">
+                    <img src="https://picsum.photos/800/600?random=9" alt="Upton Court Hotel garden">
+                    <img src="https://picsum.photos/800/600?random=10" alt="Upton Court Hotel dining">
                 </div>
             </div>
-        </section>
 
-        <section class="day-section">
-            <h2 class="day-title">🦙 Day 2: Nature Walk & Wildlife Wonders</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Kilmuckridge-Morriscastle Trail, Kilmuckridge, Co. Wexford" data-images='["images/kilmuckridge-trail-1.jpg", "images/kilmuckridge-trail-2.jpg"]'>
-                    <h3 class="activity-name">Morning stroll on the buggy-friendly Kilmuckridge-Morriscastle Trail <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Kate's Coffee Shop & Deli, Kilmuckridge, Co. Wexford</h3>
+                    <p>Enjoy a delightful lunch at Kate's, known for its fresh sandwiches, pastries, and excellent coffee.</p>
                 </div>
-
-                <div class="activity-item" data-location="Secret Valley Wildlife Park, Clonroche, Enniscorthy, Co. Wexford" data-images='["images/secret-valley-1.jpg", "images/secret-valley-2.jpg"]'>
-                    <h3 class="activity-name">Drive to Secret Valley Wildlife Park <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Secret Valley Wildlife Park, Clonroche, Enniscorthy, Co. Wexford" data-images='["images/secret-valley-reptile-1.jpg", "images/secret-valley-pony-2.jpg"]'>
-                    <h3 class="activity-name">Visit the new reptile zone or try pony rides <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Partridges, Main Street, Gorey, Co. Wexford" data-images='["images/partridges-1.jpg", "images/partridges-2.jpg"]'>
-                    <h3 class="activity-name">Grab ice cream in Gorey—try Partridges <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=11" alt="Kate's Coffee Shop exterior 1">
+                    <img src="https://picsum.photos/800/600?random=12" alt="Kate's Coffee Shop interior 1">
+                    <img src="https://picsum.photos/800/600?random=13" alt="Deli counter 1">
+                    <img src="https://picsum.photos/800/600?random=14" alt="Coffee cup 1">
+                    <img src="https://picsum.photos/800/600?random=15" alt="Kate's Coffee Shop exterior 2">
+                    <img src="https://picsum.photos/800/600?random=16" alt="Kate's Coffee Shop interior 2">
+                    <img src="https://picsum.photos/800/600?random=17" alt="Deli counter 2">
+                    <img src="https://picsum.photos/800/600?random=18" alt="Coffee cup 2">
+                    <img src="https://picsum.photos/800/600?random=19" alt="Pastries display">
+                    <img src="https://picsum.photos/800/600?random=20" alt="Sandwich close-up">
                 </div>
             </div>
-        </section>
 
-        <section class="day-section">
-            <h2 class="day-title">🏰 Day 3: Wells House Adventure Day</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Wells House & Gardens, Ballyedmond, Gorey, Co. Wexford" data-images='["images/wells-house-1.jpg", "images/wells-house-2.jpg"]'>
-                    <h3 class="activity-name">Full day at Wells House & Gardens <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Morriscastle Beach, Kilmuckridge, Co. Wexford</h3>
+                    <p>Spend the afternoon building sandcastles, splashing in the waves, and enjoying the golden sands of Morriscastle Beach.</p>
                 </div>
-
-                <div class="activity-item" data-location="Brambles Café, Wells House & Gardens, Ballyedmond, Gorey, Co. Wexford" data-images='["images/brambles-cafe-1.jpg", "images/brambles-cafe-2.jpg"]'>
-                    <h3 class="activity-name">Lunch at the on-site Brambles Café <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Glenavon Japanese Garden, Wells House & Gardens, Ballyedmond, Gorey, Co. Wexford" data-images='["images/glenavon-garden-1.jpg", "images/glenavon-garden-2.jpg"]'>
-                    <h3 class="activity-name">Detour to Glenavon Japanese Garden <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=21" alt="Morriscastle Beach view 1">
+                    <img src="https://picsum.photos/800/600?random=22" alt="Morriscastle Beach sandcastles 1">
+                    <img src="https://picsum.photos/800/600?random=23" alt="Morriscastle Beach waves 1">
+                    <img src="https://picsum.photos/800/600?random=24" alt="Morriscastle Beach family 1">
+                    <img src="https://picsum.photos/800/600?random=25" alt="Morriscastle Beach view 2">
+                    <img src="https://picsum.photos/800/600?random=26" alt="Morriscastle Beach sandcastles 2">
+                    <img src="https://picsum.photos/800/600?random=27" alt="Morriscastle Beach waves 2">
+                    <img src="https://picsum.photos/800/600?random=28" alt="Morriscastle Beach family 2">
+                    <img src="https://picsum.photos/800/600?random=29" alt="Morriscastle Beach sunset">
+                    <img src="https://picsum.photos/800/600?random=30" alt="Morriscastle Beach dunes">
                 </div>
             </div>
-        </section>
 
-        <section class="day-section">
-            <h2 class="day-title">🚴 Day 4: Castle Explorers & Crafts</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Enniscorthy Castle, Enniscorthy, Co. Wexford" data-images='["images/enniscorthy-castle-1.jpg", "images/enniscorthy-castle-2.jpg"]'>
-                    <h3 class="activity-name">Visit Enniscorthy Castle <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Lawler's of Morriscastle, Kilmuckridge, Co. Wexford</h3>
+                    <p>Savour a delicious dinner at Lawler's, a popular local spot with a warm atmosphere and great food.</p>
                 </div>
-
-                <div class="activity-item" data-location="Tinnaberna Sandhills, Kilmuckridge, Co. Wexford" data-images='["images/tinnaberna-sandhills-1.jpg", "images/tinnaberna-sandhills-2.jpg"]'>
-                    <h3 class="activity-name">Cycle or walk around the Tinnaberna Sandhills <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Gorey, Co. Wexford" data-images='["images/gorey-craft-1.jpg", "images/gorey-craft-2.jpg"]'>
-                    <h3 class="activity-name">Afternoon pottery painting or craft workshop in Gorey <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=31" alt="Lawler's of Morriscastle exterior 1">
+                    <img src="https://picsum.photos/800/600?random=32" alt="Lawler's of Morriscastle interior 1">
+                    <img src="https://picsum.photos/800/600?random=33" alt="Lawler's food dish 1">
+                    <img src="https://picsum.photos/800/600?random=34" alt="Lawler's dining area 1">
+                    <img src="https://picsum.photos/800/600?random=35" alt="Lawler's of Morriscastle exterior 2">
+                    <img src="https://picsum.photos/800/600?random=36" alt="Lawler's of Morriscastle interior 2">
+                    <img src="https://picsum.photos/800/600?random=37" alt="Lawler's food dish 2">
+                    <img src="https://picsum.photos/800/600?random=38" alt="Lawler's dining area 2">
+                    <img src="https://picsum.photos/800/600?random=39" alt="Lawler's bar area">
+                    <img src="https://picsum.photos/800/600?random=40" alt="Lawler's cozy corner">
                 </div>
             </div>
-        </section>
+        </div>
 
-        <section class="day-section">
-            <h2 class="day-title">🎉 Day 5: Festivities & Free Play</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Gorey, Co. Wexford" data-images='["images/gorey-market-1.jpg", "images/gorey-market-2.jpg"]'>
-                    <h3 class="activity-name">Browse the summer market stalls <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+        <!-- Day 2 -->
+        <div class="day-section">Day 2: Nature Walk & Wildlife Wonders</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Kilmuckridge-Morriscastle Trail, Kilmuckridge, Co. Wexford</h3>
+                    <p>Enjoy a refreshing morning walk along this scenic trail, perfect for taking in the fresh air and beautiful coastal views.</p>
                 </div>
-
-                <div class="activity-item" data-location="The Greenhouse Café, Kilmuckridge, Co. Wexford" data-images='["images/greenhouse-cafe-1.jpg", "images/greenhouse-cafe-2.jpg"]'>
-                    <h3 class="activity-name">Enjoy drop-in kids' craft sessions at The Greenhouse Café <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Ballinoulart Beach, Kilmuckridge, Co. Wexford" data-images='["images/ballinoulart-beach-1.jpg", "images/ballinoulart-beach-2.jpg"]'>
-                    <h3 class="activity-name">Late afternoon chill at Ballinoulart Beach <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=41" alt="Coastal trail 1">
+                    <img src="https://picsum.photos/800/600?random=42" alt="Nature path 1">
+                    <img src="https://picsum.photos/800/600?random=43" alt="Scenic view 1">
+                    <img src="https://picsum.photos/800/600?random=44" alt="Walking trail 1">
+                    <img src="https://picsum.photos/800/600?random=45" alt="Coastal trail 2">
+                    <img src="https://picsum.photos/800/600?random=46" alt="Nature path 2">
+                    <img src="https://picsum.photos/800/600?random=47" alt="Scenic view 2">
+                    <img src="https://picsum.photos/800/600?random=48" alt="Walking trail 2">
+                    <img src="https://picsum.photos/800/600?random=49" alt="Green fields">
+                    <img src="https://picsum.photos/800/600?random=50" alt="Trail sign">
                 </div>
             </div>
-        </section>
 
-        <section class="day-section">
-            <h2 class="day-title">🎭 Day 6: Farewell Fun</h2>
-            <div class="activities-list">
-                <div class="activity-item" data-location="Kilmuckridge, Co. Wexford" data-images='["images/kilmuckridge-drama-1.jpg", "images/kilmuckridge-drama-2.jpg"]'>
-                    <h3 class="activity-name">Catch a daytime show during the Kilmuckridge Drama Festival <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Secret Valley Wildlife Park, Clonroche, Enniscorthy, Co. Wexford</h3>
+                    <p>Explore a variety of animals and enjoy interactive experiences at this fantastic wildlife park.</p>
                 </div>
-
-                <div class="activity-item" data-location="Da Paolo Italian Restaurant, Main Street, Gorey, Co. Wexford" data-images='["images/da-paolo-1.jpg", "images/da-paolo-2.jpg"]'>
-                    <h3 class="activity-name">Brunch at Da Paolo Italian Restaurant <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="activity-item" data-location="Wexford Town, Co. Wexford" data-images='["images/wexford-town-1.jpg", "images/wexford-town-2.jpg"]'>
-                    <h3 class="activity-name">Stop by Wexford town on the way home <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h3>
-                    <div class="activity-details hidden">
-                        <div class="map-container"></div>
-                        <div class="image-carousel-wrapper">
-                            <div class="image-carousel"></div>
-                            <div class="carousel-nav"></div>
-                        </div>
-                    </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=51" alt="Wildlife Park entrance 1">
+                    <img src="https://picsum.photos/800/600?random=52" alt="Animal enclosure 1">
+                    <img src="https://picsum.photos/800/600?random=53" alt="Kids with animals 1">
+                    <img src="https://picsum.photos/800/600?random=54" alt="Park landscape 1">
+                    <img src="https://picsum.photos/800/600?random=55" alt="Wildlife Park entrance 2">
+                    <img src="https://picsum.photos/800/600?random=56" alt="Animal enclosure 2">
+                    <img src="https://picsum.photos/800/600?random=57" alt="Kids with animals 2">
+                    <img src="https://picsum.photos/800/600?random=58" alt="Park landscape 2">
+                    <img src="https://picsum.photos/800/600?random=59" alt="Exotic bird">
+                    <img src="https://picsum.photos/800/600?random=60" alt="Farm animals">
                 </div>
             </div>
-        </section>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Secret Valley Wildlife Park (Reptile Zone/Pony Rides)</h3>
+                    <p>Get up close with fascinating reptiles and let the kids enjoy a fun pony ride.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=61" alt="Reptile Zone exhibit 1">
+                    <img src="https://picsum.photos/800/600?random=62" alt="Pony ride 1">
+                    <img src="https://picsum.photos/800/600?random=63" alt="Snake close-up">
+                    <img src="https://picsum.photos/800/600?random=64" alt="Kids petting pony">
+                    <img src="https://picsum.photos/800/600?random=65" alt="Reptile Zone exhibit 2">
+                    <img src="https://picsum.photos/800/600?random=66" alt="Pony ride 2">
+                    <img src="https://picsum.photos/800/600?random=67" alt="Lizard on rock">
+                    <img src="https://picsum.photos/800/600?random=68" alt="Horse stable">
+                    <img src="https://picsum.photos/800/600?random=69" alt="Tortoise">
+                    <img src="https://picsum.photos/800/600?random=70" alt="Pony with child">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Partridges, Main Street, Gorey, Co. Wexford (Ice Cream)</h3>
+                    <p>Cool down with a delicious ice cream treat at Partridges after a day of adventure.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=71" alt="Ice cream shop exterior 1">
+                    <img src="https://picsum.photos/800/600?random=72" alt="Ice cream cone 1">
+                    <img src="https://picsum.photos/800/600?random=73" alt="Kids eating ice cream 1">
+                    <img src="https://picsum.photos/800/600?random=74" alt="Ice cream display 1">
+                    <img src="https://picsum.photos/800/600?random=75" alt="Ice cream shop exterior 2">
+                    <img src="https://picsum.photos/800/600?random=76" alt="Ice cream cone 2">
+                    <img src="https://picsum.photos/800/600?random=77" alt="Kids eating ice cream 2">
+                    <img src="https://picsum.photos/800/600?random=78" alt="Ice cream display 2">
+                    <img src="https://picsum.photos/800/600?random=79" alt="Sundae">
+                    <img src="https://picsum.photos/800/600?random=80" alt="Gelato scoops">
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 3 -->
+        <div class="day-section">Day 3: Wells House Adventure Day</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Wells House & Gardens, Ballyedmond, Gorey, Co. Wexford</h3>
+                    <p>Spend a full day exploring the historic house, extensive gardens, and woodlands of Wells House.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=81" alt="Wells House exterior 1">
+                    <img src="https://picsum.photos/800/600?random=82" alt="Wells House gardens 1">
+                    <img src="https://picsum.photos/800/600?random=83" alt="Wells House interior 1">
+                    <img src="https://picsum.photos/800/600?random=84" alt="Wells House woodland 1">
+                    <img src="https://picsum.photos/800/600?random=85" alt="Wells House exterior 2">
+                    <img src="https://picsum.photos/800/600?random=86" alt="Wells House gardens 2">
+                    <img src="https://picsum.photos/800/600?random=87" alt="Wells House interior 2">
+                    <img src="https://picsum.photos/800/600?random=88" alt="Wells House woodland 2">
+                    <img src="https://picsum.photos/800/600?random=89" alt="Wells House fountain">
+                    <img src="https://picsum.photos/800/600?random=90" alt="Wells House archway">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Brambles Café, Wells House & Gardens</h3>
+                    <p>Enjoy a lovely lunch or snack at Brambles Café, located within the beautiful Wells House grounds.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=91" alt="Brambles Café exterior 1">
+                    <img src="https://picsum.photos/800/600?random=92" alt="Brambles Café interior 1">
+                    <img src="https://picsum.photos/800/600?random=93" alt="Cafe food 1">
+                    <img src="https://picsum.photos/800/600?random=94" alt="Cafe seating 1">
+                    <img src="https://picsum.photos/800/600?random=95" alt="Brambles Café exterior 2">
+                    <img src="https://picsum.photos/800/600?random=96" alt="Brambles Café interior 2">
+                    <img src="https://picsum.photos/800/600?random=97" alt="Cafe food 2">
+                    <img src="https://picsum.photos/800/600?random=98" alt="Cafe seating 2">
+                    <img src="https://picsum.photos/800/600?random=99" alt="Outdoor cafe">
+                    <img src="https://picsum.photos/800/600?random=100" alt="Coffee and cake">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Glenavon Japanese Garden, Wells House & Gardens</h3>
+                    <p>Discover tranquility in the serene Glenavon Japanese Garden, a peaceful oasis within Wells House.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=101" alt="Japanese Garden bridge 1">
+                    <img src="https://picsum.photos/800/600?random=102" alt="Japanese Garden pond 1">
+                    <img src="https://picsum.photos/800/600?random=103" alt="Zen garden 1">
+                    <img src="https://picsum.photos/800/600?random=104" alt="Japanese Garden plants 1">
+                    <img src="https://picsum.photos/800/600?random=105" alt="Japanese Garden bridge 2">
+                    <img src="https://picsum.photos/800/600?random=106" alt="Japanese Garden pond 2">
+                    <img src="https://picsum.photos/800/600?random=107" alt="Zen garden 2">
+                    <img src="https://picsum.photos/800/600?random=108" alt="Japanese Garden plants 2">
+                    <img src="https://picsum.photos/800/600?random=109" alt="Stone lantern">
+                    <img src="https://picsum.photos/800/600?random=110" alt="Bamboo grove">
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 4 -->
+        <div class="day-section">Day 4: Castle Explorers & Crafts</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Enniscorthy Castle, Enniscorthy, Co. Wexford</h3>
+                    <p>Step back in time at Enniscorthy Castle, a historic landmark with fascinating exhibits and panoramic views.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=111" alt="Enniscorthy Castle exterior 1">
+                    <img src="https://picsum.photos/800/600?random=112" alt="Enniscorthy Castle interior 1">
+                    <img src="https://picsum.photos/800/600?random=113" alt="Castle battlements 1">
+                    <img src="https://picsum.photos/800/600?random=114" alt="Castle museum 1">
+                    <img src="https://picsum.photos/800/600?random=115" alt="Enniscorthy Castle exterior 2">
+                    <img src="https://picsum.photos/800/600?random=116" alt="Enniscorthy Castle interior 2">
+                    <img src="https://picsum.photos/800/600?random=117" alt="Castle battlements 2">
+                    <img src="https://picsum.photos/800/600?random=118" alt="Castle museum 2">
+                    <img src="https://picsum.photos/800/600?random=119" alt="Castle grounds">
+                    <img src="https://picsum.photos/800/600?random=120" alt="Castle tower">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Tinnaberna Sandhills, Kilmuckridge, Co. Wexford</h3>
+                    <p>Explore the unique natural landscape of Tinnaberna Sandhills, perfect for a breezy walk and dune exploration.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=121" alt="Sandhills view 1">
+                    <img src="https://picsum.photos/800/600?random=122" alt="Dune landscape 1">
+                    <img src="https://picsum.photos/800/600?random=123" alt="Beach and dunes 1">
+                    <img src="https://picsum.photos/800/600?random=124" alt="Coastal plants 1">
+                    <img src="https://picsum.photos/800/600?random=125" alt="Sandhills view 2">
+                    <img src="https://picsum.photos/800/600?random=126" alt="Dune landscape 2">
+                    <img src="https://picsum.photos/800/600?random=127" alt="Beach and dunes 2">
+                    <img src="https://picsum.photos/800/600?random=128" alt="Coastal plants 2">
+                    <img src="https://picsum.photos/800/600?random=129" alt="Footprints in sand">
+                    <img src="https://picsum.photos/800/600?random=130" alt="Seagrass">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Gorey (Pottery Painting or Craft Workshop)</h3>
+                    <p>Unleash your creativity with a fun pottery painting or craft workshop in Gorey, perfect for all ages.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=131" alt="Pottery painting studio 1">
+                    <img src="https://picsum.photos/800/600?random=132" alt="Kids crafting 1">
+                    <img src="https://picsum.photos/800/600?random=133" alt="Painted pottery 1">
+                    <img src="https://picsum.photos/800/600?random=134" alt="Craft supplies 1">
+                    <img src="https://picsum.photos/800/600?random=135" alt="Pottery painting studio 2">
+                    <img src="https://picsum.photos/800/600?random=136" alt="Kids crafting 2">
+                    <img src="https://picsum.photos/800/600?random=137" alt="Painted pottery 2">
+                    <img src="https://picsum.photos/800/600?random=138" alt="Craft supplies 2">
+                    <img src="https://picsum.photos/800/600?random=139" alt="Art project">
+                    <img src="https://picsum.photos/800/600?random=140" alt="Creative hands">
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 5 -->
+        <div class="day-section">Day 5: Festivities & Free Play</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Gorey (Summer Market Stalls)</h3>
+                    <p>Wander through the vibrant summer market stalls in Gorey, browsing local crafts and delicious treats.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=141" alt="Market stall 1">
+                    <img src="https://picsum.photos/800/600?random=142" alt="Outdoor market 1">
+                    <img src="https://picsum.photos/800/600?random=143" alt="Crafts display 1">
+                    <img src="https://picsum.photos/800/600?random=144" alt="Food stall 1">
+                    <img src="https://picsum.photos/800/600?random=145" alt="Market stall 2">
+                    <img src="https://picsum.photos/800/600?random=146" alt="Outdoor market 2">
+                    <img src="https://picsum.photos/800/600?random=147" alt="Crafts display 2">
+                    <img src="https://picsum.photos/800/600?random=148" alt="Food stall 2">
+                    <img src="https://picsum.photos/800/600?random=149" alt="People at market">
+                    <img src="https://picsum.photos/800/600?random=150" alt="Fresh produce">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>The Greenhouse Café, Kilmuckridge, Co. Wexford (Kids Crafts)</h3>
+                    <p>Enjoy a relaxing break at The Greenhouse Café while the kids engage in fun craft activities.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=151" alt="Greenhouse cafe interior 1">
+                    <img src="https://picsum.photos/800/600?random=152" alt="Kids craft table 1">
+                    <img src="https://picsum.photos/800/600?random=153" alt="Cafe garden 1">
+                    <img src="https://picsum.photos/800/600?random=154" alt="Craft materials 1">
+                    <img src="https://picsum.photos/800/600?random=155" alt="Greenhouse cafe interior 2">
+                    <img src="https://picsum.photos/800/600?random=156" alt="Kids craft table 2">
+                    <img src="https://picsum.photos/800/600?random=157" alt="Cafe garden 2">
+                    <img src="https://picsum.photos/800/600?random=158" alt="Craft materials 2">
+                    <img src="https://picsum.photos/800/600?random=159" alt="Child drawing">
+                    <img src="https://picsum.photos/800/600?random=160" alt="Art supplies">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Ballinoulart Beach, Kilmuckridge, Co. Wexford</h3>
+                    <p>Discover the serene beauty of Ballinoulart Beach, a perfect spot for a quiet stroll and enjoying nature.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=161" alt="Ballinoulart Beach view 1">
+                    <img src="https://picsum.photos/800/600?random=162" alt="Ballinoulart Beach waves 1">
+                    <img src="https://picsum.photos/800/600?random=163" alt="Ballinoulart Beach rocks 1">
+                    <img src="https://picsum.photos/800/600?random=164" alt="Ballinoulart Beach sunset 1">
+                    <img src="https://picsum.photos/800/600?random=165" alt="Ballinoulart Beach view 2">
+                    <img src="https://picsum.photos/800/600?random=166" alt="Ballinoulart Beach waves 2">
+                    <img src="https://picsum.photos/800/600?random=167" alt="Ballinoulart Beach rocks 2">
+                    <img src="https://picsum.photos/800/600?random=168" alt="Ballinoulart Beach sunset 2">
+                    <img src="https://picsum.photos/800/600?random=169" alt="Seaside tranquility">
+                    <img src="https://picsum.photos/800/600?random=170" alt="Coastal flora">
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 6 -->
+        <div class="day-section">Day 6: Farewell Fun</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Kilmuckridge Drama Festival</h3>
+                    <p>Experience the local culture with an evening at the Kilmuckridge Drama Festival, showcasing local talent.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=171" alt="Drama Festival stage 1">
+                    <img src="https://picsum.photos/800/600?random=172" alt="Drama Festival audience 1">
+                    <img src="https://picsum.photos/800/600?random=173" alt="Actors on stage 1">
+                    <img src="https://picsum.photos/800/600?random=174" alt="Theater interior 1">
+                    <img src="https://picsum.photos/800/600?random=175" alt="Drama Festival stage 2">
+                    <img src="https://picsum.photos/800/600?random=176" alt="Drama Festival audience 2">
+                    <img src="https://picsum.photos/800/600?random=177" alt="Actors on stage 2">
+                    <img src="https://picsum.photos/800/600?random=178" alt="Theater interior 2">
+                    <img src="https://picsum.photos/800/600?random=179" alt="Curtain call">
+                    <img src="https://picsum.photos/800/600?random=180" alt="Spotlight">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Da Paolo Italian Restaurant, Main Street, Gorey, Co. Wexford</h3>
+                    <p>Enjoy a final family meal with authentic Italian cuisine at Da Paolo in Gorey.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=181" alt="Italian Restaurant exterior 1">
+                    <img src="https://picsum.photos/800/600?random=182" alt="Italian Restaurant interior 1">
+                    <img src="https://picsum.photos/800/600?random=183" alt="Pasta dish 1">
+                    <img src="https://picsum.photos/800/600?random=184" alt="Pizza 1">
+                    <img src="https://picsum.photos/800/600?random=185" alt="Italian Restaurant exterior 2">
+                    <img src="https://picsum.photos/800/600?random=186" alt="Italian Restaurant interior 2">
+                    <img src="https://picsum.photos/800/600?random=187" alt="Pasta dish 2">
+                    <img src="https://picsum.photos/800/600?random=188" alt="Pizza 2">
+                    <img src="https://picsum.photos/800/600?random=189" alt="Tiramisu">
+                    <img src="https://picsum.photos/800/600?random=190" alt="Wine glass">
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <div class="activity-content">
+                    <h3>Wexford Town, Co. Wexford</h3>
+                    <p>Before heading home, take some time to explore the historic and charming streets of Wexford Town.</p>
+                </div>
+                <div class="activity-images">
+                    <img src="https://picsum.photos/800/600?random=191" alt="Wexford Town street 1">
+                    <img src="https://picsum.photos/800/600?random=192" alt="Wexford Town waterfront 1">
+                    <img src="https://picsum.photos/800/600?random=193" alt="Wexford Town historic building 1">
+                    <img src="https://picsum.photos/800/600?random=194" alt="Wexford Town colorful houses 1">
+                    <img src="https://picsum.photos/800/600?random=195" alt="Wexford Town street 2">
+                    <img src="https://picsum.photos/800/600?random=196" alt="Wexford Town waterfront 2">
+                    <img src="https://picsum.photos/800/600?random=197" alt="Wexford Town historic building 2">
+                    <img src="https://picsum.photos/800/600?random=198" alt="Wexford Town colorful houses 2">
+                    <img src="https://picsum.photos/800/600?random=199" alt="Wexford Town harbor">
+                    <img src="https://picsum.photos/800/600?random=200" alt="Wexford Town alleyway">
+                </div>
+            </div>
+        </div>
     </main>
 
-    <footer>
-        <p>© 2025 My Summer Holiday. All rights reserved.</p>
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8 rounded-t-lg">
+        <p>&copy; 2025 Wexford Family Fun. All rights reserved. Images from Lorem Picsum.</p>
     </footer>
-
-    <script src="script.js"></script>
 </body>
 </html>
