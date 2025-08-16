@@ -1,929 +1,344 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Wexford Family Fun</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
-<!-- Font Awesome for icons (e.g., map icon, carousel arrows) -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+<title>Castle On The Hill — Minimal WebGL FPS</title>
 <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Light blue-gray background */
-            color: #334155; /* Darker text */
-        }
-        .header {
-            background-color: #1e293b; /* Dark slate blue */
-            color: #e2e8f0; /* Off-white text */
-            padding: 1.5rem 0;
-            text-align: center;
-            border-bottom-left-radius: 1rem;
-            border-bottom-right-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .activity-card {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            overflow: hidden; /* Ensures content inside doesn't spill out */
-            transition: transform 0.2s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Ensure cards fill height in grid */
-        }
-        .activity-card:hover {
-            transform: translateY(-5px);
-        }
-        .activity-content {
-            padding: 1.5rem;
-            flex-grow: 1; /* Allow content to grow */
-            display: flex;
-            flex-direction: column;
-        }
-        .activity-content h3 {
-            color: #1e293b;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .activity-content p {
-            font-size: 0.95rem;
-            line-height: 1.5;
-            max-height: 4.5em; /* Approximately 3 lines for initial view */
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            margin-bottom: 0.5rem;
-        }
-        .activity-content p.expanded {
-            max-height: 500px; /* Arbitrarily large to show full content when expanded */
-        }
-        .read-more-btn {
-            background-color: #4f46e5; /* Indigo */
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            align-self: flex-start; /* Align button to start */
-            margin-top: 0.5rem;
-        }
-        .read-more-btn:hover {
-            background-color: #4338ca; /* Darker indigo */
-        }
+  html, body { margin:0; height:100%; overflow:hidden; background:#0b0e12; color:#e8eef5; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; }
+  #gl { width:100vw; height:100vh; display:block; touch-action:none; background:#0b0e12; }
+  /* Start overlay */
+  #startOverlay {
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; 
+    background:radial-gradient(ellipse at center, rgba(10,14,18,0.9), rgba(10,14,18,0.98));
+    z-index:10;
+  }
+  #startOverlay .card {
+    background:#12161c; border:1px solid #283244; border-radius:14px; padding:18px 16px; width:min(90vw, 420px);
+    box-shadow:0 4px 30px rgba(0,0,0,0.45); text-align:center;
+  }
+  button.primary { background:#3b82f6; color:#fff; border:none; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; width:100%; }
+  button.primary:active { transform:translateY(1px); }
+  .row { display:flex; gap:10px; margin-top:10px; justify-content:center; }
+  .pill { font-size:12px; padding:6px 10px; border-radius:999px; background:#1b2330; border:1px solid #2b394d; }
+  /* HUD */
+  #crosshair { position:fixed; left:50%; top:50%; width:10px; height:10px; transform:translate(-50%,-50%); pointer-events:none; z-index:2; }
+  #crosshair:after { content:""; position:absolute; left:4px; top:0; width:2px; height:10px; background:#e8eef5aa; }
+  #crosshair:before { content:""; position:absolute; left:0; top:4px; width:10px; height:2px; background:#e8eef5aa; }
+  #hint { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0f1722cc; border:1px solid #273246; border-radius:10px; padding:8px 12px; font-size:13px; z-index:3; }
+  #debug { position:fixed; left:8px; top:8px; font:12px/1.25 ui-monospace,Consolas,monospace; opacity:.75; }
+  /* Dialogue / Interaction panel */
+  #dialogue {
+    position:fixed; left:50%; bottom:10%; transform:translateX(-50%);
+    background:#111723; border:1px solid #283244; border-radius:12px; width:min(92vw, 560px); padding:12px; z-index:3; display:none;
+  }
+  #dialogue h3 { margin:.2rem 0 .5rem; font-size:16px; }
+  #dialogue p { margin:.3rem 0 .7rem; color:#c9d4e6; }
+  #dialogue .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  #dialogue button { background:#243148; color:#e8eef5; border:1px solid #2e3a52; border-radius:10px; padding:8px 10px; cursor:pointer; }
+  #dialogue button.primary { background:#3b82f6; border-color:#2f65c6; }
 
-        /* Collapsible Content Container (Map and Carousel) */
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.7s ease-in-out, padding 0.7s ease-in-out; /* Slower transition for smoother reveal */
-            display: flex;
-            flex-direction: column;
-            background-color: #f8fafc;
-            border-bottom-left-radius: 1rem;
-            border-bottom-right-radius: 1rem;
-            /* Initial padding is 0 for vertical, keep horizontal */
-            padding: 0 1.5rem;
-            border-top: none; /* No border initially */
-        }
+  /* Mobile controls */
+  .stick {
+    position:fixed; bottom:18px; width:120px; height:120px; border-radius:50%;
+    background:#0e1420b0; border:1px solid #2b394d; z-index:4; touch-action:none; display:none;
+  }
+  .knob {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:52px; height:52px; border-radius:50%; background:#1e293b; border:2px solid #3b82f6;
+  }
+  #leftStick { left:18px; }
+  #rightStick { right:18px; }
+  #interactBtn {
+    position:fixed; right:22px; bottom:156px; background:#3b82f6; color:#fff; border:none; border-radius:999px; 
+    padding:12px 16px; font-weight:700; z-index:4; display:none;
+  }
 
-        .collapsible-content.expanded {
-            /* Set a generous fixed max-height to ensure all content is visible */
-            max-height: 700px; /* Adjusted to reliably fit map + carousel + padding */
-            padding-top: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        /* Map Embed Styles */
-        .map-embed-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            overflow: hidden;
-            border-radius: 0.75rem;
-            margin-bottom: 1.5rem; /* Space below map */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .map-embed-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-            border-radius: 0.75rem;
-        }
-
-        /* Carousel Styles */
-        .activity-carousel-container {
-            position: relative;
-            width: 100%;
-            height: 200px; /* Fixed height for the carousel area */
-            overflow: hidden;
-            border-radius: 0.75rem; /* Rounded corners for the carousel itself */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .carousel-slides {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.5s ease-in-out;
-        }
-        .carousel-slides img {
-            min-width: 100%; /* Each image takes full width of the container */
-            height: 100%;
-            object-fit: cover;
-        }
-        .carousel-button {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            padding: 0.75rem 0.5rem;
-            cursor: pointer;
-            z-index: 10;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        .carousel-button:hover {
-            background-color: rgba(0, 0, 0, 0.7);
-        }
-        .carousel-button.prev {
-            left: 0.5rem;
-        }
-        .carousel-button.next {
-            right: 0.5rem;
-        }
-        .carousel-dots {
-            position: absolute;
-            bottom: 0.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 0.5rem;
-            z-index: 10;
-        }
-        .dot {
-            width: 8px;
-            height: 8px;
-            background-color: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.2s;
-        }
-        .dot.active {
-            background-color: #4f46e5; /* Indigo */
-            transform: scale(1.2);
-        }
-
-        .day-section {
-            background-color: #cbd5e1; /* Medium gray for day headers */
-            color: #1e293b;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            margin-top: 2.5rem;
-            margin-bottom: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+  /* Tooltip for picked target */
+  #targetName {
+    position:fixed; left:50%; bottom:56px; transform:translateX(-50%);
+    background:#101722cc; padding:6px 10px; border-radius:8px; font-size:12px; border:1px solid #283244; z-index:3; min-width:120px; text-align:center; display:none;
+  }
+</style>
 </head>
-<body class="min-h-screen flex flex-col">
-<header class="header">
-<h1 class="text-4xl font-extrabold">Wexford Family Fun Itinerary</h1>
-<p class="mt-2 text-lg">Your guide to an unforgettable family adventure in County Wexford!</p>
-</header>
-<main class="container mx-auto p-6 flex-grow">
-<!-- Day 1 -->
-<div class="day-section">Day 1: Arrival &amp; Summer Beach Bliss</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Upton Court Hotel, Gorey, Co. Wexford</h3>
-<p class="activity-description">Check into the charming Upton Court Hotel, your cozy base for the week. Settle in and prepare for your Wexford adventure! The hotel offers comfortable rooms, friendly service, and is conveniently located near many local attractions. Enjoy a relaxing evening and get ready for a week of exploration and fun with the whole family.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2427.8855448294803!2d-6.2831518230084855!3d52.51741037206053!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680a167e38985b%3A0xe04417d598d122d2!2sUpton%20Court%20Hotel%20%26%20Holiday%20Cottages!5e0!3m2!1sen!2suk!4v1753296321534!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Upton Court Hotel exterior 1" src="https://picsum.photos/800/600?random=1"/>
-<img alt="Upton Court Hotel interior 1" src="https://picsum.photos/800/600?random=2"/>
-<img alt="Upton Court Hotel lobby 1" src="https://picsum.photos/800/600?random=3"/>
-<img alt="Upton Court Hotel room 1" src="https://picsum.photos/800/600?random=4"/>
-<img alt="Upton Court Hotel exterior 2" src="https://picsum.photos/800/600?random=5"/>
-<img alt="Upton Court Hotel interior 2" src="https://picsum.photos/800/600?random=6"/>
-<img alt="Upton Court Hotel lobby 2" src="https://picsum.photos/800/600?random=7"/>
-<img alt="Upton Court Hotel room 2" src="https://picsum.photos/800/600?random=8"/>
-<img alt="Upton Court Hotel garden" src="https://picsum.photos/800/600?random=9"/>
-<img alt="Upton Court Hotel dining" src="https://picsum.photos/800/600?random=10"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Kate's Coffee Shop &amp; Deli, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Enjoy a delightful lunch at Kate's, known for its fresh sandwiches, pastries, and excellent coffee. It's a perfect spot for a quick and tasty bite before heading to the beach, offering a relaxed atmosphere for families.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2428.0597709155327!2d-6.285994123008642!3d52.51425737205968!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680a3d776720b3%3A0x34c9f664d7ae2c6a!2sKates%20Cafe!5e0!3m2!1sen!2suk!4v1753296382093!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Kate's Coffee Shop exterior 1" src="https://picsum.photos/800/600?random=11"/>
-<img alt="Kate's Coffee Shop interior 1" src="https://picsum.photos/800/600?random=12"/>
-<img alt="Deli counter 1" src="https://picsum.photos/800/600?random=13"/>
-<img alt="Coffee cup 1" src="https://picsum.photos/800/600?random=14"/>
-<img alt="Kate's Coffee Shop exterior 2" src="https://picsum.photos/800/600?random=15"/>
-<img alt="Kate's Coffee Shop interior 2" src="https://picsum.photos/800/600?random=16"/>
-<img alt="Deli counter 2" src="https://picsum.photos/800/600?random=17"/>
-<img alt="Coffee cup 2" src="https://picsum.photos/800/600?random=18"/>
-<img alt="Pastries display" src="https://picsum.photos/800/600?random=19"/>
-<img alt="Sandwich close-up" src="https://picsum.photos/800/600?random=20"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Morriscastle Beach, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Spend the afternoon building sandcastles, splashing in the waves, and enjoying the golden sands of Morriscastle Beach. Known as "The Golden Mile," it's one of Ireland's longest beaches, perfect for family fun and relaxation.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sMorriscastle%20Beach!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Morriscastle Beach view 1" src="https://picsum.photos/800/600?random=21"/>
-<img alt="Morriscastle Beach sandcastles 1" src="https://picsum.photos/800/600?random=22"/>
-<img alt="Morriscastle Beach waves 1" src="https://picsum.photos/800/600?random=23"/>
-<img alt="Morriscastle Beach family 1" src="https://picsum.photos/800/600?random=24"/>
-<img alt="Morriscastle Beach view 2" src="https://picsum.photos/800/600?random=25"/>
-<img alt="Morriscastle Beach sandcastles 2" src="https://picsum.photos/800/600?random=26"/>
-<img alt="Morriscastle Beach waves 2" src="https://picsum.photos/800/600?random=27"/>
-<img alt="Morriscastle Beach family 2" src="https://picsum.photos/800/600?random=28"/>
-<img alt="Morriscastle Beach sunset" src="https://picsum.photos/800/600?random=29"/>
-<img alt="Morriscastle Beach dunes" src="https://picsum.photos/800/600?random=30"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Lawler's of Morriscastle, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Savour a delicious dinner at Lawler's, a popular local spot with a warm atmosphere and great food. It's the perfect place to unwind after a day at the beach, offering a menu that caters to all tastes, including kid-friendly options.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2428.0912778101942!2d-6.244843423008685!3d52.5136871720596!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680af452507437%3A0xb292165bcdcb1b68!2sLawler's%20of%20Morriscastle!5e0!3m2!1sen!2suk!4v1753296427698!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Lawler's of Morriscastle exterior 1" src="https://picsum.photos/800/600?random=31"/>
-<img alt="Lawler's of Morriscastle interior 1" src="https://picsum.photos/800/600?random=32"/>
-<img alt="Lawler's food dish 1" src="https://picsum.photos/800/600?random=33"/>
-<img alt="Lawler's dining area 1" src="https://picsum.photos/800/600?random=34"/>
-<img alt="Lawler's of Morriscastle exterior 2" src="https://picsum.photos/800/600?random=35"/>
-<img alt="Lawler's of Morriscastle interior 2" src="https://picsum.photos/800/600?random=36"/>
-<img alt="Lawler's food dish 2" src="https://picsum.photos/800/600?random=37"/>
-<img alt="Lawler's dining area 2" src="https://picsum.photos/800/600?random=38"/>
-<img alt="Lawler's bar area" src="https://picsum.photos/800/600?random=39"/>
-<img alt="Lawler's cozy corner" src="https://picsum.photos/800/600?random=40"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Day 2 -->
-<div class="day-section">Day 2: Nature Walk &amp; Wildlife Wonders</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Kilmuckridge-Morriscastle Trail, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Enjoy a refreshing morning walk along this scenic trail, perfect for taking in the fresh air and beautiful coastal views. The trail offers a gentle path suitable for families, with opportunities to spot local wildlife and enjoy the serene Irish countryside.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2428.105356927057!2d-6.2642048230087255!3d52.51343237205948!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680a5d1963efef%3A0x1379fce0943aa3c1!2sMorriscastle%20Rd%2C%20Co.%20Wexford%2C%20Ireland!5e0!3m2!1sen!2suk!4v1753296465388!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Coastal trail 1" src="https://picsum.photos/800/600?random=41"/>
-<img alt="Nature path 1" src="https://picsum.photos/800/600?random=42"/>
-<img alt="Scenic view 1" src="https://picsum.photos/800/600?random=43"/>
-<img alt="Walking trail 1" src="https://picsum.photos/800/600?random=44"/>
-<img alt="Coastal trail 2" src="https://picsum.photos/800/600?random=45"/>
-<img alt="Nature path 2" src="https://picsum.photos/800/600?random=46"/>
-<img alt="Scenic view 2" src="https://picsum.photos/800/600?random=47"/>
-<img alt="Walking trail 2" src="https://picsum.photos/800/600?random=48"/>
-<img alt="Green fields" src="https://picsum.photos/800/600?random=49"/>
-<img alt="Trail sign" src="https://picsum.photos/800/600?random=50"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Secret Valley Wildlife Park, Clonroche, Enniscorthy, Co. Wexford</h3>
-<p class="activity-description">Explore a variety of animals and enjoy interactive experiences at this fantastic wildlife park. From exotic species to farm animals, there's something for everyone. Don't miss the daily feeding times and keeper talks for an even more engaging visit!</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2432.8899331871403!2d-6.754763699999999!3d52.42679199999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4842ac2777224103%3A0xdde437104bda6c97!2sSecret%20Valley%20Wildlife%20Park%20%26%20Exotic%20Animal%20Rescue!5e0!3m2!1sen!2suk!4v1753296504239!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Wildlife Park entrance 1" src="https://picsum.photos/800/600?random=51"/>
-<img alt="Animal enclosure 1" src="https://picsum.photos/800/600?random=52"/>
-<img alt="Kids with animals 1" src="https://picsum.photos/800/600?random=53"/>
-<img alt="Park landscape 1" src="https://picsum.photos/800/600?random=54"/>
-<img alt="Wildlife Park entrance 2" src="https://picsum.photos/800/600?random=55"/>
-<img alt="Animal enclosure 2" src="https://picsum.photos/800/600?random=56"/>
-<img alt="Kids with animals 2" src="https://picsum.photos/800/600?random=57"/>
-<img alt="Park landscape 2" src="https://picsum.photos/800/600?random=58"/>
-<img alt="Exotic bird" src="https://picsum.photos/800/600?random=59"/>
-<img alt="Farm animals" src="https://picsum.photos/800/600?random=60"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Secret Valley Wildlife Park (Reptile Zone/Pony Rides)</h3>
-<p class="activity-description">Get up close with fascinating reptiles in the dedicated zone and let the kids enjoy a fun pony ride. These hands-on experiences are highlights for many visitors, providing unique memories and photo opportunities.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2432.8899331871403!2d-6.754763699999999!3d52.42679199999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4842ac2777224103%3A0xdde437104bda6c97!2sSecret%20Valley%20Wildlife%20Park%20%26%20Exotic%20Animal%20Rescue!5e0!3m2!1sen!2suk!4v1753296548117!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Reptile Zone exhibit 1" src="https://picsum.photos/800/600?random=61"/>
-<img alt="Pony ride 1" src="https://picsum.photos/800/600?random=62"/>
-<img alt="Snake close-up" src="https://picsum.photos/800/600?random=63"/>
-<img alt="Kids petting pony" src="https://picsum.photos/800/600?random=64"/>
-<img alt="Reptile Zone exhibit 2" src="https://picsum.photos/800/600?random=65"/>
-<img alt="Pony ride 2" src="https://picsum.photos/800/600?random=66"/>
-<img alt="Lizard on rock" src="https://picsum.photos/800/600?random=67"/>
-<img alt="Horse stable" src="https://picsum.photos/800/600?random=68"/>
-<img alt="Tortoise" src="https://picsum.photos/800/600?random=69"/>
-<img alt="Pony with child" src="https://picsum.photos/800/600?random=70"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Partridges, Main Street, Gorey, Co. Wexford (Ice Cream)</h3>
-<p class="activity-description">Cool down with a delicious ice cream treat at Partridges after a day of adventure. This local favourite offers a wide selection of flavours, perfect for a sweet ending to your wildlife park visit.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2419.109661054749!2d-6.295704282556103!3d52.6760575!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867e71bd3596915%3A0xf0bc7001f657e266!2sGino's%20Gelato%20Gorey!5e0!3m2!1sen!2suk!4v1753296609789!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Ice cream shop exterior 1" src="https://picsum.photos/800/600?random=71"/>
-<img alt="Ice cream cone 1" src="https://picsum.photos/800/600?random=72"/>
-<img alt="Kids eating ice cream 1" src="https://picsum.photos/800/600?random=73"/>
-<img alt="Ice cream display 1" src="https://picsum.photos/800/600?random=74"/>
-<img alt="Ice cream shop exterior 2" src="https://picsum.photos/800/600?random=75"/>
-<img alt="Ice cream cone 2" src="https://picsum.photos/800/600?random=76"/>
-<img alt="Kids eating ice cream 2" src="https://picsum.photos/800/600?random=77"/>
-<img alt="Ice cream display 2" src="https://picsum.photos/800/600?random=78"/>
-<img alt="Sundae" src="https://picsum.photos/800/600?random=79"/>
-<img alt="Gelato scoops" src="https://picsum.photos/800/600?random=80"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Day 3 -->
-<div class="day-section">Day 3: Wells House Adventure Day</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Wells House &amp; Gardens, Ballyedmond, Gorey, Co. Wexford</h3>
-<p class="activity-description">Spend a full day exploring the historic house, extensive gardens, and woodlands of Wells House. This grand estate offers beautiful walks, a children's playground, and various attractions, ensuring a day full of discovery for the entire family.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2427.2791758798126!2d-6.3448595999999995!3d52.5283829!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4868082cd1668f09%3A0x7e787b570249aca!2sWells%20House%20%26%20Gardens!5e0!3m2!1sen!2suk!4v1753296635675!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Wells House exterior 1" src="https://picsum.photos/800/600?random=81"/>
-<img alt="Wells House gardens 1" src="https://picsum.photos/800/600?random=82"/>
-<img alt="Wells House interior 1" src="https://picsum.photos/800/600?random=83"/>
-<img alt="Wells House woodland 1" src="https://picsum.photos/800/600?random=84"/>
-<img alt="Wells House exterior 2" src="https://picsum.photos/800/600?random=85"/>
-<img alt="Wells House gardens 2" src="https://picsum.photos/800/600?random=86"/>
-<img alt="Wells House interior 2" src="https://picsum.photos/800/600?random=87"/>
-<img alt="Wells House woodland 2" src="https://picsum.photos/800/600?random=88"/>
-<img alt="Wells House fountain" src="https://picsum.photos/800/600?random=89"/>
-<img alt="Wells House archway" src="https://picsum.photos/800/600?random=90"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Brambles Café, Wells House &amp; Gardens</h3>
-<p class="activity-description">Enjoy a lovely lunch or snack at Brambles Café, located within the beautiful Wells House grounds. It's a convenient and pleasant spot to refuel during your exploration of the estate.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2427.2791758798116!2d-6.347048282556146!3d52.52838290000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4868082cd1668f09%3A0x7e787b570249aca!2sWells%20House%20%26%20Gardens!5e0!3m2!1sen!2suk!4v1753296664530!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Brambles Café exterior 1" src="https://picsum.photos/800/600?random=91"/>
-<img alt="Brambles Café interior 1" src="https://picsum.photos/800/600?random=92"/>
-<img alt="Cafe food 1" src="https://picsum.photos/800/600?random=93"/>
-<img alt="Cafe seating 1" src="https://picsum.photos/800/600?random=94"/>
-<img alt="Brambles Café exterior 2" src="https://picsum.photos/800/600?random=95"/>
-<img alt="Brambles Café interior 2" src="https://picsum.photos/800/600?random=96"/>
-<img alt="Cafe food 2" src="https://picsum.photos/800/600?random=97"/>
-<img alt="Cafe seating 2" src="https://picsum.photos/800/600?random=98"/>
-<img alt="Outdoor cafe" src="https://picsum.photos/800/600?random=99"/>
-<img alt="Coffee and cake" src="https://picsum.photos/800/600?random=100"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Glenavon Japanese Garden, Wells House &amp; Gardens</h3>
-<p class="activity-description">Discover tranquility in the serene Glenavon Japanese Garden, a peaceful oasis within Wells House. This beautifully designed garden offers a calming escape, perfect for quiet reflection amidst your busy family day.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2422.548708612522!2d-6.2334923!3d52.6139277!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867e0b0aa970587%3A0xe416ee8c0e7700d0!2sGlenavon%20Japanese%20Garden!5e0!3m2!1sen!2suk!4v1753296689893!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Japanese Garden bridge 1" src="https://picsum.photos/800/600?random=101"/>
-<img alt="Japanese Garden pond 1" src="https://picsum.photos/800/600?random=102"/>
-<img alt="Zen garden 1" src="https://picsum.photos/800/600?random=103"/>
-<img alt="Japanese Garden plants 1" src="https://picsum.photos/800/600?random=104"/>
-<img alt="Japanese Garden bridge 2" src="https://picsum.photos/800/600?random=105"/>
-<img alt="Japanese Garden pond 2" src="https://picsum.photos/800/600?random=106"/>
-<img alt="Zen garden 2" src="https://picsum.photos/800/600?random=107"/>
-<img alt="Japanese Garden plants 2" src="https://picsum.photos/800/600?random=108"/>
-<img alt="Stone lantern" src="https://picsum.photos/800/600?random=109"/>
-<img alt="Bamboo grove" src="https://picsum.photos/800/600?random=110"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Day 4 -->
-<div class="day-section">Day 4: Castle Explorers &amp; Crafts</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Enniscorthy Castle, Enniscorthy, Co. Wexford</h3>
-<p class="activity-description">Step back in time at Enniscorthy Castle, a historic landmark with fascinating exhibits and panoramic views. Explore its dungeons, climb to the rooftop, and learn about the rich history of the area, including its role in the 1798 Rebellion.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2448.972986470395!2d-6.23071708422477!3d52.68407897984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867f7d1f9a1f599%3A0x8d5c7f0b2f5b8e9!2sEnniscorthy%20Castle!5e0!3m2!1sen!2sie!4v1678901234567!5m2!1sen!2sie"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Enniscorthy Castle exterior 1" src="https://picsum.photos/800/600?random=111"/>
-<img alt="Enniscorthy Castle interior 1" src="https://picsum.photos/800/600?random=112"/>
-<img alt="Castle battlements 1" src="https://picsum.photos/800/600?random=113"/>
-<img alt="Castle museum 1" src="https://picsum.photos/800/600?random=114"/>
-<img alt="Enniscorthy Castle exterior 2" src="https://picsum.photos/800/600?random=115"/>
-<img alt="Enniscorthy Castle interior 2" src="https://picsum.photos/800/600?random=116"/>
-<img alt="Castle battlements 2" src="https://picsum.photos/800/600?random=117"/>
-<img alt="Castle museum 2" src="https://picsum.photos/800/600?random=118"/>
-<img alt="Castle grounds" src="https://picsum.photos/800/600?random=119"/>
-<img alt="Castle tower" src="https://picsum.photos/800/600?random=120"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Tinnaberna Sandhills, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Explore the unique natural landscape of Tinnaberna Sandhills, perfect for a breezy walk and dune exploration. This beautiful coastal area is a hidden gem, offering stunning views and a chance to connect with nature.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4859.427918766205!2d-6.27763375!3d52.4843146!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680bc4ffbf9d0f%3A0x923ad736a50ef381!2sTinnaberna%20Beach!5e0!3m2!1sen!2suk!4v1753296721202!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Sandhills view 1" src="https://picsum.photos/800/600?random=121"/>
-<img alt="Dune landscape 1" src="https://picsum.photos/800/600?random=122"/>
-<img alt="Beach and dunes 1" src="https://picsum.photos/800/600?random=123"/>
-<img alt="Coastal plants 1" src="https://picsum.photos/800/600?random=124"/>
-<img alt="Sandhills view 2" src="https://picsum.photos/800/600?random=125"/>
-<img alt="Dune landscape 2" src="https://picsum.photos/800/600?random=126"/>
-<img alt="Beach and dunes 2" src="https://picsum.photos/800/600?random=127"/>
-<img alt="Coastal plants 2" src="https://picsum.photos/800/600?random=128"/>
-<img alt="Footprints in sand" src="https://picsum.photos/800/600?random=129"/>
-<img alt="Seagrass" src="https://picsum.photos/800/600?random=130"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Gorey (Pottery Painting or Craft Workshop)</h3>
-<p class="activity-description">Unleash your creativity with a fun pottery painting or craft workshop in Gorey, perfect for all ages. It's a wonderful indoor activity, especially on a rainy day, allowing everyone to create a unique souvenir.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d154822.53738168182!2d-6.429197383593761!3d52.67619320000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867e7d3114945dd%3A0x517fd3554fb74ae4!2sCaroline%20Bergin%20Art%20-%20Classes%2C%20Parties%2C%20Gallery%20%26%20More*21!5e0!3m2!1sen!2suk!4v1753296751307!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Pottery painting studio 1" src="https://picsum.photos/800/600?random=131"/>
-<img alt="Kids crafting 1" src="https://picsum.photos/800/600?random=132"/>
-<img alt="Painted pottery 1" src="https://picsum.photos/800/600?random=133"/>
-<img alt="Craft supplies 1" src="https://picsum.photos/800/600?random=134"/>
-<img alt="Pottery painting studio 2" src="https://picsum.photos/800/600?random=135"/>
-<img alt="Kids crafting 2" src="https://picsum.photos/800/600?random=136"/>
-<img alt="Painted pottery 2" src="https://picsum.photos/800/600?random=137"/>
-<img alt="Craft supplies 2" src="https://picsum.photos/800/600?random=138"/>
-<img alt="Art project" src="https://picsum.photos/800/600?random=139"/>
-<img alt="Creative hands" src="https://picsum.photos/800/600?random=140"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Day 5 -->
-<div class="day-section">Day 5: Festivities &amp; Free Play</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Gorey (Summer Market Stalls)</h3>
-<p class="activity-description">Wander through the vibrant summer market stalls in Gorey, browsing local crafts and delicious treats. Depending on the time of year, you might find various local markets offering unique goods, entertainment, and a lively atmosphere.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d38705.96323153952!2d-6.321643920898436!3d52.675822!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867e64d894aa9d9%3A0xe34afa4db5abbfc1!2sGorey%20Farmers%20Market!5e0!3m2!1sen!2suk!4v1753296794612!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Market stall 1" src="https://picsum.photos/800/600?random=141"/>
-<img alt="Outdoor market 1" src="https://picsum.photos/800/600?random=142"/>
-<img alt="Crafts display 1" src="https://picsum.photos/800/600?random=143"/>
-<img alt="Food stall 1" src="https://picsum.photos/800/600?random=144"/>
-<img alt="Market stall 2" src="https://picsum.photos/800/600?random=145"/>
-<img alt="Outdoor market 2" src="https://picsum.photos/800/600?random=146"/>
-<img alt="Crafts display 2" src="https://picsum.photos/800/600?random=147"/>
-<img alt="Food stall 2" src="https://picsum.photos/800/600?random=148"/>
-<img alt="People at market" src="https://picsum.photos/800/600?random=149"/>
-<img alt="Fresh produce" src="https://picsum.photos/800/600?random=150"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>The Greenhouse Café, Kilmuckridge, Co. Wexford (Kids Crafts)</h3>
-<p class="activity-description">Enjoy a relaxing break at The Greenhouse Café while the kids engage in fun craft activities. This charming café often hosts creative sessions, making it a great spot for both parents and children to relax and play.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d154990.49030534562!2d-6.447324683593753!3d52.62878799999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4867e6b0d6517977%3A0x3f75147e9deb47e2!2sGreenhouse%20cafe!5e0!3m2!1sen!2suk!4v1753296830493!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Greenhouse cafe interior 1" src="https://picsum.photos/800/600?random=151"/>
-<img alt="Kids craft table 1" src="https://picsum.photos/800/600?random=152"/>
-<img alt="Cafe garden 1" src="https://picsum.photos/800/600?random=153"/>
-<img alt="Craft materials 1" src="https://picsum.photos/800/600?random=154"/>
-<img alt="Greenhouse cafe interior 2" src="https://picsum.photos/800/600?random=155"/>
-<img alt="Kids craft table 2" src="https://picsum.photos/800/600?random=156"/>
-<img alt="Cafe garden 2" src="https://picsum.photos/800/600?random=157"/>
-<img alt="Craft materials 2" src="https://picsum.photos/800/600?random=158"/>
-<img alt="Child drawing" src="https://picsum.photos/800/600?random=159"/>
-<img alt="Art supplies" src="https://picsum.photos/800/600?random=160"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Ballinoulart Beach, Kilmuckridge, Co. Wexford</h3>
-<p class="activity-description">Discover the serene beauty of Ballinoulart Beach, a perfect spot for a quiet stroll and enjoying nature. This less-crowded beach offers a peaceful escape, ideal for collecting seashells or simply enjoying the coastal breeze.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2427.4439220983736!2d-6.223590699999977!3d52.525401900000006!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680a96577094d7%3A0x7a3f9d9b8518824c!2sBallinoulart%20Bay%20Beach!5e0!3m2!1sen!2suk!4v1753296866387!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Ballinoulart Beach view 1" src="https://picsum.photos/800/600?random=161"/>
-<img alt="Ballinoulart Beach waves 1" src="https://picsum.photos/800/600?random=162"/>
-<img alt="Ballinoulart Beach rocks 1" src="https://picsum.photos/800/600?random=163"/>
-<img alt="Ballinoulart Beach sunset 1" src="https://picsum.photos/800/600?random=164"/>
-<img alt="Ballinoulart Beach view 2" src="https://picsum.photos/800/600?random=165"/>
-<img alt="Ballinoulart Beach waves 2" src="https://picsum.photos/800/600?random=166"/>
-<img alt="Ballinoulart Beach rocks 2" src="https://picsum.photos/800/600?random=167"/>
-<img alt="Ballinoulart Beach sunset 2" src="https://picsum.photos/800/600?random=168"/>
-<img alt="Seaside tranquility" src="https://picsum.photos/800/600?random=169"/>
-<img alt="Coastal flora" src="https://picsum.photos/800/600?random=170"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Day 6 -->
-<div class="day-section">Day 6: Farewell Fun</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<div class="activity-card">
-<div class="activity-content">
-<h3>Kilmuckridge Drama Festival</h3>
-<p class="activity-description">Experience the local culture with an evening at the Kilmuckridge Drama Festival, showcasing local talent. Check local listings for performance schedules during your visit for an entertaining night out.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d19424.99510467785!2d-6.283934599999987!3d52.51308794999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4868097e26ea2df9%3A0xa00c7a99731aa70!2sBallygarran%2C%20Kilmuckridge%2C%20Co.%20Wexford%2C%20Ireland!5e0!3m2!1sen!2suk!4v1753296893869!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Drama Festival stage 1" src="https://picsum.photos/800/600?random=171"/>
-<img alt="Drama Festival audience 1" src="https://picsum.photos/800/600?random=172"/>
-<img alt="Actors on stage 1" src="https://picsum.photos/800/600?random=173"/>
-<img alt="Theater interior 1" src="https://picsum.photos/800/600?random=174"/>
-<img alt="Drama Festival stage 2" src="https://picsum.photos/800/600?random=175"/>
-<img alt="Drama Festival audience 2" src="https://picsum.photos/800/600?random=176"/>
-<img alt="Actors on stage 2" src="https://picsum.photos/800/600?random=177"/>
-<img alt="Theater interior 2" src="https://picsum.photos/800/600?random=178"/>
-<img alt="Curtain call" src="https://picsum.photos/800/600?random=179"/>
-<img alt="Spotlight" src="https://picsum.photos/800/600?random=180"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Da Paolo Italian Restaurant, Main Street, Gorey, Co. Wexford</h3>
-<p class="activity-description">Enjoy a final family meal with authentic Italian cuisine at Da Paolo in Gorey. This popular restaurant offers a delightful menu with classic dishes, perfect for a memorable last dinner in Wexford.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d155792.25266374488!2d-6.501985783593704!3d52.402073599999994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48680f9e6ebb7ed3%3A0x8ac6be01d9e40134!2sDa%20Paolo!5e0!3m2!1sen!2suk!4v1753296927537!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Italian Restaurant exterior 1" src="https://picsum.photos/800/600?random=181"/>
-<img alt="Italian Restaurant interior 1" src="https://picsum.photos/800/600?random=182"/>
-<img alt="Pasta dish 1" src="https://picsum.photos/800/600?random=183"/>
-<img alt="Pizza 1" src="https://picsum.photos/800/600?random=184"/>
-<img alt="Italian Restaurant exterior 2" src="https://picsum.photos/800/600?random=185"/>
-<img alt="Italian Restaurant interior 2" src="https://picsum.photos/800/600?random=186"/>
-<img alt="Pasta dish 2" src="https://picsum.photos/800/600?random=187"/>
-<img alt="Pizza 2" src="https://picsum.photos/800/600?random=188"/>
-<img alt="Tiramisu" src="https://picsum.photos/800/600?random=189"/>
-<img alt="Wine glass" src="https://picsum.photos/800/600?random=190"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-<div class="activity-card">
-<div class="activity-content">
-<h3>Wexford Town, Co. Wexford</h3>
-<p class="activity-description">Before heading home, take some time to explore the historic and charming streets of Wexford Town. Visit the iconic Selskar Abbey, stroll along the quays, or explore the local shops for souvenirs of your trip.</p>
-<button class="read-more-btn">Read More</button>
-</div>
-<div class="collapsible-content">
-<div class="map-embed-container">
-<iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d19504.185718273227!2d-6.473190049999997!3d52.333724950000004!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48681b61b4394a6f%3A0xa00c7a997317280!2sWexford%2C%20Ireland!5e0!3m2!1sen!2suk!4v1753296949015!5m2!1sen!2suk"></iframe>
-</div>
-<div class="activity-carousel-container">
-<div class="carousel-slides">
-<img alt="Wexford Town street 1" src="https://picsum.photos/800/600?random=191"/>
-<img alt="Wexford Town waterfront 1" src="https://picsum.photos/800/600?random=192"/>
-<img alt="Wexford Town historic building 1" src="https://picsum.photos/800/600?random=193"/>
-<img alt="Wexford Town colorful houses 1" src="https://picsum.photos/800/600?random=194"/>
-<img alt="Wexford Town street 2" src="https://picsum.photos/800/600?random=195"/>
-<img alt="Wexford Town waterfront 2" src="https://picsum.photos/800/600?random=196"/>
-<img alt="Wexford Town historic building 2" src="https://picsum.photos/800/600?random=197"/>
-<img alt="Wexford Town colorful houses 2" src="https://picsum.photos/800/600?random=198"/>
-<img alt="Wexford Town harbor" src="https://picsum.photos/800/600?random=199"/>
-<img alt="Wexford Town alleyway" src="https://picsum.photos/800/600?random=200"/>
-</div>
-<button class="carousel-button prev"><i class="fas fa-chevron-left"></i></button>
-<button class="carousel-button next"><i class="fas fa-chevron-right"></i></button>
-<div class="carousel-dots"></div>
-</div>
-</div>
-</div>
-</div>
-</main>
-<footer class="bg-gray-800 text-white text-center p-4 mt-8 rounded-t-lg">
-<p>© 2025 Wexford Family Fun. All rights reserved. Images from Lorem Picsum.</p>
-</footer>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="startOverlay">
+  <div class="card">
+    <h2 style="margin:.4rem 0 0.2rem;">Castle On The Hill</h2>
+    <p style="opacity:.8; margin:.2rem 0 1rem;">Click to enter. Desktop uses mouse + WASD. Mobile gets virtual sticks. No installs. No excuses.</p>
+    <button id="startBtn" class="primary">Start</button>
+    <div class="row">
+      <div class="pill">WASD = move</div>
+      <div class="pill">Mouse/Right stick = look</div>
+      <div class="pill">E / Tap = interact</div>
+    </div>
+  </div>
+</div>
+
+<div id="crosshair"></div>
+<div id="hint" style="display:none;">Press <b>E</b> to interact</div>
+<div id="targetName"></div>
+<div id="debug"></div>
+
+<div id="dialogue">
+  <h3 id="dlgTitle">Name</h3>
+  <p id="dlgText">...</p>
+  <div class="actions" id="dlgActions"></div>
+</div>
+
+<!-- Mobile UI -->
+<div id="leftStick" class="stick"><div class="knob"></div></div>
+<div id="rightStick" class="stick"><div class="knob"></div></div>
+<button id="interactBtn">Interact</button>
+
+<!-- Game data (editable) -->
+<script id="game-data" type="application/json">
+{
+  "world": {
+    "castleCenter":[0,0,40],
+    "hillRadius": 22,
+    "hillHeight": 6
+  },
+  "npcs": [
+    {
+      "id":"blacksmith",
+      "name":"Bruna the Blacksmith",
+      "type":"townsfolk",
+      "location":{"x":-22,"y":0,"z":-10},
+      "lookAtPlayer": true,
+      "dialogue": ["Need steel or stories? I've got one of those in stock."],
+      "interactions": ["talk","trade"],
+      "inventory": [{"item":"Iron Dagger","price":8}, {"item":"Repair Kit","price":5}]
+    },
+    {
+      "id":"innkeeper",
+      "name":"Merrit the Innkeep",
+      "type":"townsfolk",
+      "location":{"x":14,"y":0,"z":-16},
+      "dialogue": ["Rooms are full. Tales are free."],
+      "interactions": ["talk"]
+    }
+  ],
+  "guards": [
+    {
+      "id":"g1",
+      "name":"Castle Guard 1",
+      "location":{"x":-6,"y":6,"z":34},
+      "patrolRoute":[[-8,6,28],[-8,6,44],[8,6,44],[8,6,28]],
+      "speed":1.2,
+      "interactions":["talk","challenge"],
+      "dialogue":["Password?" , "Wrong. Nice try."],
+      "challenge":{"prompt":"Say the password.","pass":"dandelion"}
+    },
+    {
+      "id":"g2",
+      "name":"Castle Guard 2",
+      "location":{"x":6,"y":6,"z":34},
+      "patrolRoute":[[10,6,28],[10,6,44],[-10,6,44],[-10,6,28]],
+      "speed":1.1,
+      "interactions":["talk"],
+      "dialogue":["Keep moving."]
+    }
+  ],
+  "objects":[
+    {
+      "id":"gateDoor",
+      "name":"Castle Gate",
+      "type":"door",
+      "position":[0,6,30.5],
+      "size":[3,5,0.5],
+      "hinge":"left",
+      "openAngle":90,
+      "locked": false
+    },
+    {
+      "id":"townChest",
+      "name":"Town Chest",
+      "type":"chest",
+      "position":[-18,0,-6],
+      "size":[1.5,1,1],
+      "locked": false,
+      "loot":["Coin","Old Map"]
+    },
+    {
+      "id":"notice",
+      "name":"Town Notice",
+      "type":"sign",
+      "position":[8,0,-12],
+      "size":[1.2,1.2,0.2],
+      "text":"Market every third day. No sword fighting near the bakery."
+    }
+  ]
+}
+</script>
+
 <script>
-        // JavaScript for Expandable Activity Descriptions and Collapsible Content
-        document.querySelectorAll('.activity-card').forEach(card => {
-            const description = card.querySelector('.activity-description');
-            const button = card.querySelector('.read-more-btn');
-            const collapsibleContent = card.querySelector('.collapsible-content');
+/* ============================
+   Section A: Minimal math utils
+   ============================ */
+const TAU = Math.PI*2;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function vec3(x=0,y=0,z=0){return new Float32Array([x,y,z]);}
+function add(a,b){return vec3(a[0]+b[0],a[1]+b[1],a[2]+b[2]);}
+function sub(a,b){return vec3(a[0]-b[0],a[1]-b[1],a[2]-b[2]);}
+function mul(a,s){return vec3(a[0]*s,a[1]*s,a[2]*s);}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function len(a){return Math.hypot(a[0],a[1],a[2]);}
+function norm(a){const l=len(a)||1; return vec3(a[0]/l,a[1]/l,a[2]/l);}
+function cross(a,b){return vec3(a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]);}
 
-            // Initially hide the collapsible content
-            collapsibleContent.style.maxHeight = '0';
-            collapsibleContent.style.paddingTop = '0';
-            collapsibleContent.style.paddingBottom = '0';
-            collapsibleContent.style.borderTop = 'none';
+function mat4(){return new Float32Array(16);}
+function mIdent(){const m=mat4(); m[0]=m[5]=m[10]=m[15]=1; return m;}
+function mMul(a,b){const o=mat4();
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    o[c+4*r]=a[0+4*r]*b[c+0]+a[1+4*r]*b[c+4]+a[2+4*r]*b[c+8]+a[3+4*r]*b[c+12];
+  } return o;
+}
+function mTrans(v){const m=mIdent(); m[12]=v[0]; m[13]=v[1]; m[14]=v[2]; return m;}
+function mScale(v){const m=mIdent(); m[0]=v[0]; m[5]=v[1]; m[10]=v[2]; return m;}
+function mRotY(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[0]=c; m[2]=s; m[8]=-s; m[10]=c; return m;}
+function mRotX(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[5]=c; m[6]=-s; m[9]=s; m[10]=c; return m;}
+function mPerspective(fov,aspect,near,far){
+  const f=1/Math.tan(fov/2), nf=1/(near-far), m=mat4();
+  m[0]=f/aspect; m[5]=f; m[10]=(far+near)*nf; m[11]=-1; m[14]=(2*far*near)*nf; return m;
+}
+function mLook(from, dir, upVec=vec3(0,1,0)){
+  const f=norm(dir); const s=norm(cross(f, upVec)); const u=cross(s, f);
+  const m=mIdent();
+  m[0]=s[0]; m[4]=s[1]; m[8]=s[2];
+  m[1]=u[0]; m[5]=u[1]; m[9]=u[2];
+  m[2]=-f[0]; m[6]=-f[1]; m[10]=-f[2];
+  m[12]=-dot(s, from); m[13]=-dot(u, from); m[14]=dot(f, from);
+  return m;
+}
+/* Validation: math ops are pure and side-effect free; matrix shapes 4x4. Proceed. */
 
-            // Function to initialize a carousel
-            function initializeCarousel(container) {
-                const slides = container.querySelector('.carousel-slides');
-                const images = slides.querySelectorAll('img');
-                const prevButton = container.querySelector('.carousel-button.prev');
-                const nextButton = container.querySelector('.carousel-button.next');
-                const dotsContainer = container.querySelector('.carousel-dots');
+/* ===================================
+   Section B: WebGL bootstrap + shader
+   =================================== */
+const canvas = document.getElementById('gl');
+let gl = canvas.getContext('webgl', {antialias:true, alpha:false});
+if(!gl){ alert('WebGL not supported. Try a newer browser.'); }
 
-                let currentIndex = 0;
+function resize(){ canvas.width=canvas.clientWidth; canvas.height=canvas.clientHeight; gl.viewport(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight); }
+addEventListener('resize', resize);
 
-                // Clear existing dots to prevent duplicates on re-initialization
-                dotsContainer.innerHTML = '';
+const VS=`
+attribute vec3 aPos;
+attribute vec3 aNormal;
+uniform mat4 uMVP;
+uniform mat4 uModel;
+uniform vec3 uColor;
+uniform vec3 uLightDir;
+varying vec3 vColor;
+void main(){
+  vec3 n = normalize(mat3(uModel) * aNormal);
+  float diff = max(dot(n, normalize(uLightDir)), 0.0);
+  float amb = 0.25;
+  float lit = amb + diff*0.8;
+  vColor = uColor * lit;
+  gl_Position = uMVP * vec4(aPos,1.0);
+}`;
+const FS=`
+precision mediump float;
+varying vec3 vColor;
+void main(){ gl_FragColor = vec4(vColor, 1.0); }`;
 
-                // Create dots
-                images.forEach((_, index) => {
-                    const dot = document.createElement('span');
-                    dot.classList.add('dot');
-                    if (index === 0) {
-                        dot.classList.add('active');
-                    }
-                    dot.addEventListener('click', () => {
-                        showSlide(index);
-                    });
-                    dotsContainer.appendChild(dot);
-                });
+function makeProgram(vsSrc, fsSrc){
+  const vs = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vs, vsSrc); gl.compileShader(vs);
+  if(!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(vs);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fs, fsSrc); gl.compileShader(fs);
+  if(!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(fs);
+  const p = gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p, gl.LINK_STATUS)) throw gl.getProgramInfoLog(p);
+  return p;
+}
+const prog = makeProgram(VS,FS);
+gl.useProgram(prog);
+const loc = {
+  aPos: gl.getAttribLocation(prog,'aPos'),
+  aNormal: gl.getAttribLocation(prog,'aNormal'),
+  uMVP: gl.getUniformLocation(prog,'uMVP'),
+  uModel: gl.getUniformLocation(prog,'uModel'),
+  uColor: gl.getUniformLocation(prog,'uColor'),
+  uLightDir: gl.getUniformLocation(prog,'uLightDir')
+};
+/* Validation: shaders compile and link or throw; any console error means GPU/browser mismatch. Proceed if no exceptions. */
 
-                const dots = dotsContainer.querySelectorAll('.dot');
+/* ==============================================
+   Section C: Geometry builders (cube, plane, box)
+   ============================================== */
+function makeCube(){
+  // Unit cube centered at origin, with face normals.
+  const p = [
+    // +X
+    1,-1,-1, 1,1,-1, 1,1,1, 1,-1,1,
+    // -X
+    -1,-1,1, -1,1,1, -1,1,-1, -1,-1,-1,
+    // +Y
+    -1,1,-1, -1,1,1, 1,1,1, 1,1,-1,
+    // -Y
+    -1,-1,1, -1,-1,-1, 1,-1,-1, 1,-1,1,
+    // +Z
+    -1,-1,1, 1,-1,1, 1,1,1, -1,1,1,
+    // -Z
+    1,-1,-1, -1,-1,-1, -1,1,-1, 1,1,-1
+  ];
+  const n = [
+    1,0,0, 1,0,0, 1,0,0, 1,0,0,
+    -1,0,0,-1,0,0,-1,0,0,-1,0,0,
+    0,1,0,0,1,0,0,1,0,0,1,0,
+    0,-1,0,0,-1,0,0,-1,0,0,-1,0,
+    0,0,1,0,0,1,0,0,1,0,0,1,
+    0,0,-1,0,0,-1,0,0,-1,0,0,-1
+  ];
+  const idx = [];
+  for(let f=0; f<6; f++){
+    const off=f*4;
+    idx.push(off,off+1,off+2, off,off+2,off+3);
+  }
+  return makeMesh(new Float32Array(p), new Float32Array(n), new Uint16Array(idx));
+}
+function makePlane(size=200){
+  // big ground plane on XZ
+  const hs = size/2;
+  const p = new Float32Array([-hs,0,-hs,  -hs,0,hs,  hs,0,hs,  hs,0,-hs]);
+  const n = new Float32Array([0,1,0, 0,1,0, 0,1,0, 0,1,0]);
+  const idx = new Uint16Array([0,1,2, 0,2,3]);
+  return makeMesh(p,n,idx);
+}
+function makeMesh(positions, normals, indices){
+  const vao = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vao);
+  const interleaved = new Float32Array(positions.length + normals.length);
+  for(let i=0,j=0;i<positions.length/3;i++){
+    interleaved[j++]=positions[i*3+0];
+    interleaved[j++]=positions[i*3+1];
+    interleaved[j++]=positions[i*3+2];
+    interleaved[j++]=normals[i*3+0];
+    interleaved[j++]=normals[i*3+1];
+    interleaved[j++]=normals[i*3+2];
+  }
+  gl.bufferData(gl.ARRAY_BUFFER, interleaved, gl.STATIC_DRAW);
+  const ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  return {vbo:vao, ibo:ibo, count:indices.length, stride:24};
+}
+/* Validation: cube and plane mesh creation binds buffers and counts indices; if you see undefined indices, my bad. Proceed. */
 
-                function showSlide(index) {
-                    if (index < 0) {
-                        currentIndex = images.length - 1;
-                    } else if (index >= images.length) {
-                        currentIndex = 0;
-                    } else {
-                        currentIndex = index;
-                    }
+/* ==============================
+   Section D: Scene composition
+   ============================== */
+const cube = makeCube();
+const plane = makePlane(400);
+const uLight = vec3(0.5, 1.0, 0.3);
 
-                    const offset = -currentIndex * 100; // 100% for each slide
-                    slides.style.transform = `translateX(${offset}%)`;
-
-                    // Update active dot
-                    dots.forEach((dot, i) => {
-                        if (i === currentIndex) {
-                            dot.classList.add('active');
-                        } else {
-                            dot.classList.remove('active');
-                        }
-                    });
-                }
-
-                prevButton.addEventListener('click', () => {
-                    showSlide(currentIndex - 1);
-                });
-
-                nextButton.addEventListener('click', () => {
-                    showSlide(currentIndex + 1);
-                });
-
-                // Show the first slide initially
-                showSlide(0);
-            }
-
-            // Event listener for the "Read More" button
-            button.addEventListener('click', () => {
-                const isExpanded = description.classList.toggle('expanded');
-                collapsibleContent.classList.toggle('expanded');
-
-                if (isExpanded) {
-                    button.textContent = 'Read Less';
-                    // Set a fixed max-height that is large enough to contain map + carousel
-                    collapsibleContent.style.maxHeight = '700px'; // Adjust this value if content is taller
-                    collapsibleContent.style.paddingTop = '1.5rem';
-                    collapsibleContent.style.paddingBottom = '1.5rem';
-                    collapsibleContent.style.borderTop = '1px solid #e2e8f0';
-
-                    // Initialize carousel when expanded
-                    const carouselContainer = collapsibleContent.querySelector('.activity-carousel-container');
-                    // Only initialize if not already initialized
-                    if (carouselContainer && !carouselContainer.dataset.initialized) {
-                        initializeCarousel(carouselContainer);
-                        carouselContainer.dataset.initialized = 'true';
-                    }
-
-                } else {
-                    button.textContent = 'Read More';
-                    collapsibleContent.style.maxHeight = '0';
-                    collapsibleContent.style.paddingTop = '0';
-                    collapsibleContent.style.paddingBottom = '0';
-                    collapsibleContent.style.borderTop = 'none';
-                }
-            });
-
-            // Initial check for description overflow (if needed, though now always shown)
-            // A small timeout ensures rendering has completed for accurate scrollHeight
-            setTimeout(() => {
-                if (description.scrollHeight > description.clientHeight) {
-                    button.style.display = 'block';
-                } else {
-                    button.style.display = 'none';
-                }
-            }, 100); // Small delay to allow content to render
-        });
-    </script>
-</body>
-</html>
+function drawMesh(mesh, model, color, vp){
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo);
+  gl.vertexAttribPointer(loc.aPos,3,gl.FLOAT,false,mesh.stride,0);
+  gl.enableVertexAttribArray(loc.aPos);
+  gl.vertexAttribPointer(loc.aNormal,3,gl.FLOAT,false,mesh.stride,12);
+  gl.enableVertexAttribArray(loc.aNormal);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ibo);
+  const mvp = mMul(vp,
