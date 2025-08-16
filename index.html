@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Castle on the Hill — v2</title>
+<title>Castle on the Hill — v2.1 (unstuck + better collisions)</title>
 <style>
   html,body{margin:0;height:100%;background:#0b0e12;color:#e8eef5;font-family:system-ui,Segoe UI,Roboto,Arial}
   #gl{width:100vw;height:100vh;display:block;touch-action:none}
-  /* HUD */
   #cross{position:fixed;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);pointer-events:none}
   #cross::before,#cross::after{content:"";position:absolute;background:#e8eef5bb}
   #cross::before{left:5px;top:0;width:2px;height:12px}
   #cross::after{top:5px;left:0;height:2px;width:12px}
   #prompt{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0f1722cc;border:1px solid #273246;border-radius:10px;padding:8px 12px;font-size:13px;display:none}
   #status{position:fixed;left:8px;top:8px;font:12px ui-monospace,Consolas,monospace;opacity:.75}
+  #toast{position:fixed;right:12px;top:12px;background:#111723cc;border:1px solid #283244;border-radius:10px;padding:8px 12px;font-size:12px;display:none}
   /* Dialogue */
   #dlg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:5}
   .card{width:min(560px,92vw);background:#12161c;border:1px solid #273246;border-radius:14px;padding:14px}
@@ -27,7 +27,7 @@
   .knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:#1e293b;border:2px solid #3b82f6}
   #stickL{left:16px} #stickR{right:16px}
   #useBtn{position:fixed;right:20px;bottom:160px;background:#3b82f6;color:#fff;border:none;border-radius:999px;padding:12px 16px;font-weight:700;z-index:4;display:none}
-  /* Start overlay */
+  /* Start */
   #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,14,18,.9),rgba(10,14,18,.98));z-index:10}
   #start .card{background:#12161c;border:1px solid #283244;border-radius:14px;padding:18px;width:min(90vw,420px);box-shadow:0 4px 30px rgba(0,0,0,.45);text-align:center}
   #start button{background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer;width:100%}
@@ -38,6 +38,7 @@
 <div id="cross"></div>
 <div id="prompt"></div>
 <div id="status"></div>
+<div id="toast"></div>
 
 <!-- Dialogue -->
 <div id="dlg">
@@ -51,18 +52,18 @@
 <!-- Mobile UI -->
 <div id="stickL" class="stick"><div class="knob"></div></div>
 <div id="stickR" class="stick"><div class="knob"></div></div>
-<button id="useBtn">Use</button>
+<button id="useBtn" title="Tap: Use • Hold 1s: Unstuck">Use</button>
 
 <!-- Start -->
 <div id="start">
   <div class="card">
     <h2>Castle on the Hill</h2>
-    <p style="opacity:.8">Desktop: click to lock pointer, WASD + mouse, E to interact. Mobile: twin sticks + Use.</p>
+    <p style="opacity:.85">Desktop: click canvas (WASD + mouse, E to Use, R to Unstuck). Mobile: twin sticks, tap Use to interact, hold Use for 1s to Unstuck.</p>
     <button id="startBtn">Start</button>
   </div>
 </div>
 
-<!-- Data schema (edit freely) -->
+<!-- Data schema -->
 <script id="game-data" type="application/json">
 {
   "world": { "size": 160, "hillHeight": 7, "castle": { "center":[0,0,-8], "topRadius": 14 } },
@@ -93,600 +94,286 @@
 </script>
 
 <script>
-/* ========================
-   Section A: Utilities
-   ======================== */
-const TAU = Math.PI*2, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function vec3(x=0,y=0,z=0){return new Float32Array([x,y,z]);}
-function vadd(a,b){return vec3(a[0]+b[0],a[1]+b[1],a[2]+b[2]);}
-function vsub(a,b){return vec3(a[0]-b[0],a[1]-b[1],a[2]-b[2]);}
-function vscale(a,s){return vec3(a[0]*s,a[1]*s,a[2]*s);}
-function vlen(a){return Math.hypot(a[0],a[1],a[2]);}
-function vnorm(a){const l=vlen(a)||1; return vec3(a[0]/l,a[1]/l,a[2]/l);}
-function cross(a,b){return vec3(a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]);}
-function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+/* ========= A. Math helpers ========= */
+const TAU=Math.PI*2, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const v3=(x=0,y=0,z=0)=>new Float32Array([x,y,z]);
+const add=(a,b)=>v3(a[0]+b[0],a[1]+b[1],a[2]+b[2]);
+const sub=(a,b)=>v3(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+const mul=(a,s)=>v3(a[0]*s,a[1]*s,a[2]*s);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const len=a=>Math.hypot(a[0],a[1],a[2]);
+const norm=a=>{const l=len(a)||1; return v3(a[0]/l,a[1]/l,a[2]/l);};
+const cross=(a,b)=>v3(a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]);
 
-function mat4(){return new Float32Array(16);}
-function mIdent(){const m=mat4(); m[0]=m[5]=m[10]=m[15]=1; return m;}
-function mMul(a,b){const o=mat4(); for(let r=0;r<4;r++)for(let c=0;c<4;c++) o[c+4*r]=a[0+4*r]*b[c+0]+a[1+4*r]*b[c+4]+a[2+4*r]*b[c+8]+a[3+4*r]*b[c+12]; return o;}
-function mTrans(v){const m=mIdent(); m[12]=v[0]; m[13]=v[1]; m[14]=v[2]; return m;}
-function mRotY(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[0]=c; m[2]=s; m[8]=-s; m[10]=c; return m;}
-function mRotX(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[5]=c; m[6]=-s; m[9]=s; m[10]=c; return m;}
-function mScale(v){const m=mIdent(); m[0]=v[0]; m[5]=v[1]; m[10]=v[2]; return m;}
-function mPerspective(fov,aspect,near,far){const f=1/Math.tan(fov/2), nf=1/(near-far), m=mat4(); m[0]=f/aspect;m[5]=f;m[10]=(far+near)*nf;m[11]=-1;m[14]=(2*far*near)*nf; return m;}
-function mLook(from, dir, up=vec3(0,1,0)){
-  const f=vnorm(dir), s=vnorm(cross(f,up)), u=cross(s,f), m=mIdent();
-  m[0]=s[0];m[4]=s[1];m[8]=s[2];
-  m[1]=u[0];m[5]=u[1];m[9]=u[2];
-  m[2]=-f[0];m[6]=-f[1];m[10]=-f[2];
-  m[12]=-dot(s,from);m[13]=-dot(u,from);m[14]=dot(f,from);
-  return m;
-}
-/* Validation: math ops pure, no side effects. Proceed. */
+const m4=()=>new Float32Array(16);
+const I=()=>{const m=m4(); m[0]=m[5]=m[10]=m[15]=1; return m;};
+function Mmul(a,b){const o=m4(); for(let r=0;r<4;r++)for(let c=0;c<4;c++) o[c+4*r]=a[0+4*r]*b[c+0]+a[1+4*r]*b[c+4]+a[2+4*r]*b[c+8]+a[3+4*r]*b[c+12]; return o;}
+const Mtr=v=>{const m=I(); m[12]=v[0]; m[13]=v[1]; m[14]=v[2]; return m;};
+const Mrx=a=>{const c=Math.cos(a),s=Math.sin(a),m=I(); m[5]=c;m[6]=-s;m[9]=s;m[10]=c; return m;};
+const Mry=a=>{const c=Math.cos(a),s=Math.sin(a),m=I(); m[0]=c;m[2]=s;m[8]=-s;m[10]=c; return m;};
+const Msc=v=>{const m=I(); m[0]=v[0]; m[5]=v[1]; m[10]=v[2]; return m;};
+const Mp=(fov,asp,n,f)=>{const t=1/Math.tan(fov/2), nf=1/(n-f), m=m4(); m[0]=t/asp;m[5]=t;m[10]=(f+n)*nf;m[11]=-1;m[14]=(2*f*n)*nf; return m;};
+const Mlook=(from,dir,up=v3(0,1,0))=>{const f=norm(dir), s=norm(cross(f,up)), u=cross(s,f), m=I(); m[0]=s[0];m[4]=s[1];m[8]=s[2]; m[1]=u[0];m[5]=u[1];m[9]=u[2]; m[2]=-f[0];m[6]=-f[1];m[10]=-f[2]; m[12]=-dot(s,from);m[13]=-dot(u,from);m[14]=dot(f,from); return m;};
+/* Validation: math passes smoke tests. Proceed. */
 
-/* ========================
-   Section B: GL bootstrap
-   ======================== */
+/* ========= B. GL setup ========= */
 const canvas=document.getElementById('gl');
 const gl=canvas.getContext('webgl',{antialias:true,alpha:false});
-if(!gl){ alert('WebGL not available. Try a modern browser.'); throw new Error('no webgl'); }
-
-function resize(){ const dpr=Math.min(2, window.devicePixelRatio||1); const w=(canvas.clientWidth|0)*dpr, h=(canvas.clientHeight|0)*dpr;
-  if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; gl.viewport(0,0,w,h); } }
+if(!gl){ alert('WebGL not available'); throw new Error('no webgl'); }
+function resize(){ const dpr=Math.min(2,window.devicePixelRatio||1); const w=(canvas.clientWidth|0)*dpr, h=(canvas.clientHeight|0)*dpr; if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; gl.viewport(0,0,w,h); } }
 addEventListener('resize', resize);
 
-const VS=`
-attribute vec3 aPos;
-attribute vec3 aNormal;
-attribute vec3 aColor;
-attribute vec2 aUV;
-uniform mat4 uMVP, uModel;
-uniform vec3 uLightDir;
-uniform float uUseTex;
-varying vec3 vCol;
-varying vec2 vUV;
-varying float vUseTex;
-void main(){
-  vec3 n = normalize(mat3(uModel)*aNormal);
-  float diff = max(dot(n, normalize(uLightDir)), 0.15);
-  vCol = aColor* (diff+0.05);
-  vUV = aUV;
-  vUseTex = uUseTex;
-  gl_Position = uMVP * vec4(aPos,1.0);
-}`;
-const FS=`
-precision mediump float;
-varying vec3 vCol;
-varying vec2 vUV;
-varying float vUseTex;
-uniform sampler2D uTex;
-void main(){
-  if(vUseTex>0.5){
-    vec4 t = texture2D(uTex, vUV);
-    if(t.a < 0.1) discard;
-    gl_FragColor = t;
-  } else {
-    gl_FragColor = vec4(vCol,1.0);
-  }
-}`;
-function compile(type,src){const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; }
-const prog = gl.createProgram();
-gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
-gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
-gl.linkProgram(prog);
-if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog);
+const VS=`attribute vec3 aPos;attribute vec3 aNormal;attribute vec3 aColor;attribute vec2 aUV;
+uniform mat4 uMVP,uModel;uniform vec3 uLightDir;uniform float uUseTex;
+varying vec3 vCol;varying vec2 vUV;varying float vTex;
+void main(){ vec3 n=normalize(mat3(uModel)*aNormal); float diff=max(dot(n,normalize(uLightDir)),0.15); vCol=aColor*(diff+0.05); vUV=aUV; vTex=uUseTex; gl_Position=uMVP*vec4(aPos,1.0);} `;
+const FS=`precision mediump float; varying vec3 vCol; varying vec2 vUV; varying float vTex; uniform sampler2D uTex;
+void main(){ if(vTex>0.5){ vec4 t=texture2D(uTex,vUV); if(t.a<0.1) discard; gl_FragColor=t; } else { gl_FragColor=vec4(vCol,1.0);} }`;
+function sh(type,src){const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s); if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s;}
+const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog);
 gl.useProgram(prog);
-const LOC = {
-  aPos: gl.getAttribLocation(prog,'aPos'),
-  aNormal: gl.getAttribLocation(prog,'aNormal'),
-  aColor: gl.getAttribLocation(prog,'aColor'),
-  aUV: gl.getAttribLocation(prog,'aUV'),
-  uMVP: gl.getUniformLocation(prog,'uMVP'),
-  uModel: gl.getUniformLocation(prog,'uModel'),
-  uLightDir: gl.getUniformLocation(prog,'uLightDir'),
-  uUseTex: gl.getUniformLocation(prog,'uUseTex'),
-  uTex: gl.getUniformLocation(prog,'uTex')
-};
-gl.enable(gl.DEPTH_TEST);
-gl.enable(gl.CULL_FACE);
-gl.clearColor(0.07,0.09,0.12,1.0);
-gl.uniform3f(LOC.uLightDir, 0.6, 1.0, 0.2);
-/* Validation: shaders compile/link or you’ll see a readable error. Proceed. */
+const L={aPos:gl.getAttribLocation(prog,'aPos'),aNormal:gl.getAttribLocation(prog,'aNormal'),aColor:gl.getAttribLocation(prog,'aColor'),aUV:gl.getAttribLocation(prog,'aUV'),uMVP:gl.getUniformLocation(prog,'uMVP'),uModel:gl.getUniformLocation(prog,'uModel'),uLightDir:gl.getUniformLocation(prog,'uLightDir'),uUseTex:gl.getUniformLocation(prog,'uUseTex'),uTex:gl.getUniformLocation(prog,'uTex')};
+gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.clearColor(0.07,0.09,0.12,1.0);
+gl.uniform3f(L.uLightDir,0.6,1.0,0.25);
+/* Validation: shader compiles/links or throws. Proceed. */
 
-/* ========================
-   Section C: Mesh builders
-   ======================== */
-function interleave(P,N,C,UV){
-  const vcount = P.length/3; const hasUV = UV && UV.length===vcount*2;
-  const stride = hasUV ? 3+3+3+2 : 3+3+3+2; // always provide UV slot
-  const arr = new Float32Array(vcount*stride); let o=0;
-  for(let i=0;i<vcount;i++){
-    arr[o++]=P[i*3]; arr[o++]=P[i*3+1]; arr[o++]=P[i*3+2];
-    arr[o++]=N[i*3]; arr[o++]=N[i*3+1]; arr[o++]=N[i*3+2];
-    arr[o++]=C[i*3]; arr[o++]=C[i*3+1]; arr[o++]=C[i*3+2];
-    if(hasUV){ arr[o++]=UV[i*2]; arr[o++]=UV[i*2+1]; } else { arr[o++]=0; arr[o++]=0; }
-  }
-  return arr;
-}
-function makeMesh(P,N,C,UV,I){
-  const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, interleave(P,N,C,UV), gl.STATIC_DRAW);
-  const ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(I), gl.STATIC_DRAW);
-  return {vbo, ibo, count:I.length, stride:(11*4)};
-}
-function setupAttribs(mesh){
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo);
-  gl.vertexAttribPointer(LOC.aPos,3,gl.FLOAT,false,mesh.stride,0); gl.enableVertexAttribArray(LOC.aPos);
-  gl.vertexAttribPointer(LOC.aNormal,3,gl.FLOAT,false,mesh.stride,12); gl.enableVertexAttribArray(LOC.aNormal);
-  gl.vertexAttribPointer(LOC.aColor,3,gl.FLOAT,false,mesh.stride,24); gl.enableVertexAttribArray(LOC.aColor);
-  gl.vertexAttribPointer(LOC.aUV,2,gl.FLOAT,false,mesh.stride,36); gl.enableVertexAttribArray(LOC.aUV);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ibo);
-}
-function box(w=1,h=1,d=1, col=[.7,.72,.75]){
-  const x=w/2,y=h/2,z=d/2;
-  const P=[-x,-y,-z, x,-y,-z, x, y,-z, -x, y,-z,  -x,-y, z, x,-y, z, x, y, z, -x, y, z,
-           -x,-y,-z,-x, y,-z,-x, y, z,-x,-y, z,   x,-y,-z, x,-y, z, x, y, z, x, y,-z,
-           -x, y,-z, x, y,-z, x, y, z, -x, y, z,  -x,-y,-z,-x,-y, z, x,-y, z, x,-y,-z];
-  const N=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,  0,0,1,0,0,1,0,0,1,0,0,1,
-           -1,0,0,-1,0,0,-1,0,0,-1,0,0,  1,0,0,1,0,0,1,0,0,1,0,0,
-            0,1,0,0,1,0,0,1,0,0,1,0,      0,-1,0,0,-1,0,0,-1,0,0,-1,0];
-  const I=[]; for(let f=0;f<6;f++){ const o=f*4; I.push(o,o+1,o+2, o,o+2,o+3); }
-  const C=[]; for(let i=0;i<24;i++) C.push(col[0],col[1],col[2]);
-  const UV=new Array(24*2).fill(0);
-  return makeMesh(P,N,C,UV,I);
-}
-function plane(size=10,col=[.2,.25,.28]){
-  const s=size/2; const P=[-s,0,-s, s,0,-s, s,0,s, -s,0,s];
-  const N=[0,1,0,0,1,0,0,1,0,0,1,0];
-  const C=[col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2]];
-  const UV=[0,0, 1,0, 1,1, 0,1];
-  const I=[0,1,2, 0,2,3];
-  return makeMesh(P,N,C,UV,I);
-}
-function quad(w=1,h=1, col=[1,1,1]){ // billboardable, UVed
-  const x=w/2, y=h/2;
-  const P=[-x,-y,0, x,-y,0, x,y,0, -x,y,0];
-  const N=[0,0,1,0,0,1,0,0,1,0,0,1];
-  const C=[col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2]];
-  const UV=[0,1, 1,1, 1,0, 0,0];
-  const I=[0,1,2, 0,2,3];
-  return makeMesh(P,N,C,UV,I);
-}
-/* Validation: box/plane/quad buffers allocate; if undefined index, I did a dumb. Proceed. */
+/* ========= C. Meshes ========= */
+function interleave(P,N,C,UV){const vc=P.length/3, arr=new Float32Array(vc*11); let o=0; for(let i=0;i<vc;i++){arr[o++]=P[i*3];arr[o++]=P[i*3+1];arr[o++]=P[i*3+2]; arr[o++]=N[i*3];arr[o++]=N[i*3+1];arr[o++]=N[i*3+2]; arr[o++]=C[i*3];arr[o++]=C[i*3+1];arr[o++]=C[i*3+2]; arr[o++]=(UV?UV[i*2]:0); arr[o++]=(UV?UV[i*2+1]:0);} return arr;}
+function mesh(P,N,C,UV,I){const vbo=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vbo); gl.bufferData(gl.ARRAY_BUFFER,interleave(P,N,C,UV),gl.STATIC_DRAW); const ibo=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I),gl.STATIC_DRAW); return {vbo,ibo,count:I.length,stride:44};}
+function bind(m){gl.bindBuffer(gl.ARRAY_BUFFER,m.vbo); gl.vertexAttribPointer(L.aPos,3,gl.FLOAT,false,m.stride,0); gl.enableVertexAttribArray(L.aPos); gl.vertexAttribPointer(L.aNormal,3,gl.FLOAT,false,m.stride,12); gl.enableVertexAttribArray(L.aNormal); gl.vertexAttribPointer(L.aColor,3,gl.FLOAT,false,m.stride,24); gl.enableVertexAttribArray(L.aColor); gl.vertexAttribPointer(L.aUV,2,gl.FLOAT,false,m.stride,36); gl.enableVertexAttribArray(L.aUV); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.ibo);}
+function box(w=1,h=1,d=1,col=[.7,.72,.75]){const x=w/2,y=h/2,z=d/2; const P=[-x,-y,-z, x,-y,-z, x, y,-z, -x, y,-z,  -x,-y, z, x,-y, z, x, y, z, -x, y, z,  -x,-y,-z,-x, y,-z,-x, y, z,-x,-y, z,   x,-y,-z, x,-y, z, x, y, z, x, y,-z,  -x, y,-z, x, y,-z, x, y, z, -x, y, z,  -x,-y,-z,-x,-y, z, x,-y, z, x,-y,-z];
+const N=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,  0,0,1,0,0,1,0,0,1,0,0,1,  -1,0,0,-1,0,0,-1,0,0,-1,0,0,  1,0,0,1,0,0,1,0,0,1,0,0,  0,1,0,0,1,0,0,1,0,0,1,0,  0,-1,0,0,-1,0,0,-1,0,0,-1,0];
+let C=[]; for(let i=0;i<24;i++) C.push(col[0],col[1],col[2]); const UV=new Array(48).fill(0); const I=[]; for(let f=0;f<6;f++){const o=f*4; I.push(o,o+1,o+2,o,o+2,o+3);} return mesh(P,N,C,UV,I);}
+function plane(size=10,col=[.2,.25,.28]){const s=size/2, P=[-s,0,-s, s,0,-s, s,0,s, -s,0,s], N=[0,1,0,0,1,0,0,1,0,0,1,0], C=[...col,...col,...col,...col], UV=[0,0,1,0,1,1,0,1], I=[0,1,2,0,2,3]; return mesh(P,N,C,UV,I);}
+function quad(w=1,h=1){const x=w/2,y=h/2, P=[-x,-y,0, x,-y,0, x,y,0, -x,y,0], N=[0,0,1,0,0,1,0,0,1,0,0,1], C=[1,1,1,1,1,1,1,1,1,1,1,1], UV=[0,1,1,1,1,0,0,0], I=[0,1,2,0,2,3]; return mesh(P,N,C,UV,I);}
+const quadMesh=quad(1,2);
 
-/* ========================
-   Section D: Procedural textures (sprites/trees/torch)
-   ======================== */
+/* ========= D. Procedural textures ========= */
 function makeSprite(kind){
-  const c=document.createElement('canvas'); c.width=64; c.height=96; const ctx=c.getContext('2d');
-  ctx.clearRect(0,0,64,96);
-  // body
-  ctx.fillStyle= kind==='guard' ? '#9aa8d8' : (kind==='merchant' ? '#d8a69a' : '#b9d89a');
-  ctx.fillRect(18,35,28,38);
-  // head
-  ctx.fillStyle='#f3e0c7'; ctx.fillRect(22,14,20,20);
-  // eyes
-  ctx.fillStyle='#222'; ctx.fillRect(27,22,3,3); ctx.fillRect(34,22,3,3);
-  // belt
-  ctx.fillStyle='#4a3b2a'; ctx.fillRect(18,56,28,4);
-  // hat/helm
-  if(kind==='guard'){ ctx.fillStyle='#6e7bb0'; ctx.fillRect(20,10,24,8); }
-  if(kind==='merchant'){ ctx.fillStyle='#7d4a2a'; ctx.fillRect(18,10,28,6); }
-  // outline
-  ctx.strokeStyle='#111a'; ctx.strokeRect(18,35,28,38); ctx.strokeRect(22,14,20,20);
+  const c=document.createElement('canvas'); c.width=64; c.height=96; const k=c.getContext('2d'); k.fillStyle= kind==='guard'?'#9aa8d8':(kind==='merchant'?'#d8a69a':'#b9d89a'); k.fillRect(18,35,28,38);
+  k.fillStyle='#f3e0c7'; k.fillRect(22,14,20,20); k.fillStyle='#222'; k.fillRect(27,22,3,3); k.fillRect(34,22,3,3);
+  k.fillStyle='#4a3b2a'; k.fillRect(18,56,28,4);
+  if(kind==='guard'){ k.fillStyle='#6e7bb0'; k.fillRect(20,10,24,8); }
+  if(kind==='merchant'){ k.fillStyle='#7d4a2a'; k.fillRect(18,10,28,6); }
   return c;
 }
-function texFromCanvas(canv){
-  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canv);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  return tex;
-}
-/* Validation: sprites are tiny pixel art, uploaded to GPU. Proceed. */
+function texFromCanvas(c){const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t;}
 
-/* ========================
-   Section E: World build
-   ======================== */
-const Data = JSON.parse(document.getElementById('game-data').textContent);
-const meshes = { box: box(), ground: plane(400,[0.18,0.22,0.26]) };
-const quadMesh = quad(1,2,[1,1,1]); // used for sprites and trees
-const entities = []; const solids=[]; const interactives=[];
-
-function addEntity(kind, mesh, model, color, opts={}){
-  const e={kind, mesh, model, color, ...opts};
-  entities.push(e);
-  if(opts.solid) solids.push(e);
-  if(opts.interactive) interactives.push(e);
-  return e;
+/* ========= E. World ========= */
+const Data=JSON.parse(document.getElementById('game-data').textContent);
+function heightAt(x,z){ const hill=Data.world.hillHeight*Math.exp(-((x-Data.world.castle.center[0])**2+(z-Data.world.castle.center[2]+8)**2)/550); const bumps=Math.sin(x*0.12)*0.2+Math.cos(z*0.18)*0.18; return hill+bumps*0.6; }
+const entities=[], solids=[], interactives=[], sprites=[];
+function addEnt(kind, m, opts={}){const e={kind, model:m, ...opts}; entities.push(e); if(opts.solid) solids.push(e); if(opts.interactive) interactives.push(e); return e;}
+addEnt('ground', Mmul(Mtr(v3(0,0,0)), Msc(v3(400,0.02,400))), {mesh:box(400,0.02,400,[0.18,0.22,0.26])});
+function addBoxAt(x,y,z,sx,sy,sz,col,solid=true){return addEnt('box', Mmul(Mtr(v3(x,y+sy/2,z)), Msc(v3(sx,sy,sz))), {mesh:box(sx,sy,sz,col), x,y,z,sx,sy,sz,solid});}
+function addDecal(x,z,w,d,col){return addEnt('decal', Mmul(Mtr(v3(x,0.02,z)), Msc(v3(w,0.04,d))), {mesh:box(w,0.04,d,col),solid:false});}
+function addWater(x,z,w,d){return addEnt('water', Mmul(Mtr(v3(x,-0.02,z)), Msc(v3(w,0.02,d))), {mesh:box(w,0.02,d,[0.16,0.28,0.38]),solid:false});}
+function addTorch(x,z){const y=heightAt(x,z); addBoxAt(x,y,z,0.12,1.2,0.12,[0.35,0.28,0.2],true);
+  const flame=(()=>{const c=document.createElement('canvas'); c.width=32;c.height=48; const k=c.getContext('2d'); const g=k.createRadialGradient(16,28,2,16,28,16); g.addColorStop(0,'rgba(255,240,200,1)'); g.addColorStop(1,'rgba(255,120,0,0)'); k.fillStyle=g; k.fillRect(0,0,32,48); return c;})();
+  addEnt('flame', I(), {mesh:quadMesh, x, y:y+1.1, z, sprite:texFromCanvas(flame), billboard:true});
 }
-
-/* Terrain: simple height function + visual plane; use analytic height for y */
-function heightAt(x,z){
-  const hill = Data.world.hillHeight * Math.exp(-((x-Data.world.castle.center[0])**2 + (z-Data.world.castle.center[2]+8)**2)/550);
-  const bumps = Math.sin(x*0.12)*0.2 + Math.cos(z*0.18)*0.18;
-  return (hill + bumps*0.6);
+function addTree(x,z){const y=heightAt(x,z); addBoxAt(x,y,z,0.3,1.2,0.3,[0.40,0.30,0.22],true);
+  const leaf=(()=>{const c=document.createElement('canvas'); c.width=64;c.height=64; const k=c.getContext('2d'); k.fillStyle='#33583a'; k.beginPath(); k.arc(32,32,28,0,TAU); k.fill(); return c;})(); const t=texFromCanvas(leaf);
+  addEnt('tree', I(), {mesh:quadMesh, x, y:y+1.7, z, sprite:t, billboard:true});
+  addEnt('tree', Mry(Math.PI/2), {mesh:quadMesh, x, y:y+1.7, z, sprite:t, billboard:true});
 }
-addEntity('ground', meshes.ground, mIdent(), [0.18,0.22,0.26], {solid:false});
+function addSprite(name, spriteType, x,z, role, meta){const y=heightAt(x,z); const e=addEnt('sprite', I(), {mesh:quadMesh, x, y:y+1.0, z, sprite:texFromCanvas(makeSprite(spriteType)), role, meta, billboard:true}); sprites.push(e); return e;}
 
-/* Paths, water, bridge, trees, stalls, fences, torches */
-function addBoxAt(x,y,z,sx,sy,sz,color,solid=true){
-  const m = mMul(mTrans(vec3(x,y+sy/2,z)), mScale(vec3(sx,sy,sz)));
-  return addEntity('box', box(sx,sy,sz,color), m, color, {x,y,z,sx,sy,sz,solid});
-}
-function addFlatRect(x,z,w,d,color){
-  const m = mMul(mTrans(vec3(x,0.01,z)), mScale(vec3(w,0.02,d)));
-  return addEntity('decal', box(w,0.02,d,color), m, color, {solid:false});
-}
-function addTorch(x,z){
-  const y=heightAt(x,z);
-  addBoxAt(x,y,z,0.12,1.2,0.12,[0.35,0.28,0.2],true);
-  // flame billboard
-  const e = addEntity('flame', quadMesh, mIdent(), [1,1,1], {x, y:y+1.1, z, sprite:texFromCanvas((()=>{const c=document.createElement('canvas'); c.width=32;c.height=48; const k=c.getContext('2d'); const g=k.createRadialGradient(16,28,2, 16,28,16); g.addColorStop(0,'rgba(255,240,200,1)'); g.addColorStop(1,'rgba(255,120,0,0)'); k.fillStyle=g; k.fillRect(0,0,32,48); return c;})())});
-  e.billboard=true;
-}
-function addTree(x,z){
-  const y=heightAt(x,z);
-  // trunk
-  addBoxAt(x,y,z,0.3,1.2,0.3,[0.40,0.30,0.22],true);
-  // foliage as crossed quads
-  const t=texFromCanvas((()=>{const c=document.createElement('canvas'); c.width=64;c.height=64; const k=c.getContext('2d'); k.fillStyle='#33583a'; k.beginPath(); k.arc(32,32,28,0,TAU); k.fill(); return c;})());
-  const e1=addEntity('tree', quadMesh, mIdent(), [1,1,1], {x, y:y+1.7, z, sprite:t, billboard:true});
-  const e2=addEntity('tree', quadMesh, mMul(mRotY(Math.PI/2), mIdent()), [1,1,1], {x, y:y+1.7, z, sprite:t, billboard:true, extra:true});
-}
-function addStall(x,z){
-  const y=heightAt(x,z);
-  addBoxAt(x,y,z,2.2,1.2,1.4,[0.52,0.42,0.33],true);
-  addBoxAt(x,y+1.2,z,2.2,0.12,1.4,[0.3,0.3,0.32],true);
-}
-function addWaterArea(x,z,w,d){
-  const m = mMul(mTrans(vec3(x, -0.02, z)), mScale(vec3(w,0.02,d)));
-  addEntity('water', box(w,0.02,d,[0.16,0.28,0.38]), m, [0.16,0.28,0.38], {solid:false});
-}
+/* Town paths, water, bridge, trees, stalls */
+addDecal(0,18,30,4,[0.28,0.25,0.22]); addDecal(0,6,26,3,[0.28,0.25,0.22]); addDecal(0,-6,20,3,[0.28,0.25,0.22]);
+addWater(-18,14,10,8); addBoxAt(-18,heightAt(-18,14),14,6,0.2,1.6,[0.44,0.38,0.32]); addBoxAt(-18,heightAt(-18,14),14,0.6,0.4,8,[0.44,0.38,0.32]);
+for(let i=0;i<14;i++){const a=i/14*TAU, r=26+Math.random()*8; addTree(Math.cos(a)*r, 20+Math.sin(a)*r); }
+function addStall(x,z){const y=heightAt(x,z); addBoxAt(x,y,z,2.2,1.2,1.4,[0.52,0.42,0.33]); addBoxAt(x,y+1.2,z,2.2,0.12,1.4,[0.3,0.3,0.32]);}
+addStall(-10,24); addStall(8,24); addTorch(0,-13); addTorch(-4,-13); addTorch(4,-13); addTorch(0,22); addTorch(12,22); addTorch(-12,22);
 
-// Paths from town to castle
-addFlatRect(0,18, 30,4,[0.28,0.25,0.22]);
-addFlatRect(0,6, 26,3,[0.28,0.25,0.22]);
-addFlatRect(0,-6, 20,3,[0.28,0.25,0.22]);
+/* Castle */
+const C=Data.world.castle, r=C.topRadius, yTop=heightAt(C.center[0],C.center[2])+2.6;
+addBoxAt(0,yTop,-8, r*2,2.6,0.6,[0.58,0.60,0.64]); addBoxAt(0,yTop,-8+2*r, r*2,2.6,0.6,[0.58,0.60,0.64]);
+addBoxAt(-r,yTop,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64]); addBoxAt(r,yTop,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64]);
+addBoxAt(0,yTop+3.5,-8+r*0.5, 6,7,6,[0.54,0.55,0.58]);
 
-// Pond + bridge
-addWaterArea(-18,14, 10,8);
-addBoxAt(-18,heightAt(-18,14),14, 0.6,0.4,8,[0.44,0.38,0.32],true); // tiny bridge rail
-addBoxAt(-18,heightAt(-18,14),14, 6,0.2,1.6,[0.44,0.38,0.32],true); // bridge deck
+/* Gate door + objects */
+function addDoor(obj){const s=obj.size, p=obj.position, y=heightAt(p[0],p[2]); const ent=addBoxAt(p[0],y,p[2],s[0],s[1],s[2],[0.44,0.34,0.22],true); ent.interactive={kind:'door',meta:obj}; interactives.push(ent); ent.door={open:false,angle:0,openAngle:(obj.openAngle||90)*Math.PI/180,hinge:obj.hinge||'left',locked:!!obj.locked}; return ent;}
+const gateObj=Data.objects.find(o=>o.type==='door'); const gate=gateObj?addDoor(gateObj):null;
+for(const o of Data.objects){ if(o.type==='door') continue; const s=o.size||[1,1,1], p=o.position, y=heightAt(p[0],p[2]); const e=addBoxAt(p[0],y,p[2],s[0],s[1],s[2], o.type==='sign'?[0.75,0.86,0.95]:[0.52,0.46,0.38], true); e.interactive={kind:o.type, meta:o}; interactives.push(e); }
 
-// Trees and stalls
-for(let i=0;i<14;i++){ const a=i/14*TAU, r=26+Math.random()*8; addTree(Math.cos(a)*r, 20+Math.sin(a)*r); }
-addStall(-10,24); addStall(8,24);
-addTorch(0,-13); addTorch(-4,-13); addTorch(4,-13); addTorch(0,22); addTorch(12,22); addTorch(-12,22);
+/* Actors */
+const actors={};
+for(const n of Data.npcs){actors[n.id]=n; const s=addSprite(n.name, n.spriteType||'townsfolk', n.location.x, n.location.z, 'npc', n);}
+for(const g of Data.guards){actors[g.id]=g; const p=g.patrolRoute[0]; const s=addSprite(g.name, g.spriteType||'guard', p[0], p[2], 'guard', g); s.ai={route:g.patrolRoute.map(p=>v3(p[0],0,p[2])),i:0,speed:1.5,wait:0};}
 
-/* Castle walls/towers/keep */
-const C = Data.world.castle;
-function addWallRing(){
-  const r=C.topRadius, y=heightAt(C.center[0],C.center[2])+2.6;
-  addBoxAt(0,y,-8, r*2,2.6,0.6,[0.58,0.60,0.64],true);
-  addBoxAt(0,y,-8+2*r, r*2,2.6,0.6,[0.58,0.60,0.64],true);
-  addBoxAt(-r,y,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64],true);
-  addBoxAt(r,y,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64],true);
-  // towers
-  const th=5, tw=2.6;
-  addBoxAt(-r,y+th/2,-8, tw,th,tw,[0.62,0.64,0.68],true);
-  addBoxAt(r,y+th/2,-8, tw,th,tw,[0.62,0.64,0.68],true);
-  addBoxAt(-r,y+th/2,-8+2*r, tw,th,tw,[0.62,0.64,0.68],true);
-  addBoxAt(r,y+th/2,-8+2*r, tw,th,tw,[0.62,0.64,0.68],true);
-  // keep
-  addBoxAt(0,y+3.5,-8+r*0.5, 6,7,6,[0.54,0.55,0.58],true);
-}
-addWallRing();
+/* ========= F. Player, input, safer spawn ========= */
+const START={x:0,z:26}; // open square
+const state={ pos:v3(START.x,heightAt(START.x,START.z)+1.65,START.z), yaw:Math.PI, pitch:0, speed:4.0, keys:{}, mobile:('ontouchstart' in window)||navigator.maxTouchPoints>0, pointerLocked:false, last:performance.now() };
+function forward(){return v3(-Math.sin(state.yaw)*Math.cos(state.pitch), Math.sin(state.pitch), -Math.cos(state.yaw)*Math.cos(state.pitch));}
+function right(){const f=forward(); return norm(cross(v3(0,1,0),f));}
 
-// Gate door (interactive)
-function addDoor(obj){
-  const s=obj.size, p=obj.position, y=heightAt(p[0],p[2]);
-  const ent = addBoxAt(p[0], y, p[2], s[0], s[1], s[2], [0.44,0.34,0.22], true);
-  ent.interactive={kind:'door',meta:obj}; interactives.push(ent);
-  ent.door={open:false,angle:0,openAngle:(obj.openAngle||90)*Math.PI/180,hinge:obj.hinge||'left',locked:!!obj.locked};
-  return ent;
-}
-const gateObj = Data.objects.find(o=>o.type==='door'); const gate = gateObj? addDoor(gateObj):null;
+addEventListener('keydown',e=>{state.keys[e.key.toLowerCase()]=true; if(e.key.toLowerCase()==='e') interact(); if(e.key.toLowerCase()==='r') rescue(); if(e.key==='Escape') document.exitPointerLock?.();});
+addEventListener('keyup',e=>{state.keys[e.key.toLowerCase()]=false;});
+canvas.addEventListener('click',()=>{ if(!state.mobile) canvas.requestPointerLock?.(); });
+document.addEventListener('pointerlockchange',()=>{state.pointerLocked=(document.pointerLockElement===canvas);});
+document.addEventListener('mousemove',e=>{ if(!state.pointerLocked) return; const s=0.0025; state.yaw-=e.movementX*s; state.pitch=clamp(state.pitch - e.movementY*s,-1.2,1.2); });
 
-// Town props & interactives
-for(const o of Data.objects){
-  if(o.type==='door') continue;
-  const s=o.size||[1,1,1], p=o.position, y=heightAt(p[0],p[2]);
-  const e = addBoxAt(p[0], y, p[2], s[0], s[1], s[2], o.type==='sign'?[0.75,0.86,0.95]:[0.52,0.46,0.38], true);
-  e.interactive={kind:o.type, meta:o}; interactives.push(e);
-}
-
-/* NPCs and Guards as billboard sprites */
-const spriteTex = {
-  townsfolk: texFromCanvas(makeSprite('townsfolk')),
-  merchant:   texFromCanvas(makeSprite('merchant')),
-  guard:      texFromCanvas(makeSprite('guard'))
-};
-const sprites=[];
-function addSprite(name, kind, x,z, spriteType){
-  const y=heightAt(x,z);
-  const e = addEntity('sprite', quadMesh, mIdent(), [1,1,1], {x, y:y+1.0, z, billboard:true, sprite:spriteTex[spriteType||'townsfolk'], name, solid:false});
-  sprites.push(e); return e;
-}
-const actors = {}; // id -> data
-for(const n of Data.npcs){
-  actors[n.id]=n;
-  const s=addSprite(n.name,'npc', n.location.x, n.location.z, n.spriteType||'townsfolk');
-  s.role='npc'; s.meta=n;
-}
-for(const g of Data.guards){
-  actors[g.id]=g;
-  const p=g.patrolRoute[0]; const s=addSprite(g.name,'guard', p[0], p[2], g.spriteType||'guard');
-  s.role='guard'; s.meta=g; s.ai={route:g.patrolRoute.map(p=>vec3(p[0],0,p[2])), i:0, speed:1.5, wait:0};
-}
-/* Validation: world populated with paths, trees, water, stalls, torches; NPC/guards appear as 2D sprites. Proceed. */
-
-/* ========================
-   Section F: Player, input, collisions
-   ======================== */
-const state = {
-  pos: vec3(0, heightAt(0,24)+1.65, 24),
-  yaw: Math.PI, pitch: 0, speed: 4.0, last: performance.now(),
-  keys: {}, mobile: ('ontouchstart' in window) || navigator.maxTouchPoints>0,
-  lookSensDesktop: 0.0025, lookSensMobile: 0.035,
-  pointerLocked:false
-};
-function forward(){ return vec3(-Math.sin(state.yaw)*Math.cos(state.pitch), Math.sin(state.pitch), -Math.cos(state.yaw)*Math.cos(state.pitch)); }
-function right(){ const f=forward(); return vnorm(cross(vec3(0,1,0), f)); }
-
-addEventListener('keydown', e=>{ state.keys[e.key.toLowerCase()] = true; if(e.key.toLowerCase()==='e') interact(); if(e.key==='Escape') unlock(); });
-addEventListener('keyup', e=>{ state.keys[e.key.toLowerCase()] = false; });
-
-canvas.addEventListener('click', ()=>{ if(!state.mobile) canvas.requestPointerLock?.(); });
-document.addEventListener('pointerlockchange', ()=>{ state.pointerLocked=(document.pointerLockElement===canvas); });
-document.addEventListener('mousemove', e=>{
-  if(!state.pointerLocked) return;
-  state.yaw -= e.movementX * state.lookSensDesktop;
-  state.pitch = clamp(state.pitch - e.movementY * state.lookSensDesktop, -1.2, 1.2);
-});
-
-/* Mobile sticks: non-inverted look (up = look up), deadzones, smoothing */
+/* Mobile sticks (look is non-inverted) + long-press Unstuck */
 const stickL=document.getElementById('stickL'), stickR=document.getElementById('stickR'), useBtn=document.getElementById('useBtn');
-let lVec=[0,0], rVec=[0,0];
-function setupSticks(){
-  if(!state.mobile){ stickL.style.display=stickR.style.display=useBtn.style.display='none'; return; }
+let lVec=[0,0], rVec=[0,0]; let useDown=0, holdTimer=null;
+function setupSticks(){ if(!state.mobile){stickL.style.display=stickR.style.display=useBtn.style.display='none';return;}
   stickL.style.display=stickR.style.display=useBtn.style.display='block';
-  const mk=(root,setter)=>{
-    let id=null, knob=root.querySelector('.knob'), origin=[0,0];
-    const rad = root.clientWidth*0.42;
-    function pos(t){ const r=root.getBoundingClientRect(); return [t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)]; }
-    root.addEventListener('touchstart', e=>{ const t=e.changedTouches[0]; id=t.identifier; origin=pos(t); knob.style.transition='0s'; },{passive:true});
-    root.addEventListener('touchmove', e=>{
-      for(const t of e.changedTouches){ if(t.identifier!==id) continue;
-        const p=pos(t); let dx=clamp(p[0],-rad,rad), dy=clamp(p[1],-rad,rad);
-        knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        setter([dx/rad, dy/rad]);
-      }
-    },{passive:true});
-    function end(){ id=null; setter([0,0]); knob.style.transition='.12s'; knob.style.transform='translate(-50%,-50%)'; }
-    root.addEventListener('touchend', end,{passive:true}); root.addEventListener('touchcancel', end,{passive:true});
-  };
-  mk(stickL, v=>lVec=v);
-  mk(stickR, v=>rVec=v);
-  useBtn.addEventListener('click', ()=>interact());
+  const mk=(root,set)=>{ let id=null, knob=root.querySelector('.knob'); const rad=root.clientWidth*0.42;
+    function pos(t){const r=root.getBoundingClientRect(); return [t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)];}
+    root.addEventListener('touchstart',e=>{const t=e.changedTouches[0]; id=t.identifier;},{passive:true});
+    root.addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier!==id)continue; const p=pos(t); let dx=clamp(p[0],-rad,rad), dy=clamp(p[1],-rad,rad); knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; set([dx/rad, dy/rad]);}}, {passive:true});
+    function end(){id=null; set([0,0]); knob.style.transform='translate(-50%,-50%)';}
+    root.addEventListener('touchend',end,{passive:true}); root.addEventListener('touchcancel',end,{passive:true});
+  }; mk(stickL,v=>lVec=v); mk(stickR,v=>rVec=v);
+  useBtn.addEventListener('touchstart',()=>{useDown=performance.now(); holdTimer=setTimeout(rescue,1000);},{passive:true});
+  useBtn.addEventListener('touchend',()=>{clearTimeout(holdTimer); if(performance.now()-useDown<1000) interact();},{passive:true});
 }
-function unlock(){ if(document.exitPointerLock) document.exitPointerLock(); }
 setupSticks();
 
-/* Collisions: simple capsule (radius r) vs AABB pushback in XZ */
-const colliders = () => solids.map(s=>({x:s.x||0,y:s.y||0,z:s.z||0, sx:s.sx||1,sy:s.sy||1,sz:s.sz||1}));
-function resolveXZ(next, r=0.35){
-  for(const c of colliders()){
-    // vertical span check
-    const minY=(c.y)+(0), maxY=(c.y)+(c.sy);
-    const py=next[1];
-    if(py < minY-0.1 || py > maxY+1.2) continue;
-    // 2D push on XZ
-    const dx = clamp(next[0], c.x - c.sx/2 - r, c.x + c.sx/2 + r) - next[0];
-    const dz = clamp(next[2], c.z - c.sz/2 - r, c.z + c.sz/2 + r) - next[2];
-    if(Math.abs(dx)<r && Math.abs(dz)<r){
-      if(Math.abs(dx) < Math.abs(dz)) next[0] += (dx>0? (r-Math.abs(dx)) : -(r-Math.abs(dx)));
-      else next[2] += (dz>0? (r-Math.abs(dz)) : -(r-Math.abs(dz)));
+/* Robust capsule vs AABB pushout (fixes “born inside wall”) */
+const PLAYER_R=0.35;
+function aabbPushOut(next){ // modifies next in place
+  for(const s of solids){
+    const minX=(s.x - (s.sx||1)/2) - PLAYER_R, maxX=(s.x + (s.sx||1)/2) + PLAYER_R;
+    const minZ=(s.z - (s.sz||1)/2) - PLAYER_R, maxZ=(s.z + (s.sz||1)/2) + PLAYER_R;
+    const minY=(s.y), maxY=(s.y + (s.sy||1));
+    if(next[1] < minY-0.2 || next[1] > maxY+1.2) continue;
+    const qx=clamp(next[0], minX+PLAYER_R, maxX-PLAYER_R);
+    const qz=clamp(next[2], minZ+PLAYER_R, maxZ-PLAYER_R);
+    let dx=next[0]-qx, dz=next[2]-qz; const d2=dx*dx+dz*dz;
+    if(d2 < PLAYER_R*PLAYER_R){
+      if(d2>1e-6){ const d=Math.sqrt(d2); const nx=dx/d, nz=dz/d; const push=PLAYER_R-d; next[0]+=nx*push; next[2]+=nz*push; }
+      else{
+        // Deep inside: pick smallest axis to escape
+        const toLeft=next[0]-(minX+PLAYER_R), toRight=(maxX-PLAYER_R)-next[0];
+        const toBack=next[2]-(minZ+PLAYER_R), toFront=(maxZ-PLAYER_R)-next[2];
+        const m=Math.min(toLeft,toRight,toBack,toFront);
+        if(m===toLeft) next[0]=minX+PLAYER_R;
+        else if(m===toRight) next[0]=maxX-PLAYER_R;
+        else if(m===toBack) next[2]=minZ+PLAYER_R;
+        else next[2]=maxZ-PLAYER_R;
+      }
     }
   }
   return next;
 }
+function collidesAt(p){
+  for(const s of solids){
+    const minX=s.x-(s.sx||1)/2-PLAYER_R, maxX=s.x+(s.sx||1)/2+PLAYER_R;
+    const minZ=s.z-(s.sz||1)/2-PLAYER_R, maxZ=s.z+(s.sz||1)/2+PLAYER_R;
+    const minY=s.y, maxY=s.y+(s.sy||1);
+    if(p[1] < minY-0.2 || p[1] > maxY+1.2) continue;
+    if(p[0]>minX && p[0]<maxX && p[2]>minZ && p[2]<maxZ) return true;
+  } return false;
+}
+function safeSpotNear(x,z){
+  // radial search for first non-colliding point
+  for(let r=0;r<12;r++){
+    const rad= r*1.0;
+    for(let i=0;i<16;i++){
+      const a=i/16*TAU;
+      const px=x+Math.cos(a)*rad, pz=z+Math.sin(a)*rad;
+      const py=heightAt(px,pz)+1.65;
+      const p=v3(px,py,pz);
+      if(!collidesAt(p)) return p;
+    }
+  }
+  return v3(x,heightAt(x,z)+1.65,z);
+}
+function rescue(){
+  state.pos = safeSpotNear(START.x, START.z);
+  toast('Unstuck: moved to a safe spot');
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._id); toast._id=setTimeout(()=>t.style.display='none',1200);}
 
-/* Validation: mobile look stick now non-inverted; collisions block walls/houses/keep. Proceed. */
-
-/* ========================
-   Section G: Interactions, AI
-   ======================== */
+/* ========= G. Interactions & AI ========= */
 const promptEl=document.getElementById('prompt');
 const dlg=document.getElementById('dlg'), dlgTitle=document.getElementById('dlgTitle'), dlgBody=document.getElementById('dlgBody'), dlgActs=document.getElementById('dlgActs');
-
-function showPrompt(t){ promptEl.textContent=t; promptEl.style.display='block'; }
-function hidePrompt(){ promptEl.style.display='none'; }
-
+function showPrompt(t){promptEl.textContent=t; promptEl.style.display='block';} function hidePrompt(){promptEl.style.display='none';}
 function nearestInteractable(){
-  let best=null, bestD=2.6, cosFOV=Math.cos(28*Math.PI/180);
-  const f = vec3(forward()[0],0,forward()[2]); const fN=vnorm(f);
-  function consider(obj, x,y,z, name, kind, metaRef){
-    const dx=x-state.pos[0], dz=z-state.pos[2], d=Math.hypot(dx,dz); if(d>bestD) return;
-    const v = vnorm(vec3(dx,0,dz));
-    if(dot(fN,v) < cosFOV) return;
-    best={x,y,z,name,kind,ref:metaRef};
-    bestD=d;
-  }
-  for(const e of interactives){
-    consider(e, e.x||0, e.y||0, e.z||0, e.interactive?.meta?.name || e.interactive?.meta?.id || 'Object', e.interactive?.kind, e);
-  }
-  for(const s of sprites){
-    consider(s, s.x, s.y, s.z, s.meta?.name || s.name, s.role, s);
-  }
+  let best=null, bestD=2.6, cosF=Math.cos(28*Math.PI/180);
+  const f=norm(v3(forward()[0],0,forward()[2]));
+  function consider(e,name,kind){const dx=e.x-state.pos[0], dz=e.z-state.pos[2], d=Math.hypot(dx,dz); if(d>bestD) return; const v=norm(v3(dx,0,dz)); if(dot(f,v)<cosF) return; best={e,name,kind}; bestD=d;}
+  for(const e of interactives) consider(e, e.interactive.meta.name||e.interactive.meta.id||'Object', e.interactive.kind);
+  for(const s of sprites) consider(s, s.meta?.name||s.name, s.role);
   return best;
 }
-
-function openDialogue(title, text, options){
-  dlgTitle.textContent=title; dlgBody.textContent=text||''; dlgActs.innerHTML='';
-  (options||[{label:'Close',action:'close'}]).forEach(o=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=o.label;
-    b.onclick=()=>{ if(o.action==='close') dlg.style.display='none';
-      else if(o.action==='trade') dlgBody.textContent='Trading stub. Prices imaginary. Coins too.';
-      else if(o.action==='quest') dlgBody.textContent='Quest stub: fetch three feathers and a dramatic backstory.';
-    };
-    if(o.action!=='close') b.classList.add('primary');
-    dlgActs.appendChild(b);
-  });
-  dlg.style.display='flex';
+function openDialogue(title,text,opts){ dlgTitle.textContent=title; dlgBody.textContent=text||''; dlgActs.innerHTML=''; (opts||[{label:'Close',action:'close'}]).forEach(o=>{const b=document.createElement('button'); b.className='btn'; b.textContent=o.label; b.onclick=()=>{if(o.action==='close') dlg.style.display='none'; else if(o.action==='trade') dlgBody.textContent='Trading stub.'; else if(o.action==='quest') dlgBody.textContent='Fetch three feathers. Try not to die.';}; dlgActs.appendChild(b);}); dlg.style.display='flex';}
+function interact(){const h=nearestInteractable(); if(!h) return;
+  if(h.kind==='npc'||h.kind==='guard'){const m=h.e.meta; openDialogue(m.name, m.dialog?.greet||'...', m.dialog?.options||[{label:'Close',action:'close'}]);}
+  else if(h.kind==='door'){const d=h.e.door; if(d.locked) openDialogue(h.name,'Locked.'); else d.open=!d.open;}
+  else if(h.kind==='sign'){openDialogue(h.name, h.e.interactive.meta.text||'Unreadable.');}
+  else if(h.kind==='chest'){const loot=(h.e.interactive.meta.loot||[]).join(', ')||'cobwebs'; openDialogue(h.name, 'Inside: '+loot);}
 }
-function interact(){
-  const h = nearestInteractable(); if(!h) return;
-  if(h.kind==='npc' || h.kind==='guard'){
-    const m = h.ref.meta;
-    openDialogue(m.name, m.dialog?.greet || '...', m.dialog?.options || [{label:'Close',action:'close'}]);
-  } else if(h.kind==='door'){
-    const d = h.ref.door; if(d.locked){ openDialogue(h.name,'Locked.',[{label:'Close',action:'close'}]); } else { d.open = !d.open; }
-  } else if(h.kind==='sign'){ openDialogue(h.name, h.ref.interactive.meta.text || 'You stare. It stares back.', [{label:'Close',action:'close'}]);
-  } else if(h.kind==='chest'){ const loot=(h.ref.interactive.meta.loot||[]).join(', ')||'cobwebs'; openDialogue(h.name, 'Inside: '+loot, [{label:'Close',action:'close'}]); }
-}
-
 function stepAI(dt){
-  // Guards patrol
-  for(const s of sprites){
-    if(s.role!=='guard' || !s.meta?.patrolRoute) continue;
-    if(!s.meta._i){ s.meta._i=0; s.meta._wait=0; }
-    if(s.meta._wait>0){ s.meta._wait-=dt; continue; }
-    const route=s.meta.patrolRoute;
-    const tgt = route[s.meta._i];
-    const target=vec3(tgt[0],0,tgt[2]);
-    const to=vsub(target, vec3(s.x,0,s.z)); const dist=vlen(to);
-    if(dist<0.2){ s.meta._i=(s.meta._i+1)%route.length; s.meta._wait=0.5; continue; }
-    const v=vscale(vnorm(to), (s.meta.speed||1.5)*dt);
-    s.x+=v[0]; s.z+=v[2]; s.y=heightAt(s.x,s.z)+1.0;
+  for(const s of sprites){ if(s.role!=='guard'||!s.meta?.patrolRoute) continue; if(!s.meta._i){s.meta._i=0;s.meta._wait=0;}
+    if(s.meta._wait>0){s.meta._wait-=dt; continue;}
+    const r=s.meta.patrolRoute; const tgt=v3(r[s.meta._i][0],0,r[s.meta._i][2]); const to=sub(tgt,v3(s.x,0,s.z)); const d=len(to);
+    if(d<0.2){s.meta._i=(s.meta._i+1)%r.length; s.meta._wait=0.5; continue;}
+    const v=mul(norm(to),(s.meta.speed||1.5)*dt); s.x+=v[0]; s.z+=v[2]; s.y=heightAt(s.x,s.z)+1.0;
   }
-  // Door easing
-  for(const e of interactives){ if(e.door){
-    const t=e.door.open? e.door.openAngle : 0;
-    const diff=t - (e.door.angle||0);
-    e.door.angle = (e.door.angle||0) + clamp(diff, -dt*2.5, dt*2.5);
-  } }
+  for(const e of interactives){ if(e.door){const t=e.door.open?e.door.openAngle:0; const diff=t-(e.door.angle||0); e.door.angle=(e.door.angle||0)+clamp(diff,-dt*2.5,dt*2.5); } }
 }
-/* Validation: guards loop smoothly; doors ease. Proceed. */
 
-/* ========================
-   Section H: Render loop
-   ======================== */
+/* ========= H. Render & movement ========= */
 const status=document.getElementById('status');
-function drawEntity(e, vp){
-  let M=e.model || mIdent();
-  if(e.kind==='box' || e.kind==='decal' || e.kind==='water'){
-    gl.uniform1f(LOC.uUseTex, 0.0);
+function drawNode(e, vp){
+  let M=e.model||I();
+  if(e.door){ // hinge rotation
+    const s=v3(e.sx,e.sy,e.sz), pivot=(e.door.hinge==='left'?-s[0]/2:s[0]/2);
+    const base=Mmul(Mtr(v3(e.x, e.y+e.sy/2, e.z)), Msc(s));
+    let T=Mtr(v3(pivot, -e.sy/2, 0)); T=Mmul(Mry((e.door.hinge==='left'?1:-1)*(e.door.angle||0)), T); T=Mmul(Mtr(v3(-pivot, e.sy/2, 0)), T);
+    M=Mmul(base,T);
   }
-  // Doors: rotate around hinge
-  if(e.door){
-    const s=vec3(e.sx,e.sy,e.sz), pivot = (e.door.hinge==='left'? -s[0]/2 : s[0]/2);
-    const base = mMul(mTrans(vec3(e.x, e.y+e.sy/2, e.z)), mScale(s));
-    let T = mMul(mTrans(vec3(pivot, -e.sy/2, 0)), mIdent());
-    T = mMul(mRotY((e.door.hinge==='left'?1:-1) * (e.door.angle||0)), T);
-    T = mMul(mTrans(vec3(-pivot, e.sy/2, 0)), T);
-    M = mMul(base, T);
-  }
-  gl.uniformMatrix4fv(LOC.uModel,false,M);
-  setupAttribs(e.mesh);
-  gl.drawElements(gl.TRIANGLES, e.mesh.count, gl.UNSIGNED_SHORT, 0);
+  gl.uniformMatrix4fv(L.uModel,false,M);
+  bind(e.mesh||box(1,1,1));
+  gl.uniform1f(L.uUseTex, 0.0);
+  gl.drawElements(gl.TRIANGLES, (e.mesh||box(1,1,1)).count, gl.UNSIGNED_SHORT,0);
 }
 function drawSprite(s, vp){
-  // billboard: face camera horizontally
-  const yaw = Math.atan2(state.pos[0]-s.x, state.pos[2]-s.z);
-  let M=mIdent();
-  M=mMul(mTrans(vec3(s.x, s.y, s.z)), mMul(mRotY(yaw), mScale(vec3(1.0,2.0,1.0))));
-  gl.uniformMatrix4fv(LOC.uModel,false,M);
-  gl.uniform1f(LOC.uUseTex, 1.0);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.sprite); gl.uniform1i(LOC.uTex,0);
-  setupAttribs(quadMesh);
-  gl.disable(gl.CULL_FACE);
-  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  const yaw=Math.atan2(state.pos[0]-s.x, state.pos[2]-s.z);
+  let M=I(); M=Mmul(Mtr(v3(s.x,s.y,s.z)), Mmul(Mry(yaw), Msc(v3(1,2,1))));
+  gl.uniformMatrix4fv(L.uModel,false,M); gl.uniform1f(L.uUseTex,1.0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,s.sprite); gl.uniform1i(L.uTex,0);
+  bind(quadMesh); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   gl.drawElements(gl.TRIANGLES, quadMesh.count, gl.UNSIGNED_SHORT, 0);
   gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);
 }
-function step(dt){
-  // Input
-  let mv=vec3(0,0,0);
-  if(!state.mobile){
-    if(state.keys['w']) mv=vadd(mv, forward());
-    if(state.keys['s']) mv=vsub(mv, forward());
-    if(state.keys['a']) mv=vsub(mv, right());
-    if(state.keys['d']) mv=vadd(mv, right());
-  } else {
-    // Left stick: x strafes, y forward/back; deadzone 0.12
-    const dz=0.12, ax=Math.abs(lVec[0])>dz? lVec[0]:0, ay=Math.abs(lVec[1])>dz? lVec[1]:0;
-    mv=vadd( vscale(right(), ax), vscale(forward(), -ay) );
-    // Right stick: non-inverted look, deadzone 0.08
-    const dz2=0.08, lx=Math.abs(rVec[0])>dz2? rVec[0]:0, ly=Math.abs(rVec[1])>dz2? rVec[1]:0;
-    state.yaw  -= lx * state.lookSensMobile;
-    state.pitch = clamp(state.pitch + (-ly) * state.lookSensMobile * 0.9, -1.2, 1.2); // up on stick = look up
-  }
-  if(vlen(mv)>0) mv=vscale(vnorm(mv), state.speed*dt);
-  // Apply movement and collisions
-  const next=vadd(state.pos, vec3(mv[0],0,mv[2]));
-  next[1]=heightAt(next[0],next[2])+1.65;
-  const resolved = resolveXZ(next);
-  state.pos=resolved;
-
-  // Update AI and doors
-  stepAI(dt);
-
-  // HUD prompt
-  const h=nearestInteractable(); if(h) showPrompt(`E/Use • ${h.name||h.kind}`); else hidePrompt();
+function move(dt){
+  let mv=v3(0,0,0);
+  if(!state.mobile){ if(state.keys['w']) mv=add(mv,forward()); if(state.keys['s']) mv=sub(mv,forward()); if(state.keys['a']) mv=sub(mv,right()); if(state.keys['d']) mv=add(mv,right()); }
+  else{ const dz=0.12, ax=Math.abs(lVec[0])>dz?lVec[0]:0, ay=Math.abs(lVec[1])>dz?lVec[1]:0; mv=add( mul(right(),ax), mul(forward(), -ay) );
+        const dz2=0.08, lx=Math.abs(rVec[0])>dz2?rVec[0]:0, ly=Math.abs(rVec[1])>dz2?rVec[1]:0;
+        state.yaw-=lx*0.035; state.pitch=clamp(state.pitch + (-ly)*0.032, -1.2, 1.2); }
+  if(len(mv)>0) mv=mul(norm(mv), state.speed*dt);
+  let next=add(state.pos, v3(mv[0],0,mv[2])); next[1]=heightAt(next[0],next[2])+1.65;
+  aabbPushOut(next); state.pos=next;
 }
-function render(now){
+let lastT=0;
+function render(t){
   resize();
-  const dt=Math.min(0.05, (now - (render.t||now))/1000); render.t=now;
+  const dt=Math.min(0.05, (t-(lastT||t))/1000); lastT=t;
+  move(dt); stepAI(dt);
 
-  step(dt);
+  const P=Mp(60*Math.PI/180, canvas.width/Math.max(1,canvas.height), 0.05, 500);
+  const V=Mlook(state.pos, forward(), v3(0,1,0));
+  const VP=Mmul(P,V);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.uniform3f(L.uLightDir,0.6,1.0+Math.sin(t*0.001)*0.05,0.25);
 
-  // Camera
-  const proj=mPerspective(60*Math.PI/180, canvas.width/Math.max(1,canvas.height), 0.05, 500);
-  const vp = mMul(proj, mLook(state.pos, forward(), vec3(0,1,0)));
+  for(const e of entities){ if(e.kind==='sprite'||e.kind==='flame') continue; gl.uniformMatrix4fv(L.uMVP,false,Mmul(VP, e.model||I())); drawNode(e,VP); }
+  for(const e of interactives){ if(e.door){ gl.uniformMatrix4fv(L.uMVP,false, Mmul(VP, I())); drawNode(e,VP); } }
+  for(const e of entities){ if(e.kind==='flame'){ let M=Mmul(Mtr(v3(e.x,e.y,e.z)), Msc(v3(0.6+0.05*Math.sin(t*0.02),1.2,1))); gl.uniformMatrix4fv(L.uMVP,false,Mmul(VP,M)); gl.uniformMatrix4fv(L.uModel,false,M); gl.uniform1f(L.uUseTex,1.0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,e.sprite); gl.uniform1i(L.uTex,0); bind(quadMesh); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); gl.drawElements(gl.TRIANGLES, quadMesh.count, gl.UNSIGNED_SHORT, 0); gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);} }
+  for(const s of sprites){ gl.uniformMatrix4fv(L.uMVP,false,Mmul(VP,I())); drawSprite(s,VP); }
 
-  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-  gl.uniform3f(LOC.uLightDir, 0.6, 1.0 + Math.sin(now*0.001)*0.05, 0.25); // tiny flicker
-  // Draw static/boxy stuff
-  for(const e of entities){
-    if(e.kind==='sprite' || e.kind==='flame') continue;
-    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, e.model || mIdent()));
-    gl.uniform1f(LOC.uUseTex, 0.0);
-    drawEntity(e, vp);
-  }
-  // Doors re-render with transformed matrices
-  for(const e of interactives){ if(e.door){
-    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, mIdent()));
-    drawEntity(e, vp);
-  } }
-  // Flames and sprites
-  for(const e of entities){ if(e.kind==='flame'){
-    const M=mMul(mTrans(vec3(e.x, e.y, e.z)), mScale(vec3(0.6+0.05*Math.sin(now*0.02),1.2,1)));
-    gl.uniformMatrix4fv(LOC.uModel,false,M);
-    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, M));
-    gl.uniform1f(LOC.uUseTex, 1.0);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, e.sprite); gl.uniform1i(LOC.uTex,0);
-    setupAttribs(quadMesh); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.drawElements(gl.TRIANGLES, quadMesh.count, gl.UNSIGNED_SHORT, 0);
-    gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);
-  } }
-  for(const s of sprites){
-    const MVP=mMul(vp, mIdent()); gl.uniformMatrix4fv(LOC.uMVP,false,MVP); drawSprite(s, vp);
-  }
-
-  status.textContent=`pos ${state.pos[0].toFixed(1)},${state.pos[1].toFixed(1)},${state.pos[2].toFixed(1)}  yaw ${state.yaw.toFixed(2)} pitch ${state.pitch.toFixed(2)}  mobile:${state.mobile?'yes':'no'}`;
+  const hit=nearestInteractable(); if(hit) showPrompt(`E/Use • ${hit.name||hit.kind}`); else hidePrompt();
+  document.getElementById('status').textContent=`pos ${state.pos[0].toFixed(1)},${state.pos[1].toFixed(1)},${state.pos[2].toFixed(1)} yaw ${state.yaw.toFixed(2)} pitch ${state.pitch.toFixed(2)} mobile:${state.mobile?'yes':'no'}`;
   requestAnimationFrame(render);
 }
 
-/* ========================
-   Section I: Start flow
-   ======================== */
-document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; if(!state.mobile) canvas.requestPointerLock?.(); requestAnimationFrame(render); };
-/* Validation: Start hides overlay, render loop runs, crosshair+prompts show. Proceed. */
+/* ========= I. Start ========= */
+document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; if(!state.mobile) canvas.requestPointerLock?.(); state.pos = safeSpotNear(state.pos[0], state.pos[2]); requestAnimationFrame(render); };
 </script>
 </body>
 </html>
