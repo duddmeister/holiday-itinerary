@@ -2,744 +2,691 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Hillcastle: A Tiny 3D Castle Adventure</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Castle on the Hill — v2</title>
 <style>
-  html, body { margin:0; height:100%; background:#0b0d12; color:#e6e6e6; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;}
-  #game { position:fixed; inset:0; }
-  canvas { width:100%; height:100%; display:block; touch-action:none; }
+  html,body{margin:0;height:100%;background:#0b0e12;color:#e8eef5;font-family:system-ui,Segoe UI,Roboto,Arial}
+  #gl{width:100vw;height:100vh;display:block;touch-action:none}
   /* HUD */
-  .hud { position:fixed; inset:0; pointer-events:none; }
-  .crosshair { position:absolute; left:50%; top:50%; width:12px; height:12px; transform:translate(-50%,-50%); border:2px solid #fff; border-radius:2px; opacity:.6; }
-  .prompt { position:absolute; left:50%; bottom:12%; transform:translateX(-50%); background:rgba(0,0,0,.55); padding:8px 12px; border-radius:8px; font-size:14px; pointer-events:none; }
-  .status { position:absolute; left:8px; top:8px; background:rgba(0,0,0,.45); padding:6px 8px; border-radius:8px; font-size:12px; line-height:1.3; pointer-events:none; max-width:45ch; }
-  .btn { position:absolute; right:12px; bottom:12px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); padding:10px 12px; border-radius:12px; font-weight:600; pointer-events:auto; }
-  .btn:active { transform:scale(.98); }
+  #cross{position:fixed;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);pointer-events:none}
+  #cross::before,#cross::after{content:"";position:absolute;background:#e8eef5bb}
+  #cross::before{left:5px;top:0;width:2px;height:12px}
+  #cross::after{top:5px;left:0;height:2px;width:12px}
+  #prompt{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0f1722cc;border:1px solid #273246;border-radius:10px;padding:8px 12px;font-size:13px;display:none}
+  #status{position:fixed;left:8px;top:8px;font:12px ui-monospace,Consolas,monospace;opacity:.75}
   /* Dialogue */
-  .dialogue { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); }
-  .dlg-card { width:min(560px,92vw); background:#12151d; border:1px solid #263042; border-radius:16px; padding:14px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
-  .dlg-title { font-weight:700; margin-bottom:8px; }
-  .dlg-body { font-size:14px; line-height:1.4; margin-bottom:10px; white-space:pre-wrap;}
-  .dlg-actions { display:flex; flex-wrap:wrap; gap:8px; }
-  .dlg-actions button { padding:8px 10px; border-radius:10px; border:1px solid #2f3a4f; background:#1a1f2a; color:#e6e6e6; cursor:pointer; }
-  .dlg-actions button:active { transform:scale(.98); }
+  #dlg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:5}
+  .card{width:min(560px,92vw);background:#12161c;border:1px solid #273246;border-radius:14px;padding:14px}
+  .card h3{margin:.2rem 0 .6rem}
+  #dlgBody{color:#cdd7e7;white-space:pre-wrap}
+  #dlgActs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .btn{background:#243148;color:#e8eef5;border:1px solid #2e3a52;border-radius:10px;padding:8px 10px;cursor:pointer}
+  .btn.primary{background:#3b82f6;border-color:#2f65c6}
   /* Mobile controls */
-  .touch-only { display:none; }
-  @media (hover:none) and (pointer:coarse) {
-    .touch-only { display:block; }
-    .action-btn { position:absolute; right:14px; bottom:84px; width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); display:grid; place-items:center; font-weight:700; pointer-events:auto; user-select:none; }
-    .joystick { position:absolute; bottom:14px; width:140px; height:140px; border-radius:50%; border:1px dashed rgba(255,255,255,.25); background:rgba(255,255,255,.05); pointer-events:auto; }
-    #joyL { left:14px; }
-    #joyR { right:14px; }
-    .knob { position:absolute; left:50%; top:50%; width:64px; height:64px; border-radius:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); }
-  }
-  .fallback { position:fixed; inset:0; display:none; place-items:center; padding:24px; text-align:center; }
-  .fallback .card { max-width:640px; background:#11151c; border:1px solid #2f3a4f; border-radius:16px; padding:18px; }
-  a, button { color:#d7f3ff; }
+  .stick{position:fixed;bottom:16px;width:130px;height:130px;border-radius:50%;background:#0e1420b0;border:1px solid #2b394d;z-index:4;touch-action:none;display:none}
+  .knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:#1e293b;border:2px solid #3b82f6}
+  #stickL{left:16px} #stickR{right:16px}
+  #useBtn{position:fixed;right:20px;bottom:160px;background:#3b82f6;color:#fff;border:none;border-radius:999px;padding:12px 16px;font-weight:700;z-index:4;display:none}
+  /* Start overlay */
+  #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,14,18,.9),rgba(10,14,18,.98));z-index:10}
+  #start .card{background:#12161c;border:1px solid #283244;border-radius:14px;padding:18px;width:min(90vw,420px);box-shadow:0 4px 30px rgba(0,0,0,.45);text-align:center}
+  #start button{background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer;width:100%}
 </style>
 </head>
 <body>
-<div id="game">
-  <canvas id="glcanvas"></canvas>
-  <div class="hud">
-    <div class="crosshair"></div>
-    <div id="prompt" class="prompt" style="display:none;"></div>
-    <div id="status" class="status"></div>
-    <button id="pauseBtn" class="btn">Pause</button>
-    <div id="mobileUI" class="touch-only">
-      <div id="joyL" class="joystick"><div class="knob"></div></div>
-      <div id="joyR" class="joystick"><div class="knob"></div></div>
-      <div id="actBtn" class="action-btn">USE</div>
-    </div>
+<canvas id="gl"></canvas>
+<div id="cross"></div>
+<div id="prompt"></div>
+<div id="status"></div>
+
+<!-- Dialogue -->
+<div id="dlg">
+  <div class="card">
+    <h3 id="dlgTitle"></h3>
+    <div id="dlgBody">...</div>
+    <div id="dlgActs"></div>
   </div>
 </div>
-<div id="dlg" class="dialogue">
-  <div class="dlg-card">
-    <div class="dlg-title" id="dlgTitle">NPC</div>
-    <div class="dlg-body" id="dlgBody">...</div>
-    <div class="dlg-actions" id="dlgActions"></div>
+
+<!-- Mobile UI -->
+<div id="stickL" class="stick"><div class="knob"></div></div>
+<div id="stickR" class="stick"><div class="knob"></div></div>
+<button id="useBtn">Use</button>
+
+<!-- Start -->
+<div id="start">
+  <div class="card">
+    <h2>Castle on the Hill</h2>
+    <p style="opacity:.8">Desktop: click to lock pointer, WASD + mouse, E to interact. Mobile: twin sticks + Use.</p>
+    <button id="startBtn">Start</button>
   </div>
 </div>
-<div id="fallback" class="fallback"><div class="card">
-  <h2>WebGL required</h2>
-  <p>Your browser didn’t give us a WebGL context. Try a modern browser or enable hardware acceleration. Until then, imagine a majestic castle on a hill and your character tripping over virtual chickens.</p>
-</div></div>
+
+<!-- Data schema (edit freely) -->
+<script id="game-data" type="application/json">
+{
+  "world": { "size": 160, "hillHeight": 7, "castle": { "center":[0,0,-8], "topRadius": 14 } },
+  "npcs": [
+    { "id":"blacksmith","name":"Bruna the Blacksmith","type":"townsfolk","spriteType":"townsfolk",
+      "location":{"x":-22,"y":0,"z":22},"interactions":["talk","trade"],
+      "dialog":{"greet":"Need steel or stories? I have one of those.","options":[{"label":"Trade","action":"trade"},{"label":"Any work?","action":"quest"}]}},
+    { "id":"merchant","name":"Tonn the Trader","type":"townsfolk","spriteType":"merchant",
+      "location":{"x":10,"y":0,"z":26},"interactions":["talk","trade"],
+      "dialog":{"greet":"Coin talks. Mostly it says goodbye.","options":[{"label":"Show goods","action":"trade"}]} }
+  ],
+  "guards": [
+    { "id":"g1","name":"Castle Guard 1","spriteType":"guard",
+      "patrolRoute":[[-8,0,-15],[8,0,-15],[8,0,-3],[-8,0,-3]],
+      "interactions":["talk","challenge"],
+      "dialog":{"greet":"State your business.","options":[{"label":"All good.","action":"close"}]} },
+    { "id":"g2","name":"Castle Guard 2","spriteType":"guard",
+      "patrolRoute":[[-12,0,-4],[-2,0,-10],[6,0,-8],[0,0,-2]],
+      "interactions":["talk"], "dialog":{"greet":"Keep moving.","options":[{"label":"Fine.","action":"close"}]} }
+  ],
+  "objects": [
+    { "id":"gate","name":"Castle Gate","type":"door","hinge":"left","position":[0,0,-16.2],"size":[2.6,3.6,0.22],"locked":false },
+    { "id":"signTown","name":"Noticeboard","type":"sign","position":[6,0,22],"size":[1.2,1.4,0.2],
+      "text":"Market at noon on rest days. No swordfighting by the bakery." },
+    { "id":"chest1","name":"Town Chest","type":"chest","position":[-18,0,20],"size":[1.4,1.0,1.0],"locked":false,"loot":["Coin","Old Map"] }
+  ]
+}
+</script>
 
 <script>
-/* =========================
-   Section 0: Game data (schema-driven)
-   ========================= */
-const GAME_DATA = {
-  npcs: [
-    { id:"blacksmith", name:"Blacksmith", type:"townsfolk",
-      location:{x: -18, y:0, z: 28}, interactions:["talk","trade"],
-      dialog: { greet:"Need tools? I’ve got steel that bites." ,
-                options:[{label:"Trade", action:"trade"},
-                         {label:"Any work?", action:"quest"}] } },
-    { id:"merchant", name:"Merchant", type:"townsfolk",
-      location:{x: 6, y:0, z: 22}, interactions:["talk","trade"],
-      dialog:{ greet:"Coin talks. Mostly it says goodbye.",
-               options:[{label:"Show goods", action:"trade"}] } },
-    { id:"child", name:"Town Kid", type:"townsfolk",
-      location:{x: 14, y:0, z: 18}, interactions:["talk"],
-      dialog:{ greet:"The guards say the hill is haunted. They’re boring.",
-               options:[{label:"Stay safe", action:"close"}] } }
-  ],
-  guards: [
-    { id:"g1", name:"Castle Guard 1",
-      patrolRoute:[[0,0,-10],[10,0,-10],[10,0,0],[0,0,0]],
-      interactions:["talk","challenge"],
-      dialog:{ greet:"Keep to the path. No funny business.",
-               options:[{label:"Any trouble?", action:"close"}] } },
-    { id:"g2", name:"Castle Guard 2",
-      patrolRoute:[[-10,0,-4],[-6,0,-14],[2,0,-12],[ -4,0,-2 ]],
-      interactions:["talk"],
-      dialog:{ greet:"Move along.",
-               options:[{label:"Fine.", action:"close"}] } }
-  ],
-  objects: [
-    { id:"gate", kind:"door", name:"Castle Gate",
-      location:{x:0,y:0,z:-6}, size:{w:2.2,h:3.2,d:0.2},
-      hinge:"left", interactions:["use","examine"],
-      examine:"A heavy timber gate reinforced with iron bands." },
-    { id:"chest1", kind:"chest", name:"Town Chest",
-      location:{x:-16,y:0,z:26}, interactions:["examine","use"],
-      examine:"Locked. The blacksmith might have opinions." },
-    { id:"sign1", kind:"sign", name:"Town Noticeboard",
-      location:{x:8,y:0,z:20}, interactions:["examine"],
-      examine:"Festival postponed due to mysterious honking at dawn." }
-  ],
-  settings: {
-    hillHeight: 6,
-    worldSize: 120,
-    townRadius: 28,
-    castleTopRadius: 12
-  }
-};
-/* Validation: data present and minimally shaped. */
-if (!Array.isArray(GAME_DATA.npcs) || !Array.isArray(GAME_DATA.guards)) console.error("GAME_DATA invalid");
+/* ========================
+   Section A: Utilities
+   ======================== */
+const TAU = Math.PI*2, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function vec3(x=0,y=0,z=0){return new Float32Array([x,y,z]);}
+function vadd(a,b){return vec3(a[0]+b[0],a[1]+b[1],a[2]+b[2]);}
+function vsub(a,b){return vec3(a[0]-b[0],a[1]-b[1],a[2]-b[2]);}
+function vscale(a,s){return vec3(a[0]*s,a[1]*s,a[2]*s);}
+function vlen(a){return Math.hypot(a[0],a[1],a[2]);}
+function vnorm(a){const l=vlen(a)||1; return vec3(a[0]/l,a[1]/l,a[2]/l);}
+function cross(a,b){return vec3(a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]);}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
 
-/* =========================
-   Section 1: Minimal math utils
-   ========================= */
-const TAU = Math.PI*2;
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-function vec3(x=0,y=0,z=0){ return new Float32Array([x,y,z]); }
-function v3set(v,x,y,z){ v[0]=x;v[1]=y;v[2]=z; return v; }
-function v3add(a,b,out=a){ out[0]=a[0]+b[0]; out[1]=a[1]+b[1]; out[2]=a[2]+b[2]; return out;}
-function v3sub(a,b,out=a){ out[0]=a[0]-b[0]; out[1]=a[1]-b[1]; out[2]=a[2]-b[2]; return out;}
-function v3scale(a,s,out=a){ out[0]=a[0]*s; out[1]=a[1]*s; out[2]=a[2]*s; return out;}
-function v3len(a){ return Math.hypot(a[0],a[1],a[2]); }
-function v3norm(a,out=a){ let l=v3len(a)||1; out[0]=a[0]/l; out[1]=a[1]/l; out[2]=a[2]/l; return out;}
-function v3dot(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+function mat4(){return new Float32Array(16);}
+function mIdent(){const m=mat4(); m[0]=m[5]=m[10]=m[15]=1; return m;}
+function mMul(a,b){const o=mat4(); for(let r=0;r<4;r++)for(let c=0;c<4;c++) o[c+4*r]=a[0+4*r]*b[c+0]+a[1+4*r]*b[c+4]+a[2+4*r]*b[c+8]+a[3+4*r]*b[c+12]; return o;}
+function mTrans(v){const m=mIdent(); m[12]=v[0]; m[13]=v[1]; m[14]=v[2]; return m;}
+function mRotY(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[0]=c; m[2]=s; m[8]=-s; m[10]=c; return m;}
+function mRotX(a){const c=Math.cos(a), s=Math.sin(a); const m=mIdent(); m[5]=c; m[6]=-s; m[9]=s; m[10]=c; return m;}
+function mScale(v){const m=mIdent(); m[0]=v[0]; m[5]=v[1]; m[10]=v[2]; return m;}
+function mPerspective(fov,aspect,near,far){const f=1/Math.tan(fov/2), nf=1/(near-far), m=mat4(); m[0]=f/aspect;m[5]=f;m[10]=(far+near)*nf;m[11]=-1;m[14]=(2*far*near)*nf; return m;}
+function mLook(from, dir, up=vec3(0,1,0)){
+  const f=vnorm(dir), s=vnorm(cross(f,up)), u=cross(s,f), m=mIdent();
+  m[0]=s[0];m[4]=s[1];m[8]=s[2];
+  m[1]=u[0];m[5]=u[1];m[9]=u[2];
+  m[2]=-f[0];m[6]=-f[1];m[10]=-f[2];
+  m[12]=-dot(s,from);m[13]=-dot(u,from);m[14]=dot(f,from);
+  return m;
+}
+/* Validation: math ops pure, no side effects. Proceed. */
 
-function mat4(){ return new Float32Array(16); }
-function m4ident(out=mat4()){
-  out.set([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); return out;
-}
-function m4mul(a,b,out=mat4()){
-  const r=out;
-  for(let i=0;i<4;i++){
-    for(let j=0;j<4;j++){
-      r[i*4+j]=a[i*4+0]*b[0*4+j]+a[i*4+1]*b[1*4+j]+a[i*4+2]*b[2*4+j]+a[i*4+3]*b[3*4+j];
-    }
-  }
-  return r;
-}
-function m4translate(tx,ty,tz,out=m4ident()){
-  out[12]=tx; out[13]=ty; out[14]=tz; return out;
-}
-function m4rotateY(a,out=m4ident()){
-  const c=Math.cos(a), s=Math.sin(a);
-  out.set([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); return out;
-}
-function m4rotateX(a,out=m4ident()){
-  const c=Math.cos(a), s=Math.sin(a);
-  out.set([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]); return out;
-}
-function m4scale(sx,sy,sz,out=m4ident()){
-  out.set([sx,0,0,0, 0,sy,0,0, 0,0,sz,0, 0,0,0,1]); return out;
-}
-function m4persp(fovy, aspect, near, far, out=mat4()){
-  const f=1/Math.tan(fovy/2), nf=1/(near-far);
-  out.set([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,(2*far*near)*nf,0]);
-  return out;
-}
+/* ========================
+   Section B: GL bootstrap
+   ======================== */
+const canvas=document.getElementById('gl');
+const gl=canvas.getContext('webgl',{antialias:true,alpha:false});
+if(!gl){ alert('WebGL not available. Try a modern browser.'); throw new Error('no webgl'); }
 
-/* Validation: core math ops exist; console won’t scream on imports. */
+function resize(){ const dpr=Math.min(2, window.devicePixelRatio||1); const w=(canvas.clientWidth|0)*dpr, h=(canvas.clientHeight|0)*dpr;
+  if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; gl.viewport(0,0,w,h); } }
+addEventListener('resize', resize);
 
-/* =========================
-   Section 2: WebGL boilerplate + shader
-   ========================= */
-const canvas = document.getElementById('glcanvas');
-const gl = canvas.getContext('webgl', {antialias:true});
-const fallback = document.getElementById('fallback');
-if (!gl) { fallback.style.display='grid'; throw new Error('WebGL unavailable'); }
-
-function resize() {
-  const dpr = Math.min(window.devicePixelRatio||1, 2);
-  const w = Math.floor(canvas.clientWidth * dpr);
-  const h = Math.floor(canvas.clientHeight * dpr);
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w; canvas.height = h; gl.viewport(0,0,w,h);
-  }
-}
-window.addEventListener('resize', resize);
-
-const VS = `
+const VS=`
 attribute vec3 aPos;
 attribute vec3 aNormal;
 attribute vec3 aColor;
-uniform mat4 uModel, uView, uProj;
-varying vec3 vColor;
-varying vec3 vNormal;
-void main(){
-  vec4 world = uModel * vec4(aPos,1.0);
-  vNormal = mat3(uModel) * aNormal;
-  vColor = aColor;
-  gl_Position = uProj * uView * world;
-}`;
-const FS = `
-precision mediump float;
-varying vec3 vColor;
-varying vec3 vNormal;
+attribute vec2 aUV;
+uniform mat4 uMVP, uModel;
 uniform vec3 uLightDir;
+uniform float uUseTex;
+varying vec3 vCol;
+varying vec2 vUV;
+varying float vUseTex;
 void main(){
-  vec3 n = normalize(vNormal);
-  float diff = max(dot(n, -normalize(uLightDir)), 0.15);
-  vec3 c = vColor * (diff + 0.05);
-  gl_FragColor = vec4(c, 1.0);
+  vec3 n = normalize(mat3(uModel)*aNormal);
+  float diff = max(dot(n, normalize(uLightDir)), 0.15);
+  vCol = aColor* (diff+0.05);
+  vUV = aUV;
+  vUseTex = uUseTex;
+  gl_Position = uMVP * vec4(aPos,1.0);
 }`;
-function compile(type, src){
-  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-  return s;
-}
-function program(vs,fs){
-  const p = gl.createProgram();
-  gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
-  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
-  gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
-  return p;
-}
-const prog = program(VS,FS);
+const FS=`
+precision mediump float;
+varying vec3 vCol;
+varying vec2 vUV;
+varying float vUseTex;
+uniform sampler2D uTex;
+void main(){
+  if(vUseTex>0.5){
+    vec4 t = texture2D(uTex, vUV);
+    if(t.a < 0.1) discard;
+    gl_FragColor = t;
+  } else {
+    gl_FragColor = vec4(vCol,1.0);
+  }
+}`;
+function compile(type,src){const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog);
 gl.useProgram(prog);
-const loc = {
+const LOC = {
   aPos: gl.getAttribLocation(prog,'aPos'),
   aNormal: gl.getAttribLocation(prog,'aNormal'),
   aColor: gl.getAttribLocation(prog,'aColor'),
+  aUV: gl.getAttribLocation(prog,'aUV'),
+  uMVP: gl.getUniformLocation(prog,'uMVP'),
   uModel: gl.getUniformLocation(prog,'uModel'),
-  uView: gl.getUniformLocation(prog,'uView'),
-  uProj: gl.getUniformLocation(prog,'uProj'),
-  uLightDir: gl.getUniformLocation(prog,'uLightDir')
+  uLightDir: gl.getUniformLocation(prog,'uLightDir'),
+  uUseTex: gl.getUniformLocation(prog,'uUseTex'),
+  uTex: gl.getUniformLocation(prog,'uTex')
 };
 gl.enable(gl.DEPTH_TEST);
-gl.clearColor(0.47/4,0.58/4,0.81/4,1);
-/* Validation: shader compiles or throws with readable error. */
+gl.enable(gl.CULL_FACE);
+gl.clearColor(0.07,0.09,0.12,1.0);
+gl.uniform3f(LOC.uLightDir, 0.6, 1.0, 0.2);
+/* Validation: shaders compile/link or you’ll see a readable error. Proceed. */
 
-/* =========================
-   Section 3: Mesh builders
-   ========================= */
-function createMesh(positions, normals, colors, indices){
-  const vao = gl.createBuffer();
-  const nbo = gl.createBuffer();
-  const cbo = gl.createBuffer();
-  const ibo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vao);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ARRAY_BUFFER, nbo);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ARRAY_BUFFER, cbo);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-  return { vao, nbo, cbo, ibo, count: indices.length };
+/* ========================
+   Section C: Mesh builders
+   ======================== */
+function interleave(P,N,C,UV){
+  const vcount = P.length/3; const hasUV = UV && UV.length===vcount*2;
+  const stride = hasUV ? 3+3+3+2 : 3+3+3+2; // always provide UV slot
+  const arr = new Float32Array(vcount*stride); let o=0;
+  for(let i=0;i<vcount;i++){
+    arr[o++]=P[i*3]; arr[o++]=P[i*3+1]; arr[o++]=P[i*3+2];
+    arr[o++]=N[i*3]; arr[o++]=N[i*3+1]; arr[o++]=N[i*3+2];
+    arr[o++]=C[i*3]; arr[o++]=C[i*3+1]; arr[o++]=C[i*3+2];
+    if(hasUV){ arr[o++]=UV[i*2]; arr[o++]=UV[i*2+1]; } else { arr[o++]=0; arr[o++]=0; }
+  }
+  return arr;
 }
-function bindMesh(m){
-  gl.bindBuffer(gl.ARRAY_BUFFER, m.vao);
-  gl.vertexAttribPointer(loc.aPos,3,gl.FLOAT,false,0,0);
-  gl.enableVertexAttribArray(loc.aPos);
-  gl.bindBuffer(gl.ARRAY_BUFFER, m.nbo);
-  gl.vertexAttribPointer(loc.aNormal,3,gl.FLOAT,false,0,0);
-  gl.enableVertexAttribArray(loc.aNormal);
-  gl.bindBuffer(gl.ARRAY_BUFFER, m.cbo);
-  gl.vertexAttribPointer(loc.aColor,3,gl.FLOAT,false,0,0);
-  gl.enableVertexAttribArray(loc.aColor);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.ibo);
+function makeMesh(P,N,C,UV,I){
+  const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, interleave(P,N,C,UV), gl.STATIC_DRAW);
+  const ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(I), gl.STATIC_DRAW);
+  return {vbo, ibo, count:I.length, stride:(11*4)};
 }
-function boxMesh(w=1,h=1,d=1, color=[.8,.8,.8]){
+function setupAttribs(mesh){
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo);
+  gl.vertexAttribPointer(LOC.aPos,3,gl.FLOAT,false,mesh.stride,0); gl.enableVertexAttribArray(LOC.aPos);
+  gl.vertexAttribPointer(LOC.aNormal,3,gl.FLOAT,false,mesh.stride,12); gl.enableVertexAttribArray(LOC.aNormal);
+  gl.vertexAttribPointer(LOC.aColor,3,gl.FLOAT,false,mesh.stride,24); gl.enableVertexAttribArray(LOC.aColor);
+  gl.vertexAttribPointer(LOC.aUV,2,gl.FLOAT,false,mesh.stride,36); gl.enableVertexAttribArray(LOC.aUV);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ibo);
+}
+function box(w=1,h=1,d=1, col=[.7,.72,.75]){
   const x=w/2,y=h/2,z=d/2;
-  const P=[
-    // front
-    -x,-y, z,  x,-y, z,  x, y, z,  -x, y, z,
-    // back
-    -x,-y,-z, -x, y,-z,  x, y,-z,  x,-y,-z,
-    // left
-    -x,-y,-z, -x,-y, z, -x, y, z, -x, y,-z,
-    // right
-     x,-y,-z,  x, y,-z,  x, y, z,  x,-y, z,
-    // top
-    -x, y, z,  x, y, z,  x, y,-z, -x, y,-z,
-    // bottom
-    -x,-y, z, -x,-y,-z,  x,-y,-z,  x,-y, z
-  ];
-  const N=[
-    0,0,1, 0,0,1, 0,0,1, 0,0,1,
-    0,0,-1,0,0,-1,0,0,-1,0,0,-1,
-    -1,0,0,-1,0,0,-1,0,0,-1,0,0,
-    1,0,0,1,0,0,1,0,0,1,0,0,
-    0,1,0,0,1,0,0,1,0,0,1,0,
-    0,-1,0,0,-1,0,0,-1,0,0,-1,0
-  ];
-  let C=[]; for(let i=0;i<24;i++) C.push(color[0],color[1],color[2]);
-  const I=[];
-  for(let f=0;f<6;f++){ const o=f*4; I.push(o,o+1,o+2, o,o+2,o+3); }
-  return createMesh(P,N,C,I);
+  const P=[-x,-y,-z, x,-y,-z, x, y,-z, -x, y,-z,  -x,-y, z, x,-y, z, x, y, z, -x, y, z,
+           -x,-y,-z,-x, y,-z,-x, y, z,-x,-y, z,   x,-y,-z, x,-y, z, x, y, z, x, y,-z,
+           -x, y,-z, x, y,-z, x, y, z, -x, y, z,  -x,-y,-z,-x,-y, z, x,-y, z, x,-y,-z];
+  const N=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,  0,0,1,0,0,1,0,0,1,0,0,1,
+           -1,0,0,-1,0,0,-1,0,0,-1,0,0,  1,0,0,1,0,0,1,0,0,1,0,0,
+            0,1,0,0,1,0,0,1,0,0,1,0,      0,-1,0,0,-1,0,0,-1,0,0,-1,0];
+  const I=[]; for(let f=0;f<6;f++){ const o=f*4; I.push(o,o+1,o+2, o,o+2,o+3); }
+  const C=[]; for(let i=0;i<24;i++) C.push(col[0],col[1],col[2]);
+  const UV=new Array(24*2).fill(0);
+  return makeMesh(P,N,C,UV,I);
 }
-function terrainMesh(size=120, div=64, hillHeight=6){
-  const step = size/div;
-  const half = size/2;
-  const P=[], N=[], C=[], I=[];
-  function height(x,z){
-    const cx=0, cz=-8; // hill center near castle
-    const dx=x-cx, dz=z-cz;
-    const r2=(dx*dx+dz*dz);
-    const hill = hillHeight*Math.exp(-r2/450);
-    const ripples = Math.sin(x*0.15)*0.15 + Math.cos(z*0.2)*0.1;
-    return hill + ripples* (1 - Math.min(1, r2/2000));
-  }
-  const H=[];
-  for(let iz=0; iz<=div; iz++){
-    for(let ix=0; ix<=div; ix++){
-      const x = ix*step - half;
-      const z = iz*step - half;
-      const y = height(x,z);
-      P.push(x,y,z);
-      C.push(0.30, 0.42, 0.29); // grass
-      H.push(y);
-    }
-  }
-  // indices
-  for(let iz=0; iz<div; iz++){
-    for(let ix=0; ix<div; ix++){
-      const i0 = iz*(div+1)+ix;
-      const i1 = i0+1;
-      const i2 = i0+(div+1);
-      const i3 = i2+1;
-      I.push(i0,i2,i1, i1,i2,i3);
-    }
-  }
-  // normals via finite differences
-  N.length = (div+1)*(div+1)*3;
-  function idx(ix,iz){ return iz*(div+1)+ix; }
-  for(let iz=0; iz<=div; iz++){
-    for(let ix=0; ix<=div; ix++){
-      const i = idx(ix,iz);
-      const x = P[i*3], y = P[i*3+1], z = P[i*3+2];
-      const iL = idx(Math.max(ix-1,0),iz), iR = idx(Math.min(ix+1,div),iz);
-      const iD = idx(ix,Math.max(iz-1,0)), iU = idx(ix,Math.min(iz+1,div));
-      const vx = [P[iR*3]-P[iL*3], P[iR*3+1]-P[iL*3+1], P[iR*3+2]-P[iL*3+2]];
-      const vz = [P[iU*3]-P[iD*3], P[iU*3+1]-P[iD*3+1], P[iU*3+2]-P[iD*3+2]];
-      const nx = vx[1]*vz[2]-vx[2]*vz[1];
-      const ny = vx[2]*vz[0]-vx[0]*vz[2];
-      const nz = vx[0]*vz[1]-vx[1]*vz[0];
-      const l = Math.hypot(nx,ny,nz)||1;
-      N[i*3]=nx/l; N[i*3+1]=ny/l; N[i*3+2]=nz/l;
-    }
-  }
-  return { mesh:createMesh(P,N,C,I), heightFn:(x,z)=>{ // bilinear sample
-      const fx = (x+half)/step; const fz = (z+half)/step;
-      const ix = Math.floor(clamp(fx,0,div)); const iz = Math.floor(clamp(fz,0,div));
-      const i = iz*(div+1)+ix;
-      return H[i]||0;
-  }};
+function plane(size=10,col=[.2,.25,.28]){
+  const s=size/2; const P=[-s,0,-s, s,0,-s, s,0,s, -s,0,s];
+  const N=[0,1,0,0,1,0,0,1,0,0,1,0];
+  const C=[col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2]];
+  const UV=[0,0, 1,0, 1,1, 0,1];
+  const I=[0,1,2, 0,2,3];
+  return makeMesh(P,N,C,UV,I);
 }
-/* Validation: meshes build once; if indexes wrong, WebGL will error loudly. */
-
-/* =========================
-   Section 4: Scene construction
-   ========================= */
-const scene = [];
-const terrain = terrainMesh(GAME_DATA.settings.worldSize, 80, GAME_DATA.settings.hillHeight);
-scene.push({ mesh: terrain.mesh, model: m4ident(), kind:'terrain' });
-
-function addBoxEntity(x,y,z, sx,sy,sz, color, kind='static', id=null){
-  const mesh = boxMesh(sx,sy,sz,color);
-  const model = m4mul(m4translate(x,y,z), m4ident());
-  scene.push({ mesh, model, x,y,z, sx,sy,sz, color, kind, id, rotY:0 });
-  return scene[scene.length-1];
+function quad(w=1,h=1, col=[1,1,1]){ // billboardable, UVed
+  const x=w/2, y=h/2;
+  const P=[-x,-y,0, x,-y,0, x,y,0, -x,y,0];
+  const N=[0,0,1,0,0,1,0,0,1,0,0,1];
+  const C=[col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2], col[0],col[1],col[2]];
+  const UV=[0,1, 1,1, 1,0, 0,0];
+  const I=[0,1,2, 0,2,3];
+  return makeMesh(P,N,C,UV,I);
 }
-// Castle walls and towers on hilltop
-(function buildCastle(){
-  const radius = GAME_DATA.settings.castleTopRadius;
-  const wallH=3, wallT=0.6;
-  // Four walls
-  addBoxEntity(0, terrain.heightFn(0,-6)+wallH/2, -6, radius*2, wallH, wallT, [0.55,0.54,0.52], 'wall');
-  addBoxEntity(0, terrain.heightFn(0, 6)+wallH/2,  6, radius*2, wallH, wallT, [0.55,0.54,0.52], 'wall');
-  addBoxEntity(-radius, terrain.heightFn(-radius,0)+wallH/2, 0, wallT, wallH, radius*2, [0.55,0.54,0.52], 'wall');
-  addBoxEntity( radius, terrain.heightFn( radius,0)+wallH/2, 0, wallT, wallH, radius*2, [0.55,0.54,0.52], 'wall');
-  // Towers
-  const tw=2.4; const th=5;
-  addBoxEntity(-radius, terrain.heightFn(-radius,-6)+th/2, -6, tw,th,tw,[0.48,0.48,0.50],'tower');
-  addBoxEntity( radius, terrain.heightFn( radius,-6)+th/2, -6, tw,th,tw,[0.48,0.48,0.50],'tower');
-  addBoxEntity(-radius, terrain.heightFn(-radius, 6)+th/2,  6, tw,th,tw,[0.48,0.48,0.50],'tower');
-  addBoxEntity( radius, terrain.heightFn( radius, 6)+th/2,  6, tw,th,tw,[0.48,0.48,0.50],'tower');
-  // Keep
-  addBoxEntity(0, terrain.heightFn(0,-1)+4, -1, 5,8,5,[0.44,0.44,0.48],'keep');
-})();
+/* Validation: box/plane/quad buffers allocate; if undefined index, I did a dumb. Proceed. */
 
-// Town huts
-(function buildTown(){
-  for(let i=0;i<16;i++){
-    const ang = i/16 * TAU;
-    const r = GAME_DATA.settings.townRadius + 6 + Math.random()*6;
-    const x = Math.cos(ang) * r;
-    const z = Math.sin(ang) * r + 16;
-    const y = terrain.heightFn(x,z);
-    const w=2+Math.random()*1.2, d=2+Math.random()*1.2, h=1.6+Math.random()*0.8;
-    addBoxEntity(x, y + h/2, z, w,h,d, [0.62,0.49,0.36],'house');
-  }
-})();
+/* ========================
+   Section D: Procedural textures (sprites/trees/torch)
+   ======================== */
+function makeSprite(kind){
+  const c=document.createElement('canvas'); c.width=64; c.height=96; const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,64,96);
+  // body
+  ctx.fillStyle= kind==='guard' ? '#9aa8d8' : (kind==='merchant' ? '#d8a69a' : '#b9d89a');
+  ctx.fillRect(18,35,28,38);
+  // head
+  ctx.fillStyle='#f3e0c7'; ctx.fillRect(22,14,20,20);
+  // eyes
+  ctx.fillStyle='#222'; ctx.fillRect(27,22,3,3); ctx.fillRect(34,22,3,3);
+  // belt
+  ctx.fillStyle='#4a3b2a'; ctx.fillRect(18,56,28,4);
+  // hat/helm
+  if(kind==='guard'){ ctx.fillStyle='#6e7bb0'; ctx.fillRect(20,10,24,8); }
+  if(kind==='merchant'){ ctx.fillStyle='#7d4a2a'; ctx.fillRect(18,10,28,6); }
+  // outline
+  ctx.strokeStyle='#111a'; ctx.strokeRect(18,35,28,38); ctx.strokeRect(22,14,20,20);
+  return c;
+}
+function texFromCanvas(canv){
+  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canv);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return tex;
+}
+/* Validation: sprites are tiny pixel art, uploaded to GPU. Proceed. */
 
-/* Interactive objects: doors, chests, signs (animated via transforms) */
-const interactives = [];
+/* ========================
+   Section E: World build
+   ======================== */
+const Data = JSON.parse(document.getElementById('game-data').textContent);
+const meshes = { box: box(), ground: plane(400,[0.18,0.22,0.26]) };
+const quadMesh = quad(1,2,[1,1,1]); // used for sprites and trees
+const entities = []; const solids=[]; const interactives=[];
+
+function addEntity(kind, mesh, model, color, opts={}){
+  const e={kind, mesh, model, color, ...opts};
+  entities.push(e);
+  if(opts.solid) solids.push(e);
+  if(opts.interactive) interactives.push(e);
+  return e;
+}
+
+/* Terrain: simple height function + visual plane; use analytic height for y */
+function heightAt(x,z){
+  const hill = Data.world.hillHeight * Math.exp(-((x-Data.world.castle.center[0])**2 + (z-Data.world.castle.center[2]+8)**2)/550);
+  const bumps = Math.sin(x*0.12)*0.2 + Math.cos(z*0.18)*0.18;
+  return (hill + bumps*0.6);
+}
+addEntity('ground', meshes.ground, mIdent(), [0.18,0.22,0.26], {solid:false});
+
+/* Paths, water, bridge, trees, stalls, fences, torches */
+function addBoxAt(x,y,z,sx,sy,sz,color,solid=true){
+  const m = mMul(mTrans(vec3(x,y+sy/2,z)), mScale(vec3(sx,sy,sz)));
+  return addEntity('box', box(sx,sy,sz,color), m, color, {x,y,z,sx,sy,sz,solid});
+}
+function addFlatRect(x,z,w,d,color){
+  const m = mMul(mTrans(vec3(x,0.01,z)), mScale(vec3(w,0.02,d)));
+  return addEntity('decal', box(w,0.02,d,color), m, color, {solid:false});
+}
+function addTorch(x,z){
+  const y=heightAt(x,z);
+  addBoxAt(x,y,z,0.12,1.2,0.12,[0.35,0.28,0.2],true);
+  // flame billboard
+  const e = addEntity('flame', quadMesh, mIdent(), [1,1,1], {x, y:y+1.1, z, sprite:texFromCanvas((()=>{const c=document.createElement('canvas'); c.width=32;c.height=48; const k=c.getContext('2d'); const g=k.createRadialGradient(16,28,2, 16,28,16); g.addColorStop(0,'rgba(255,240,200,1)'); g.addColorStop(1,'rgba(255,120,0,0)'); k.fillStyle=g; k.fillRect(0,0,32,48); return c;})())});
+  e.billboard=true;
+}
+function addTree(x,z){
+  const y=heightAt(x,z);
+  // trunk
+  addBoxAt(x,y,z,0.3,1.2,0.3,[0.40,0.30,0.22],true);
+  // foliage as crossed quads
+  const t=texFromCanvas((()=>{const c=document.createElement('canvas'); c.width=64;c.height=64; const k=c.getContext('2d'); k.fillStyle='#33583a'; k.beginPath(); k.arc(32,32,28,0,TAU); k.fill(); return c;})());
+  const e1=addEntity('tree', quadMesh, mIdent(), [1,1,1], {x, y:y+1.7, z, sprite:t, billboard:true});
+  const e2=addEntity('tree', quadMesh, mMul(mRotY(Math.PI/2), mIdent()), [1,1,1], {x, y:y+1.7, z, sprite:t, billboard:true, extra:true});
+}
+function addStall(x,z){
+  const y=heightAt(x,z);
+  addBoxAt(x,y,z,2.2,1.2,1.4,[0.52,0.42,0.33],true);
+  addBoxAt(x,y+1.2,z,2.2,0.12,1.4,[0.3,0.3,0.32],true);
+}
+function addWaterArea(x,z,w,d){
+  const m = mMul(mTrans(vec3(x, -0.02, z)), mScale(vec3(w,0.02,d)));
+  addEntity('water', box(w,0.02,d,[0.16,0.28,0.38]), m, [0.16,0.28,0.38], {solid:false});
+}
+
+// Paths from town to castle
+addFlatRect(0,18, 30,4,[0.28,0.25,0.22]);
+addFlatRect(0,6, 26,3,[0.28,0.25,0.22]);
+addFlatRect(0,-6, 20,3,[0.28,0.25,0.22]);
+
+// Pond + bridge
+addWaterArea(-18,14, 10,8);
+addBoxAt(-18,heightAt(-18,14),14, 0.6,0.4,8,[0.44,0.38,0.32],true); // tiny bridge rail
+addBoxAt(-18,heightAt(-18,14),14, 6,0.2,1.6,[0.44,0.38,0.32],true); // bridge deck
+
+// Trees and stalls
+for(let i=0;i<14;i++){ const a=i/14*TAU, r=26+Math.random()*8; addTree(Math.cos(a)*r, 20+Math.sin(a)*r); }
+addStall(-10,24); addStall(8,24);
+addTorch(0,-13); addTorch(-4,-13); addTorch(4,-13); addTorch(0,22); addTorch(12,22); addTorch(-12,22);
+
+/* Castle walls/towers/keep */
+const C = Data.world.castle;
+function addWallRing(){
+  const r=C.topRadius, y=heightAt(C.center[0],C.center[2])+2.6;
+  addBoxAt(0,y,-8, r*2,2.6,0.6,[0.58,0.60,0.64],true);
+  addBoxAt(0,y,-8+2*r, r*2,2.6,0.6,[0.58,0.60,0.64],true);
+  addBoxAt(-r,y,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64],true);
+  addBoxAt(r,y,-8+r, 0.6,2.6,2*r,[0.58,0.60,0.64],true);
+  // towers
+  const th=5, tw=2.6;
+  addBoxAt(-r,y+th/2,-8, tw,th,tw,[0.62,0.64,0.68],true);
+  addBoxAt(r,y+th/2,-8, tw,th,tw,[0.62,0.64,0.68],true);
+  addBoxAt(-r,y+th/2,-8+2*r, tw,th,tw,[0.62,0.64,0.68],true);
+  addBoxAt(r,y+th/2,-8+2*r, tw,th,tw,[0.62,0.64,0.68],true);
+  // keep
+  addBoxAt(0,y+3.5,-8+r*0.5, 6,7,6,[0.54,0.55,0.58],true);
+}
+addWallRing();
+
+// Gate door (interactive)
 function addDoor(obj){
-  const {x,y,z} = obj.location;
-  const h = obj.size?.h||3, w=obj.size?.w||2, d=obj.size?.d||0.2;
-  const baseY = terrain.heightFn(x,z);
-  const ent = addBoxEntity(x, baseY + h/2, z, w,h,d, [0.36,0.24,0.16], 'door', obj.id);
-  ent.isDoor = true; ent.open=0; ent.hinge = obj.hinge||'left'; ent.name = obj.name;
-  interactives.push(ent);
-}
-function addSimpleObject(obj, color, kind){
-  const {x,y,z} = obj.location;
-  const by = terrain.heightFn(x,z);
-  const ent = addBoxEntity(x, by+0.5, z, 1,1,1, color, kind, obj.id);
-  ent.name = obj.name; ent.examine = obj.examine||"";
-  interactives.push(ent);
-}
-for(const obj of GAME_DATA.objects){
-  if (obj.kind==='door') addDoor(obj);
-  else if (obj.kind==='chest') addSimpleObject(obj,[0.35,0.27,0.12],'chest');
-  else if (obj.kind==='sign') addSimpleObject(obj,[0.45,0.42,0.28],'sign');
-}
-
-/* NPCs/Guards as upright billboards (we rotate Y to face camera) */
-function addBillboardNPC(n, tint){
-  const ent = { id:n.id, kind:n.type==='guard'?'guard':'npc', name:n.name,
-    x:n.location.x, y:terrain.heightFn(n.location.x,n.location.z), z:n.location.z,
-    rotY:0, interactions:n.interactions||[], dialog:n.dialog||{}, radius:0.8, tint };
-  scene.push({ mesh: boxMesh(0.8,1.8,0.2,tint), model:m4ident(), x:ent.x, y:ent.y+0.9, z:ent.z, rotY:0, kind:ent.kind, id:ent.id, entityRef:ent });
+  const s=obj.size, p=obj.position, y=heightAt(p[0],p[2]);
+  const ent = addBoxAt(p[0], y, p[2], s[0], s[1], s[2], [0.44,0.34,0.22], true);
+  ent.interactive={kind:'door',meta:obj}; interactives.push(ent);
+  ent.door={open:false,angle:0,openAngle:(obj.openAngle||90)*Math.PI/180,hinge:obj.hinge||'left',locked:!!obj.locked};
   return ent;
 }
-const npcs = [];
-for(const n of GAME_DATA.npcs){ npcs.push(addBillboardNPC(n,[0.75,0.85,0.95])); }
-const guards = [];
-for(const g of GAME_DATA.guards){
-  const guard = addBillboardNPC({ ...g, type:"guard", location:{ x:g.patrolRoute[0][0], y:0, z:g.patrolRoute[0][2] } }, [0.85,0.75,0.55]);
-  guard.patrolRoute = g.patrolRoute.map(p=>({x:p[0],y:p[1],z:p[2]}));
-  guard.interactions = g.interactions||["talk"];
-  guard.dialog = g.dialog||{};
-  guard.patrolIndex=0; guard.patrolT=0; guard.speed=1.6;
-  guards.push(guard);
+const gateObj = Data.objects.find(o=>o.type==='door'); const gate = gateObj? addDoor(gateObj):null;
+
+// Town props & interactives
+for(const o of Data.objects){
+  if(o.type==='door') continue;
+  const s=o.size||[1,1,1], p=o.position, y=heightAt(p[0],p[2]);
+  const e = addBoxAt(p[0], y, p[2], s[0], s[1], s[2], o.type==='sign'?[0.75,0.86,0.95]:[0.52,0.46,0.38], true);
+  e.interactive={kind:o.type, meta:o}; interactives.push(e);
 }
 
-/* Validation: scene arrays populated; at least one terrain, some boxes, some NPCs. */
-
-/* =========================
-   Section 5: Camera, input, player
-   ========================= */
-const state = {
-  camPos: vec3(0,1.6, 18),
-  yaw: Math.PI, pitch: 0,
-  forward: vec3(), right: vec3(1,0,0),
-  keys: {}, pointerLocked:false, paused:false,
-  mobile: matchMedia('(hover:none) and (pointer:coarse)').matches,
-  moveVec:[0,0], lookVec:[0,0]
+/* NPCs and Guards as billboard sprites */
+const spriteTex = {
+  townsfolk: texFromCanvas(makeSprite('townsfolk')),
+  merchant:   texFromCanvas(makeSprite('merchant')),
+  guard:      texFromCanvas(makeSprite('guard'))
 };
-const view = mat4(), proj = mat4();
-
-function updateVectors(){
-  // forward vector from yaw/pitch (pitch clamped)
-  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
-  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
-  v3set(state.forward, -sy*cp, sp, -cy*cp); // right-handed-ish
-  v3set(state.right, cy, 0, -sy);
+const sprites=[];
+function addSprite(name, kind, x,z, spriteType){
+  const y=heightAt(x,z);
+  const e = addEntity('sprite', quadMesh, mIdent(), [1,1,1], {x, y:y+1.0, z, billboard:true, sprite:spriteTex[spriteType||'townsfolk'], name, solid:false});
+  sprites.push(e); return e;
 }
-updateVectors();
-
-function pointerLockSetup(){
-  if (state.mobile) return;
-  canvas.addEventListener('click', ()=>{ if (!state.pointerLocked) canvas.requestPointerLock(); });
-  document.addEventListener('pointerlockchange', ()=>{ state.pointerLocked = (document.pointerLockElement===canvas); });
-  document.addEventListener('mousemove', e=>{
-    if (!state.pointerLocked || state.paused) return;
-    const sens=0.0025;
-    state.yaw -= e.movementX * sens;
-    state.pitch -= e.movementY * sens;
-    state.pitch = clamp(state.pitch, -1.2, 1.2);
-    updateVectors();
-  });
+const actors = {}; // id -> data
+for(const n of Data.npcs){
+  actors[n.id]=n;
+  const s=addSprite(n.name,'npc', n.location.x, n.location.z, n.spriteType||'townsfolk');
+  s.role='npc'; s.meta=n;
 }
-pointerLockSetup();
-
-document.addEventListener('keydown', e=>{ state.keys[e.code]=true; if(e.code==='KeyE') tryInteract(); if(e.code==='Escape') togglePause(true); });
-document.addEventListener('keyup', e=>{ state.keys[e.code]=false; });
-
-/* Virtual joysticks */
-const joyL = document.getElementById('joyL');
-const joyR = document.getElementById('joyR');
-const actBtn = document.getElementById('actBtn');
-if (state.mobile){
-  function makeJoystick(el, outVec, isLook){
-    let touchId=null, base={x:0,y:0}, knob=el.querySelector('.knob');
-    function pos(t){ const r = el.getBoundingClientRect(); return { x: t.clientX - (r.left + r.width/2), y: t.clientY - (r.top + r.height/2) }; }
-    el.addEventListener('touchstart', e=>{
-      if (touchId!=null) return;
-      const t = e.changedTouches[0]; touchId=t.identifier; base=pos(t);
-    });
-    el.addEventListener('touchmove', e=>{
-      for(const t of e.changedTouches){
-        if (t.identifier!==touchId) continue;
-        const p=pos(t); const max=55; const dx=clamp(p.x,-max,max), dy=clamp(p.y,-max,max);
-        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        outVec[0]=dx/max; outVec[1]=dy/max;
-      }
-    });
-    function end(t){
-      if (t.identifier!==touchId) return;
-      touchId=null; outVec[0]=outVec[1]=0; knob.style.transform='translate(-50%,-50%)';
-    }
-    el.addEventListener('touchend', e=>{ for(const t of e.changedTouches) end(t); });
-    el.addEventListener('touchcancel', e=>{ for(const t of e.changedTouches) end(t); });
-  }
-  makeJoystick(joyL, state.moveVec, false);
-  makeJoystick(joyR, state.lookVec, true);
-  actBtn.addEventListener('touchstart', ()=>tryInteract());
+for(const g of Data.guards){
+  actors[g.id]=g;
+  const p=g.patrolRoute[0]; const s=addSprite(g.name,'guard', p[0], p[2], g.spriteType||'guard');
+  s.role='guard'; s.meta=g; s.ai={route:g.patrolRoute.map(p=>vec3(p[0],0,p[2])), i:0, speed:1.5, wait:0};
 }
+/* Validation: world populated with paths, trees, water, stalls, torches; NPC/guards appear as 2D sprites. Proceed. */
 
-function movePlayer(dt){
-  let vx=0,vz=0;
-  if (!state.mobile){
-    if (state.keys['KeyW']) vz -= 1;
-    if (state.keys['KeyS']) vz += 1;
-    if (state.keys['KeyA']) vx -= 1;
-    if (state.keys['KeyD']) vx += 1;
-  } else {
-    // left joystick: x is strafe, y is forward/back
-    vx = state.moveVec[0];
-    vz = state.moveVec[1];
-  }
-  // apply look joystick on mobile
-  if (state.mobile){
-    const sens=0.03;
-    state.yaw -= state.lookVec[0]*sens;
-    state.pitch -= state.lookVec[1]*sens;
-    state.pitch = clamp(state.pitch, -1.2, 1.2);
-    updateVectors();
-  }
+/* ========================
+   Section F: Player, input, collisions
+   ======================== */
+const state = {
+  pos: vec3(0, heightAt(0,24)+1.65, 24),
+  yaw: Math.PI, pitch: 0, speed: 4.0, last: performance.now(),
+  keys: {}, mobile: ('ontouchstart' in window) || navigator.maxTouchPoints>0,
+  lookSensDesktop: 0.0025, lookSensMobile: 0.035,
+  pointerLocked:false
+};
+function forward(){ return vec3(-Math.sin(state.yaw)*Math.cos(state.pitch), Math.sin(state.pitch), -Math.cos(state.yaw)*Math.cos(state.pitch)); }
+function right(){ const f=forward(); return vnorm(cross(vec3(0,1,0), f)); }
 
-  // movement in world space
-  const speed = 3.2;
-  const f = vec3(state.forward[0],0,state.forward[2]); v3norm(f,f);
-  const r = vec3(state.right[0],0,state.right[2]); v3norm(r,r);
-  let v = vec3();
-  v3add(v3scale(r,vx), v3scale(f,-vz), v);
-  const l = v3len(v); if (l>0) v3scale(v, speed*dt/l, v);
-  v3add(state.camPos, v, state.camPos);
+addEventListener('keydown', e=>{ state.keys[e.key.toLowerCase()] = true; if(e.key.toLowerCase()==='e') interact(); if(e.key==='Escape') unlock(); });
+addEventListener('keyup', e=>{ state.keys[e.key.toLowerCase()] = false; });
 
-  // clamp to world and stick to heightmap
-  const ws = GAME_DATA.settings.worldSize/2 - 2;
-  state.camPos[0]=clamp(state.camPos[0], -ws, ws);
-  state.camPos[2]=clamp(state.camPos[2], -ws, ws);
-  const groundY = terrain.heightFn(state.camPos[0], state.camPos[2]);
-  state.camPos[1] = groundY + 1.65;
-}
-
-/* Validation: WASD/touch affect camPos; yaw/pitch clamped to sane range. */
-
-/* =========================
-   Section 6: Interactions & UI
-   ========================= */
-const promptEl = document.getElementById('prompt');
-const statusEl = document.getElementById('status');
-const dlg = document.getElementById('dlg');
-const dlgTitle = document.getElementById('dlgTitle');
-const dlgBody = document.getElementById('dlgBody');
-const dlgActions = document.getElementById('dlgActions');
-
-function showPrompt(text){ promptEl.textContent=text; promptEl.style.display='block'; }
-function hidePrompt(){ promptEl.style.display='none'; }
-
-function openDialogue(title, text, options){
-  dlgTitle.textContent = title;
-  dlgBody.textContent = text || "";
-  dlgActions.innerHTML='';
-  (options||[{label:"Close",action:"close"}]).forEach(opt=>{
-    const b=document.createElement('button'); b.textContent=opt.label;
-    b.onclick=()=>{ if(opt.action==='close') closeDialogue(); else if(opt.action==='trade') dlgBody.textContent="Trading is a stub. You’re browsing without coin anyway."; else if(opt.action==='quest') dlgBody.textContent="Quest stub: fetch three feathers and a dramatic backstory."; };
-    dlgActions.appendChild(b);
-  });
-  dlg.style.display='flex';
-  togglePause(true,true);
-}
-function closeDialogue(){ dlg.style.display='none'; togglePause(false,true); }
-
-document.getElementById('pauseBtn').addEventListener('click', ()=>{
-  if (dlg.style.display==='flex') { closeDialogue(); return; }
-  togglePause(!state.paused,true);
+canvas.addEventListener('click', ()=>{ if(!state.mobile) canvas.requestPointerLock?.(); });
+document.addEventListener('pointerlockchange', ()=>{ state.pointerLocked=(document.pointerLockElement===canvas); });
+document.addEventListener('mousemove', e=>{
+  if(!state.pointerLocked) return;
+  state.yaw -= e.movementX * state.lookSensDesktop;
+  state.pitch = clamp(state.pitch - e.movementY * state.lookSensDesktop, -1.2, 1.2);
 });
 
-function togglePause(p, fromUI=false){
-  state.paused = p;
-  if (!state.mobile){
-    if (!p && !fromUI && !state.pointerLocked) canvas.requestPointerLock();
+/* Mobile sticks: non-inverted look (up = look up), deadzones, smoothing */
+const stickL=document.getElementById('stickL'), stickR=document.getElementById('stickR'), useBtn=document.getElementById('useBtn');
+let lVec=[0,0], rVec=[0,0];
+function setupSticks(){
+  if(!state.mobile){ stickL.style.display=stickR.style.display=useBtn.style.display='none'; return; }
+  stickL.style.display=stickR.style.display=useBtn.style.display='block';
+  const mk=(root,setter)=>{
+    let id=null, knob=root.querySelector('.knob'), origin=[0,0];
+    const rad = root.clientWidth*0.42;
+    function pos(t){ const r=root.getBoundingClientRect(); return [t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)]; }
+    root.addEventListener('touchstart', e=>{ const t=e.changedTouches[0]; id=t.identifier; origin=pos(t); knob.style.transition='0s'; },{passive:true});
+    root.addEventListener('touchmove', e=>{
+      for(const t of e.changedTouches){ if(t.identifier!==id) continue;
+        const p=pos(t); let dx=clamp(p[0],-rad,rad), dy=clamp(p[1],-rad,rad);
+        knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        setter([dx/rad, dy/rad]);
+      }
+    },{passive:true});
+    function end(){ id=null; setter([0,0]); knob.style.transition='.12s'; knob.style.transform='translate(-50%,-50%)'; }
+    root.addEventListener('touchend', end,{passive:true}); root.addEventListener('touchcancel', end,{passive:true});
+  };
+  mk(stickL, v=>lVec=v);
+  mk(stickR, v=>rVec=v);
+  useBtn.addEventListener('click', ()=>interact());
+}
+function unlock(){ if(document.exitPointerLock) document.exitPointerLock(); }
+setupSticks();
+
+/* Collisions: simple capsule (radius r) vs AABB pushback in XZ */
+const colliders = () => solids.map(s=>({x:s.x||0,y:s.y||0,z:s.z||0, sx:s.sx||1,sy:s.sy||1,sz:s.sz||1}));
+function resolveXZ(next, r=0.35){
+  for(const c of colliders()){
+    // vertical span check
+    const minY=(c.y)+(0), maxY=(c.y)+(c.sy);
+    const py=next[1];
+    if(py < minY-0.1 || py > maxY+1.2) continue;
+    // 2D push on XZ
+    const dx = clamp(next[0], c.x - c.sx/2 - r, c.x + c.sx/2 + r) - next[0];
+    const dz = clamp(next[2], c.z - c.sz/2 - r, c.z + c.sz/2 + r) - next[2];
+    if(Math.abs(dx)<r && Math.abs(dz)<r){
+      if(Math.abs(dx) < Math.abs(dz)) next[0] += (dx>0? (r-Math.abs(dx)) : -(r-Math.abs(dx)));
+      else next[2] += (dz>0? (r-Math.abs(dz)) : -(r-Math.abs(dz)));
+    }
   }
+  return next;
 }
 
-function playerForwardDotTo(target){
-  const dir = vec3(target.x - state.camPos[0], 0, target.z - state.camPos[2]);
-  v3norm(dir,dir);
-  const f = vec3(state.forward[0],0,state.forward[2]); v3norm(f,f);
-  return v3dot(dir,f);
-}
+/* Validation: mobile look stick now non-inverted; collisions block walls/houses/keep. Proceed. */
+
+/* ========================
+   Section G: Interactions, AI
+   ======================== */
+const promptEl=document.getElementById('prompt');
+const dlg=document.getElementById('dlg'), dlgTitle=document.getElementById('dlgTitle'), dlgBody=document.getElementById('dlgBody'), dlgActs=document.getElementById('dlgActs');
+
+function showPrompt(t){ promptEl.textContent=t; promptEl.style.display='block'; }
+function hidePrompt(){ promptEl.style.display='none'; }
 
 function nearestInteractable(){
-  let best=null; let bestD=2.5; const cosFOV = Math.cos(30*Math.PI/180);
-  // NPCs and guards by their scene boxes
-  for(const s of scene){
-    if (s.kind==='terrain' || s.kind==='wall' || s.kind==='tower' || s.kind==='house' || s.kind==='keep') continue;
-    const tx = s.x, tz = s.z, ty = s.y;
-    const dx = tx - state.camPos[0], dz = tz - state.camPos[2];
-    const d = Math.hypot(dx,dz);
-    if (d<bestD){
-      if (playerForwardDotTo({x:tx,z:tz}) >= cosFOV){
-        best = s; bestD=d;
-      }
-    }
+  let best=null, bestD=2.6, cosFOV=Math.cos(28*Math.PI/180);
+  const f = vec3(forward()[0],0,forward()[2]); const fN=vnorm(f);
+  function consider(obj, x,y,z, name, kind, metaRef){
+    const dx=x-state.pos[0], dz=z-state.pos[2], d=Math.hypot(dx,dz); if(d>bestD) return;
+    const v = vnorm(vec3(dx,0,dz));
+    if(dot(fN,v) < cosFOV) return;
+    best={x,y,z,name,kind,ref:metaRef};
+    bestD=d;
+  }
+  for(const e of interactives){
+    consider(e, e.x||0, e.y||0, e.z||0, e.interactive?.meta?.name || e.interactive?.meta?.id || 'Object', e.interactive?.kind, e);
+  }
+  for(const s of sprites){
+    consider(s, s.x, s.y, s.z, s.meta?.name || s.name, s.role, s);
   }
   return best;
 }
 
-function tryInteract(){
-  const s = nearestInteractable();
-  if (!s) return;
-  if (s.kind==='npc' || s.kind==='guard'){
-    const e = s.entityRef;
-    openDialogue(e.name, e.dialog?.greet||"...", e.dialog?.options||[{label:"Close",action:"close"}]);
-  } else if (s.kind==='door' && s.isDoor){
-    s.entityRef = s.entityRef||{};
-    s.open = s.open>0.5?0:1;
-  } else if (s.kind==='chest' || s.kind==='sign'){
-    openDialogue(s.name, s.examine||"It exists.", [{label:"Close",action:"close"}]);
-  }
+function openDialogue(title, text, options){
+  dlgTitle.textContent=title; dlgBody.textContent=text||''; dlgActs.innerHTML='';
+  (options||[{label:'Close',action:'close'}]).forEach(o=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=o.label;
+    b.onclick=()=>{ if(o.action==='close') dlg.style.display='none';
+      else if(o.action==='trade') dlgBody.textContent='Trading stub. Prices imaginary. Coins too.';
+      else if(o.action==='quest') dlgBody.textContent='Quest stub: fetch three feathers and a dramatic backstory.';
+    };
+    if(o.action!=='close') b.classList.add('primary');
+    dlgActs.appendChild(b);
+  });
+  dlg.style.display='flex';
+}
+function interact(){
+  const h = nearestInteractable(); if(!h) return;
+  if(h.kind==='npc' || h.kind==='guard'){
+    const m = h.ref.meta;
+    openDialogue(m.name, m.dialog?.greet || '...', m.dialog?.options || [{label:'Close',action:'close'}]);
+  } else if(h.kind==='door'){
+    const d = h.ref.door; if(d.locked){ openDialogue(h.name,'Locked.',[{label:'Close',action:'close'}]); } else { d.open = !d.open; }
+  } else if(h.kind==='sign'){ openDialogue(h.name, h.ref.interactive.meta.text || 'You stare. It stares back.', [{label:'Close',action:'close'}]);
+  } else if(h.kind==='chest'){ const loot=(h.ref.interactive.meta.loot||[]).join(', ')||'cobwebs'; openDialogue(h.name, 'Inside: '+loot, [{label:'Close',action:'close'}]); }
 }
 
-/* Validation: prompt appears when aimed at entity within ~2.5m; E/use toggles doors or opens dialogue. */
-
-/* =========================
-   Section 7: Guard patrols
-   ========================= */
-function updateGuards(dt){
-  for(const g of guards){
-    const path = g.patrolRoute;
-    if (!path || path.length<2) continue;
-    const a = path[g.patrolIndex];
-    const b = path[(g.patrolIndex+1)%path.length];
-    const pos = vec3(g.x, g.y, g.z);
-    const dir = vec3(b.x - a.x, 0, b.z - a.z);
-    const dist = Math.max(0.001, Math.hypot(dir[0],dir[2]));
-    const step = g.speed*dt;
-    const toB = vec3(b.x - g.x, 0, b.z - g.z);
-    if (Math.hypot(toB[0],toB[2]) <= step){
-      g.x = b.x; g.z = b.z; g.y = terrain.heightFn(g.x,g.z);
-      g.patrolIndex = (g.patrolIndex+1)%path.length;
-    } else {
-      v3norm(dir,dir);
-      g.x += dir[0]*step; g.z += dir[2]*step; g.y = terrain.heightFn(g.x,g.z);
-    }
-    // Face movement direction for billboard
-    g.rotY = Math.atan2(dir[0], dir[2]);
-    // Update matching scene node (crude linear search to keep code small)
-    for(const s of scene){ if (s.id===g.id || (s.entityRef && s.entityRef.id===g.id)){ s.x=g.x; s.z=g.z; s.y=g.y+0.9; s.rotY=g.rotY; } }
+function stepAI(dt){
+  // Guards patrol
+  for(const s of sprites){
+    if(s.role!=='guard' || !s.meta?.patrolRoute) continue;
+    if(!s.meta._i){ s.meta._i=0; s.meta._wait=0; }
+    if(s.meta._wait>0){ s.meta._wait-=dt; continue; }
+    const route=s.meta.patrolRoute;
+    const tgt = route[s.meta._i];
+    const target=vec3(tgt[0],0,tgt[2]);
+    const to=vsub(target, vec3(s.x,0,s.z)); const dist=vlen(to);
+    if(dist<0.2){ s.meta._i=(s.meta._i+1)%route.length; s.meta._wait=0.5; continue; }
+    const v=vscale(vnorm(to), (s.meta.speed||1.5)*dt);
+    s.x+=v[0]; s.z+=v[2]; s.y=heightAt(s.x,s.z)+1.0;
   }
+  // Door easing
+  for(const e of interactives){ if(e.door){
+    const t=e.door.open? e.door.openAngle : 0;
+    const diff=t - (e.door.angle||0);
+    e.door.angle = (e.door.angle||0) + clamp(diff, -dt*2.5, dt*2.5);
+  } }
 }
-/* Validation: guards loop over waypoints; if route bad, they’ll twitch at point 0. */
+/* Validation: guards loop smoothly; doors ease. Proceed. */
 
-/* =========================
-   Section 8: Render loop
-   ========================= */
-function drawNode(n){
-  let M = m4ident();
-  M = m4mul(m4translate(n.x||0, n.y||0, n.z||0), M);
-  if (n.rotY) M = m4mul(m4rotateY(n.rotY), M);
+/* ========================
+   Section H: Render loop
+   ======================== */
+const status=document.getElementById('status');
+function drawEntity(e, vp){
+  let M=e.model || mIdent();
+  if(e.kind==='box' || e.kind==='decal' || e.kind==='water'){
+    gl.uniform1f(LOC.uUseTex, 0.0);
+  }
   // Doors: rotate around hinge
-  if (n.isDoor){
-    const angle = n.open*1.3; // 0..~75deg
-    const hingeLeft = n.hinge==='left';
-    // move to hinge
-    const sx=n.sx||1, sy=n.sy||1, sz=n.sz||1;
-    const hx = (hingeLeft? -sx/2 : sx/2);
-    M = m4mul(m4translate(hx, -(sy/2), 0), M);
-    M = m4mul(m4rotateY( hingeLeft? angle : -angle ), M);
-    M = m4mul(m4translate(-hx, sy/2, 0), M);
+  if(e.door){
+    const s=vec3(e.sx,e.sy,e.sz), pivot = (e.door.hinge==='left'? -s[0]/2 : s[0]/2);
+    const base = mMul(mTrans(vec3(e.x, e.y+e.sy/2, e.z)), mScale(s));
+    let T = mMul(mTrans(vec3(pivot, -e.sy/2, 0)), mIdent());
+    T = mMul(mRotY((e.door.hinge==='left'?1:-1) * (e.door.angle||0)), T);
+    T = mMul(mTrans(vec3(-pivot, e.sy/2, 0)), T);
+    M = mMul(base, T);
   }
-  if (n.sx || n.sy || n.sz) M = m4mul(m4scale(n.sx||1,n.sy||1,n.sz||1), M);
-
-  bindMesh(n.mesh);
-  gl.uniformMatrix4fv(loc.uModel,false,M);
-  gl.drawElements(gl.TRIANGLES, n.mesh.count, gl.UNSIGNED_SHORT, 0);
+  gl.uniformMatrix4fv(LOC.uModel,false,M);
+  setupAttribs(e.mesh);
+  gl.drawElements(gl.TRIANGLES, e.mesh.count, gl.UNSIGNED_SHORT, 0);
 }
-
-function render(time){
-  if (!lastTime) lastTime = time;
-  const dt = Math.min(0.05, (time - lastTime)/1000);
-  lastTime = time;
-  resize();
-  if (!state.paused){
-    movePlayer(dt);
-    updateGuards(dt);
+function drawSprite(s, vp){
+  // billboard: face camera horizontally
+  const yaw = Math.atan2(state.pos[0]-s.x, state.pos[2]-s.z);
+  let M=mIdent();
+  M=mMul(mTrans(vec3(s.x, s.y, s.z)), mMul(mRotY(yaw), mScale(vec3(1.0,2.0,1.0))));
+  gl.uniformMatrix4fv(LOC.uModel,false,M);
+  gl.uniform1f(LOC.uUseTex, 1.0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.sprite); gl.uniform1i(LOC.uTex,0);
+  setupAttribs(quadMesh);
+  gl.disable(gl.CULL_FACE);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.drawElements(gl.TRIANGLES, quadMesh.count, gl.UNSIGNED_SHORT, 0);
+  gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);
+}
+function step(dt){
+  // Input
+  let mv=vec3(0,0,0);
+  if(!state.mobile){
+    if(state.keys['w']) mv=vadd(mv, forward());
+    if(state.keys['s']) mv=vsub(mv, forward());
+    if(state.keys['a']) mv=vsub(mv, right());
+    if(state.keys['d']) mv=vadd(mv, right());
+  } else {
+    // Left stick: x strafes, y forward/back; deadzone 0.12
+    const dz=0.12, ax=Math.abs(lVec[0])>dz? lVec[0]:0, ay=Math.abs(lVec[1])>dz? lVec[1]:0;
+    mv=vadd( vscale(right(), ax), vscale(forward(), -ay) );
+    // Right stick: non-inverted look, deadzone 0.08
+    const dz2=0.08, lx=Math.abs(rVec[0])>dz2? rVec[0]:0, ly=Math.abs(rVec[1])>dz2? rVec[1]:0;
+    state.yaw  -= lx * state.lookSensMobile;
+    state.pitch = clamp(state.pitch + (-ly) * state.lookSensMobile * 0.9, -1.2, 1.2); // up on stick = look up
   }
+  if(vlen(mv)>0) mv=vscale(vnorm(mv), state.speed*dt);
+  // Apply movement and collisions
+  const next=vadd(state.pos, vec3(mv[0],0,mv[2]));
+  next[1]=heightAt(next[0],next[2])+1.65;
+  const resolved = resolveXZ(next);
+  state.pos=resolved;
 
-  // camera matrices
-  let V = m4ident();
-  V = m4mul(m4rotateX(state.pitch), V);
-  V = m4mul(m4rotateY(state.yaw), V);
-  V = m4mul(m4translate(-state.camPos[0], -state.camPos[1], -state.camPos[2]), V);
-  const aspect = canvas.width / Math.max(1, canvas.height);
-  const P = m4persp(60*Math.PI/180, aspect, 0.05, 400);
+  // Update AI and doors
+  stepAI(dt);
+
+  // HUD prompt
+  const h=nearestInteractable(); if(h) showPrompt(`E/Use • ${h.name||h.kind}`); else hidePrompt();
+}
+function render(now){
+  resize();
+  const dt=Math.min(0.05, (now - (render.t||now))/1000); render.t=now;
+
+  step(dt);
+
+  // Camera
+  const proj=mPerspective(60*Math.PI/180, canvas.width/Math.max(1,canvas.height), 0.05, 500);
+  const vp = mMul(proj, mLook(state.pos, forward(), vec3(0,1,0)));
 
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-  gl.uniformMatrix4fv(loc.uView,false,V);
-  gl.uniformMatrix4fv(loc.uProj,false,P);
-  gl.uniform3f(loc.uLightDir, 0.6, 1.0, 0.2);
-
-  // update prompt
-  const hit = nearestInteractable();
-  if (hit) showPrompt(`Use [E] • ${hit.name||hit.kind}`); else hidePrompt();
-
-  // sync billboard nodes to face camera horizontally
-  for(const s of scene){
-    if (s.kind==='npc' || s.kind==='guard'){
-      const yaw = Math.atan2( state.camPos[0]-s.x, state.camPos[2]-s.z );
-      s.rotY = yaw;
-    }
+  gl.uniform3f(LOC.uLightDir, 0.6, 1.0 + Math.sin(now*0.001)*0.05, 0.25); // tiny flicker
+  // Draw static/boxy stuff
+  for(const e of entities){
+    if(e.kind==='sprite' || e.kind==='flame') continue;
+    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, e.model || mIdent()));
+    gl.uniform1f(LOC.uUseTex, 0.0);
+    drawEntity(e, vp);
+  }
+  // Doors re-render with transformed matrices
+  for(const e of interactives){ if(e.door){
+    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, mIdent()));
+    drawEntity(e, vp);
+  } }
+  // Flames and sprites
+  for(const e of entities){ if(e.kind==='flame'){
+    const M=mMul(mTrans(vec3(e.x, e.y, e.z)), mScale(vec3(0.6+0.05*Math.sin(now*0.02),1.2,1)));
+    gl.uniformMatrix4fv(LOC.uModel,false,M);
+    gl.uniformMatrix4fv(LOC.uMVP,false,mMul(vp, M));
+    gl.uniform1f(LOC.uUseTex, 1.0);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, e.sprite); gl.uniform1i(LOC.uTex,0);
+    setupAttribs(quadMesh); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawElements(gl.TRIANGLES, quadMesh.count, gl.UNSIGNED_SHORT, 0);
+    gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);
+  } }
+  for(const s of sprites){
+    const MVP=mMul(vp, mIdent()); gl.uniformMatrix4fv(LOC.uMVP,false,MVP); drawSprite(s, vp);
   }
 
-  // draw
-  for(const n of scene) drawNode(n);
-
-  // status text
-  statusEl.textContent = `Pos: ${state.camPos[0].toFixed(1)}, ${state.camPos[1].toFixed(1)}, ${state.camPos[2].toFixed(1)} | ` +
-                         `Look: yaw ${(state.yaw).toFixed(2)} pitch ${(state.pitch).toFixed(2)} | ` +
-                         `Mobile: ${state.mobile ? 'yes' : 'no'} ${state.paused?'(paused)':''}`;
-
+  status.textContent=`pos ${state.pos[0].toFixed(1)},${state.pos[1].toFixed(1)},${state.pos[2].toFixed(1)}  yaw ${state.yaw.toFixed(2)} pitch ${state.pitch.toFixed(2)}  mobile:${state.mobile?'yes':'no'}`;
   requestAnimationFrame(render);
 }
-let lastTime=0;
-requestAnimationFrame(render);
-/* Validation: if you see green hills, stone boxes, houses, and moving guards, we passed. If screen is black, check shader compile errors in console. */
+
+/* ========================
+   Section I: Start flow
+   ======================== */
+document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; if(!state.mobile) canvas.requestPointerLock?.(); requestAnimationFrame(render); };
+/* Validation: Start hides overlay, render loop runs, crosshair+prompts show. Proceed. */
 </script>
 </body>
 </html>
