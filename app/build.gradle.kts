@@ -38,9 +38,9 @@ android {
     }
 
     lint {
-        // Print every issue in the build log, not just the first error.
+        // A plain-text report that CI prints, so every issue shows in the build log.
         textReport = true
-        textOutput = file("stdout")
+        textOutput = layout.buildDirectory.file("reports/lint-results.txt").get().asFile
     }
 }
 
