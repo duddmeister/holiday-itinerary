@@ -36,6 +36,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    lint {
+        // Print every issue in the build log, not just the first error.
+        textReport = true
+        textOutput = file("stdout")
+    }
 }
 
 kotlin {
