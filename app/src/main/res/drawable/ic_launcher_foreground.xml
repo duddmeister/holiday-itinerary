@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Keycap -->
+    <path
+        android:fillColor="#24FFFFFF"
+        android:pathData="M41,35h26a9,9 0,0 1,9 9v20a9,9 0,0 1,-9 9h-26a9,9 0,0 1,-9 -9v-20a9,9 0,0 1,9 -9z"
+        android:strokeWidth="3"
+        android:strokeColor="#F2FFFFFF" />
+    <!-- Sparkle -->
+    <path android:pathData="M54,42.5Q55.5,52.5 65.5,54Q55.5,55.5 54,65.5Q52.5,55.5 42.5,54Q52.5,52.5 54,42.5Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="65.5"
+                android:endY="65.5"
+                android:startX="42.5"
+                android:startY="42.5"
+                android:type="linear">
+                <item android:color="#FFC4B5FD" android:offset="0" />
+                <item android:color="#FF5EEAD4" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M70,38.5Q70.6,42.4 74.5,43Q70.6,43.6 70,47.5Q69.4,43.6 65.5,43Q69.4,42.4 70,38.5Z" />
+</vector>

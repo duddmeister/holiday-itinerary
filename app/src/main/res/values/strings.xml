@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumen</string>
+    <string name="ime_name">Lumen Keyboard</string>
+    <string name="subtype_en_us">English (US)</string>
+    <string name="tagline">A keyboard that glows.</string>
+
+    <string name="section_setup">Get started</string>
+    <string name="section_try">Try it</string>
+    <string name="section_themes">Themes</string>
+    <string name="section_typing">Typing</string>
+    <string name="section_layout">Layout</string>
+    <string name="section_feel">Feel</string>
+    <string name="section_privacy">Privacy</string>
+    <string name="section_about">About</string>
+
+    <string name="step_enable">Turn on Lumen</string>
+    <string name="step_enable_summary">Enable it in your keyboard settings</string>
+    <string name="open_settings">Open</string>
+    <string name="step_select">Switch to Lumen</string>
+    <string name="step_select_summary">Pick Lumen as your keyboard</string>
+    <string name="choose">Choose</string>
+    <string name="setup_done">You\'re all set</string>
+    <string name="setup_done_summary">Lumen is your keyboard. Enjoy!</string>
+    <string name="try_hint">Type here to try Lumen…</string>
+
+    <string name="key_shape">Key shape</string>
+    <string name="key_backgrounds">Key backgrounds</string>
+    <string name="key_backgrounds_summary">Turn off for a borderless look</string>
+
+    <string name="autocorrect">Auto-correct</string>
+    <string name="autocorrect_summary">Fixes typos when you press space. Backspace to undo.</string>
+    <string name="suggestions">Suggestion strip</string>
+    <string name="suggestions_summary">Completions and next-word predictions</string>
+    <string name="glide">Glide typing</string>
+    <string name="glide_summary">Slide across the letters to type a word</string>
+    <string name="glide_trail">Show glide trail</string>
+    <string name="emoji_suggestions">Emoji suggestions</string>
+    <string name="emoji_suggestions_summary">Offers 🍕 when you type “pizza”</string>
+    <string name="auto_caps">Auto-capitalisation</string>
+    <string name="double_space">Double-space full stop</string>
+    <string name="double_space_summary">Tap space twice to end a sentence</string>
+
+    <string name="letter_layout">Letter layout</string>
+    <string name="number_row">Number row</string>
+    <string name="symbol_hints">Long-press for symbols</string>
+    <string name="symbol_hints_summary">Shows symbol hints on the letter keys</string>
+    <string name="keyboard_height">Keyboard height</string>
+
+    <string name="key_previews">Pop-up on key press</string>
+    <string name="light_effects">Light effects</string>
+    <string name="light_effects_summary">Keys glow softly when you press them</string>
+    <string name="haptics">Vibrate on key press</string>
+    <string name="haptic_strength">Vibration strength</string>
+    <string name="light">Light</string>
+    <string name="medium">Medium</string>
+    <string name="firm">Firm</string>
+    <string name="sound">Sound on key press</string>
+    <string name="sound_volume">Sound volume</string>
+    <string name="long_press_delay">Long-press delay</string>
+    <string name="space_cursor">Space-bar cursor</string>
+    <string name="space_cursor_summary">Slide along the space bar to move the cursor</string>
+    <string name="delete_swipe">Swipe to delete</string>
+    <string name="delete_swipe_summary">Slide left from backspace to select and delete words</string>
+
+    <string name="learn_words">Learn from my typing</string>
+    <string name="learn_words_summary">Remembers your words and phrases, on this device only</string>
+    <string name="clipboard_history">Clipboard history</string>
+    <string name="clipboard_history_summary">Keeps recent copies for an hour. Pinned clips stay.</string>
+    <string name="clear_learned">Clear learned words</string>
+    <string name="clear_learned_summary">Forget everything Lumen has learned</string>
+    <string name="clear_learned_confirm">Lumen will forget the words and phrases it has learned from your typing.</string>
+    <string name="clear">Clear</string>
+    <string name="privacy_note">Lumen has no internet access. Everything it learns stays on this device, and it never learns from password or incognito fields.</string>
+    <string name="about_body">Lumen %1$s\n\nEnglish dictionary from the Android Open Source Project (Apache License 2.0). Emoji data from Unicode and GitHub\'s gemoji (MIT).</string>
+</resources>
