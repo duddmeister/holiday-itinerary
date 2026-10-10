@@ -1,0 +1,233 @@
+# Lumen starter predictions for English.
+# Hand-written for Lumen. Each line: context<TAB>next words, most likely first.
+# The context is one or two lowercase words; "<s>" means the start of a sentence.
+# On-device learning adds to (and quickly outranks) these.
+<s>	I Thanks The Hi Hey Yes What How Ok Can We It That Sounds Just Let's
+i	am have think was will don't can just love need would want feel know hope
+i am	so going not a sure really the just in excited
+i have	a to been no the never an some
+i think	so it that you we I the this
+i was	going just thinking so a in about not
+i will	be have do send let call get see
+i don't	know think have want like need care
+i can	do see help send get try
+i just	wanted got saw need realized
+i love	you it this that the
+i need	to a you the some help
+i would	love like be have
+i want	to a you the
+i hope	you it that we
+i feel	like so bad good
+i know	I you right that it what
+i'm	going not so sure on in just a at here
+i've	been got never seen had
+i'll	be have do send let call see check
+i'd	love like be have
+you	are can have know want guys should will need
+you are	so the a welcome right
+you can	do get see use
+you have	a to any the
+you know	what I it that
+you're	welcome right the so not a
+thank	you
+thank you	so for very
+thanks	for so again a
+thanks for	the your letting sharing everything
+so	much I we you good far the it excited sorry happy
+so much	for fun
+how	are about is was do much many to long did
+how are	you things
+how about	you we the
+how is	it the your everything
+what	is are do time a the about if you did
+what is	the your it
+what are	you your the we
+what time	is are do
+what do	you we
+when	is are do will you I we can
+where	are is do did
+who	is are was
+why	not is are did do
+is	it that the there this a not
+is it	ok possible a the
+it	is was will would has
+it is	a the so not
+it was	a so the great really
+it's	a not ok the been so fine all
+that	is was would sounds makes
+that is	so the a great
+that's	great a so the what fine awesome amazing right ok
+sounds	good great like fun perfect
+sounds good	to
+good	morning night luck to idea job one time
+good morning	everyone
+good night	everyone
+happy	birthday to new holidays
+happy birthday	to
+see	you the it what
+see you	soon later tomorrow then there
+let	me us you
+let me	know see check
+let me know	if when what
+let's	go do get meet see talk
+can	you we I be
+can you	please send help do
+could	you we be I
+would	you be love like have
+will	be you do have
+should	be we I have
+on	the my it a way
+on my	way phone
+on the	way other phone
+in	the a my an
+in a	few bit minute
+at	the home work
+for	the a you your me
+to	the be do get go see make
+to be	honest a the
+to the	store
+of	the course my
+of course	I
+with	the you a my me
+from	the my your
+about	the it to you that
+are	you we they there
+are you	ok sure free going coming doing
+do	you it not we
+do you	want have know think need
+did	you it they
+did you	get see
+have	a to you been fun
+have a	great good nice
+have a great	day weekend time
+have a good	day night weekend one
+nice	to one
+nice to	meet see
+not	sure yet a really
+no	worries problem I way
+no problem	at
+yes	I it please
+yeah	I that it
+ok	I thanks sounds
+okay	I thanks
+please	let send
+please let	me
+looking	forward
+looking forward	to
+forward	to
+miss	you
+love	you it the
+love you	too so
+call	me you
+call me	when
+talk	to soon later
+talk to	you
+talk to you	soon later
+just	wanted a got
+just wanted	to
+wanted	to
+going	to
+going to	be the
+need	to a
+need to	get go
+want	to a
+want to	go
+be	there a the
+be there	in soon
+have to	go do
+has	been a
+had	a to
+was	a the so just
+were	you the
+this	is weekend morning week time
+this is	a the
+next	week time year
+last	night week time year
+tomorrow	morning night at
+right	now
+right now	I
+at the	moment
+the	best same first only
+the best	thing
+one	of more
+one of	the
+some	of
+all	the of right good
+very	much good
+too	much
+much	better
+as	soon well
+as soon	as
+as soon as	possible I
+a	lot few great good little
+a lot	of
+a few	minutes days
+a little	bit
+take	care
+take care	of
+get	a the it back
+get back	to
+back	to home
+home	soon
+work	today tomorrow
+on the way	home
+by	the
+my	friend phone mom dad
+your	help time message
+our	team
+we	are can have will should
+we are	going
+we can	do
+we should	go
+they	are were
+he	is was
+she	is was
+there	is are was
+there is	a no
+there are	a some no
+here	is
+here is	the
+if	you I it
+if you	have need want
+because	I it
+but	I it the
+and	I the
+or	not
+than	I
+then	I we
+also	I
+really	good
+pretty	good much
+kind	of regards
+sort	of
+lot	of
+out	of
+up	to
+same	here
+happy new	year
+merry	christmas
+congratulations	on
+congrats	on
+best	wishes regards
+please find	attached
+find	attached
+attached	is
+hope	you this
+hope you	are
+hope you are	well doing
+just a	quick
+quick	question
+any	update
+how was	your it
+how was your	day weekend
+how's	it
+how's it	going
+what's	up
+i'm sorry	for
+sorry	for I
+sorry for	the
+no worries	at
+be right	back
+i'm on	my
+almost	there
+running	late
