@@ -1,5 +1,6 @@
 package io.github.duddmeister.lumen.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -200,6 +201,7 @@ class SettingsKit(private val context: Context, val palette: Palette) {
 }
 
 /** Lays children out left to right, wrapping onto new lines. */
+@SuppressLint("ViewConstructor")
 class FlowLayout(context: Context, private val hGap: Int, private val vGap: Int) : ViewGroup(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)

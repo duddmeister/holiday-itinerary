@@ -330,8 +330,9 @@ class SettingsActivity : Activity() {
     /** Every theme as a live miniature; tap to apply. */
     private inner class ThemeGallery(context: Context) : View(context) {
         private val ids = Themes.catalogue
-        private val previews = HashMap<String, KeyboardPreview>()
+        private val previews = ids.associateWith { KeyboardPreview(context) }
         private val rect = RectF()
+        private val ring = RectF()
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         private val columns = 2
@@ -366,12 +367,13 @@ class SettingsActivity : Activity() {
                 val corner = context.dp(16f)
                 canvas.save()
                 if (i == pressed) canvas.scale(0.97f, 0.97f, rect.centerX(), rect.centerY())
-                previews.getOrPut(id) { KeyboardPreview(context) }.draw(canvas, rect, theme, prefs.keyShape, corner, prefs.keyBackgrounds)
+                previews.getValue(id).draw(canvas, rect, theme, prefs.keyShape, corner, prefs.keyBackgrounds)
                 if (id == selected) {
                     paint.style = Paint.Style.STROKE
                     paint.strokeWidth = context.dp(3f)
                     paint.color = kit.palette.accent
-                    val ring = RectF(rect).apply { inset(-context.dp(4f), -context.dp(4f)) }
+                    ring.set(rect)
+                    ring.inset(-context.dp(4f), -context.dp(4f))
                     canvas.drawRoundRect(ring, corner + context.dp(4f), corner + context.dp(4f), paint)
                 }
                 canvas.restore()

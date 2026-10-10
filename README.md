@@ -79,6 +79,7 @@ in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 ## Privacy
 
 Lumen never connects to the internet. Learned words stay in the app's private
-storage and can be cleared from the app. Clipboard history is kept in memory for
-an hour (pinned clips are saved), and clips that apps mark as sensitive, such as
-passwords, are never recorded.
+storage, are left out of backups and transfers to a new phone, and can be cleared
+from the app. Clipboard history is kept in memory for an hour (pinned clips are
+saved), and clips that apps mark as sensitive, such as passwords, are never
+recorded.
