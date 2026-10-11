@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.net.Uri
 import android.text.Editable
@@ -25,6 +26,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import io.github.duddmeister.lumen.BuildConfig
@@ -40,6 +42,7 @@ import io.github.duddmeister.lumen.theme.Themes
 import io.github.duddmeister.lumen.ui.Colors
 import io.github.duddmeister.lumen.ui.Motion
 import io.github.duddmeister.lumen.ui.dp
+import io.github.duddmeister.lumen.update.Updater
 import kotlin.math.ceil
 
 /** Lumen's home screen: setup, a live theme gallery and every setting. */
@@ -47,6 +50,9 @@ class SettingsActivity : Activity() {
     private lateinit var prefs: Prefs
     private lateinit var kit: SettingsKit
     private lateinit var setupCard: LinearLayout
+    private var updateCard: LinearLayout? = null
+    private var resumed = false
+    private val onUpdate: (Updater.State) -> Unit = { refreshUpdate() }
     private lateinit var hero: HeroPreview
     private lateinit var gallery: ThemeGallery
 
@@ -86,6 +92,12 @@ class SettingsActivity : Activity() {
         }
         setContentView(scroll)
         build(content)
+        Updater.listen(onUpdate)
+    }
+
+    override fun onDestroy() {
+        Updater.unlisten(onUpdate)
+        super.onDestroy()
     }
 
     private fun build(root: Column) {
@@ -106,6 +118,15 @@ class SettingsActivity : Activity() {
         setupCard = kit.card()
         root.addView(kit.section(getString(R.string.section_setup)))
         root.addView(setupCard)
+
+        // Updates, for builds that can install Lumen's releases
+        if (Updater.enabled) {
+            root.addView(kit.section(getString(R.string.section_updates)))
+            val card = kit.card()
+            updateCard = card
+            root.addView(card)
+            refreshUpdate()
+        }
 
         // Try it
         root.addView(kit.section(getString(R.string.section_try)))
@@ -263,6 +284,95 @@ class SettingsActivity : Activity() {
         if (!last) addView(kit.divider())
     }
 
+    /** Shows where updating stands: one row for the latest news, then the automatic-check switch. */
+    private fun refreshUpdate() {
+        val card = updateCard ?: return
+        val state = Updater.state
+        // Android asked the user to confirm the install: show its screen while we're in front.
+        if (state is Updater.State.Installing && state.confirm != null && resumed) {
+            try {
+                startActivity(state.confirm)
+            } catch (e: android.content.ActivityNotFoundException) {
+                // Nothing to show it; the installer reports the failure.
+            }
+            Updater.confirmShown()
+            return
+        }
+        card.removeAllViews()
+        val current = BuildConfig.VERSION_NAME
+        val lumen = getString(R.string.app_name) + " " + current
+        when (state) {
+            Updater.State.Idle ->
+                card.addView(updateRow(lumen, getString(R.string.update_unchecked), getString(R.string.update_check), filled = false) {
+                    Updater.check(now = true)
+                })
+            Updater.State.Checking ->
+                card.addView(updateRow(lumen, getString(R.string.update_checking)))
+            Updater.State.Current ->
+                card.addView(updateRow(lumen, getString(R.string.update_current), getString(R.string.update_check), filled = false) {
+                    Updater.check(now = true)
+                })
+            is Updater.State.Available -> {
+                val news = state.release.changes.joinToString("\n") { "• $it" }
+                    .ifEmpty { getString(R.string.update_available_summary, current) }
+                card.addView(updateRow(getString(R.string.update_available, state.release.versionName), news, getString(R.string.update_install)) {
+                    Updater.install(this, state.release)
+                })
+            }
+            is Updater.State.NeedsPermission ->
+                card.addView(updateRow(getString(R.string.update_permission), getString(R.string.update_permission_summary), getString(R.string.update_permission_action)) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        // No such screen on this device; Android's installer asks instead.
+                        Updater.install(this, state.release)
+                    }
+                })
+            is Updater.State.Downloading -> {
+                val percent = (state.progress * 100).toInt()
+                card.addView(updateRow(getString(R.string.update_downloading, state.release.versionName), "$percent%"))
+                card.addView(ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                    max = 100
+                    progress = percent
+                    progressTintList = ColorStateList.valueOf(kit.palette.accent)
+                    progressBackgroundTintList = ColorStateList.valueOf(Colors.withAlpha(kit.palette.secondary, 0.35f))
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(dp(20), 0, dp(20), dp(14))
+                    }
+                })
+            }
+            is Updater.State.Installing ->
+                card.addView(updateRow(getString(R.string.update_installing, state.release.versionName), getString(R.string.update_installing_summary)))
+            is Updater.State.Failed -> {
+                val release = state.release
+                val title = getString(if (release != null) R.string.update_failed else R.string.update_check_failed)
+                card.addView(updateRow(title, state.message, getString(R.string.update_retry), filled = false) {
+                    if (release != null) Updater.install(this, release) else Updater.check(now = true)
+                })
+            }
+        }
+        card.addView(kit.divider())
+        card.addView(kit.switchRow(getString(R.string.auto_updates), getString(R.string.auto_updates_summary), prefs.autoUpdates) {
+            prefs.set(Prefs.AUTO_UPDATES, it)
+        })
+    }
+
+    private fun updateRow(title: String, subtitle: String, action: String? = null, filled: Boolean = true, onClick: () -> Unit = {}): View {
+        val p = kit.palette
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(20), dp(16), dp(16), dp(16))
+            addView(LinearLayout(this@SettingsActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(kit.text(title, 16f, bold = true))
+                addView(kit.text(subtitle, 13.5f, p.secondary).apply { setPadding(0, dp(2), 0, 0) })
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(12) }
+            })
+            if (action != null) addView(kit.button(action, filled = filled, onClick = onClick))
+        }
+    }
+
     /** Puts the key saved for the chosen GIF service in [field]. */
     private fun showGifKey(field: EditText) {
         val service = prefs.gifService
@@ -272,8 +382,24 @@ class SettingsActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        resumed = true
+        if (Updater.enabled) {
+            val state = Updater.state
+            // Back from allowing Lumen to install apps: carry on with the update.
+            if (state is Updater.State.NeedsPermission && packageManager.canRequestPackageInstalls()) {
+                Updater.install(this, state.release)
+            } else if (prefs.autoUpdates) {
+                Updater.check(now = false)
+            }
+            refreshUpdate()
+        }
         refreshSetup()
         refreshPreviews()
+    }
+
+    override fun onPause() {
+        resumed = false
+        super.onPause()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

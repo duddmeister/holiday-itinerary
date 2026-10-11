@@ -5,6 +5,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Lumen's own signing key, so each new build installs over the last one and the app
+// can update itself. It never lives in the repository: CI writes it from the
+// LUMEN_SIGNING_KEY secret to a temporary file and passes its path and password.
+// Builds without it use the debug key.
+val signingKeyFile: String? = providers.environmentVariable("LUMEN_SIGNING_KEY_FILE").orNull?.takeIf { it.isNotEmpty() }
+val signingPassword: String? = providers.environmentVariable("LUMEN_SIGNING_PASSWORD").orNull?.takeIf { it.isNotEmpty() }
+val ownKey = signingKeyFile != null && signingPassword != null
+
 android {
     namespace = "io.github.duddmeister.lumen"
     compileSdk = 35
@@ -13,8 +21,17 @@ android {
         applicationId = "io.github.duddmeister.lumen"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        // CI passes the number of commits, so each build on main is newer than the last.
+        val build = providers.environmentVariable("LUMEN_VERSION_CODE").orNull?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "1.0.$build"
+
+        // Where the app looks for updates: the GitHub repository that built it, and only
+        // in builds signed with Lumen's key, since only those can install the updates.
+        val updateRepo = if (!ownKey) "" else providers.environmentVariable("GITHUB_REPOSITORY")
+            .getOrElse("")
+            .filter { it.isLetterOrDigit() || it in "-_./" }
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
 
         // GIF search uses GIPHY or KLIPY, which need an API key. Build one in with
         // -PgiphyApiKey=... / -PklipyApiKey=... or the GIPHY_API_KEY / KLIPY_API_KEY
@@ -29,14 +46,28 @@ android {
         }
     }
 
+    signingConfigs {
+        if (ownKey) {
+            create("lumen") {
+                storeFile = file(signingKeyFile!!)
+                storeType = "PKCS12"
+                storePassword = signingPassword
+                keyAlias = "lumen"
+                keyPassword = signingPassword
+            }
+        }
+    }
+    val signing = signingConfigs.findByName("lumen") ?: signingConfigs.getByName("debug")
+
     buildTypes {
+        debug {
+            signingConfig = signing
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key so release builds install straight away.
-            // Use your own signing config before publishing to a store.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signing
         }
     }
 
