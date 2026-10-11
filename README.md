@@ -40,6 +40,8 @@ make it feel at home on any phone.
   with pins and a one-tap paste chip, swipe left from backspace to delete whole
   words, long-press for accents and symbols, an optional number row, and QWERTY,
   QWERTZ, AZERTY, Colemak and Dvorak layouts.
+- **Symbols with a flick.** Flick down on a key for the number or symbol in its
+  corner (1 on Q, @ on A), no long press or symbols page needed.
 - **A space bar that does more.** Swipe left on it to jump back a word. Swipe
   right to finish the word you're typing with the suggestion, or to jump forward
   a word.

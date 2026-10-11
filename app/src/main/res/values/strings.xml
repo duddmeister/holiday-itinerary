@@ -47,6 +47,8 @@
     <string name="symbol_hints_summary">Shows symbol hints on the letter keys</string>
     <string name="keyboard_height">Keyboard height</string>
     <string name="spelling">Spelling</string>
+    <string name="flick_symbols">Flick down for symbols</string>
+    <string name="flick_symbols_summary">Flick down on a key to type the number or symbol in its corner</string>
     <string name="voice_typing">Voice typing</string>
     <string name="voice_typing_summary">A microphone in the toolbar. What you say goes to your phone\'s speech service (usually Google\'s); Lumen keeps no recordings.</string>
     <string name="voice_speak">Speak now</string>
