@@ -182,6 +182,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         clipboardPanel = null
         themePanel = null
         gifPanel = null
+        voice?.cancel()
+        voicePanel = null
         applyTheme()
         applySettings()
         layout?.let { r.keyboard.setKeyboard(it) }
@@ -359,6 +361,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             trailEnabled = prefs.glideTrail
             spaceSwipesEnabled = prefs.spaceCursor && typingIntoApp
             deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
+            flickEnabled = prefs.flickSymbols
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
             heightScale = prefs.heightPercent / 100f

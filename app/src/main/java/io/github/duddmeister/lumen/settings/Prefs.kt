@@ -39,6 +39,8 @@ class Prefs(context: Context) {
     val numberRow get() = bool(NUMBER_ROW, false)
     val splitKeyboard get() = bool(SPLIT, true)
     val symbolHints get() = bool(SYMBOL_HINTS, true)
+    /** A flick down on a key types the symbol in its corner. */
+    val flickSymbols get() = bool(FLICK_SYMBOLS, true)
     val keyPreviews get() = bool(KEY_PREVIEWS, true)
     val lightEffects get() = bool(LIGHT_EFFECTS, true)
     val autoCaps get() = bool(AUTO_CAPS, true)
@@ -87,6 +89,7 @@ class Prefs(context: Context) {
         const val NUMBER_ROW = "number_row"
         const val SPLIT = "split_keyboard"
         const val SYMBOL_HINTS = "symbol_hints"
+        const val FLICK_SYMBOLS = "flick_symbols"
         const val KEY_PREVIEWS = "key_previews"
         const val LIGHT_EFFECTS = "light_effects"
         const val AUTO_CAPS = "auto_caps"

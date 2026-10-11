@@ -69,6 +69,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     var trailEnabled = true
     var spaceSwipesEnabled = true
     var deleteSwipeEnabled = true
+    /** A quick flick down on a key types the symbol in its corner. */
+    var flickEnabled = true
     var lightEffects = true
     var hintsVisible = true
     var longPressDelay = 300L
@@ -85,7 +87,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     private val gapY = context.dp(9f)
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
-    private enum class Mode { PRESS, PANEL, GESTURE, SPACE_SWIPE, DELETE_SWIPE, DONE }
+    private enum class Mode { PRESS, PANEL, GESTURE, SPACE_SWIPE, DELETE_SWIPE, FLICK, DONE }
 
     private inner class Pointer(val id: Int) : Runnable {
         var key: Key? = null
@@ -99,6 +101,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         var words = 0
         var repeats = 0
         var moved = false
+        /** Went past a flick: from here on it's a slide. */
+        var flickOff = false
 
         /** Long press and key repeat share one timer. */
         override fun run() {
@@ -415,6 +419,12 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                         p.anchorX = p.downX - touchSlop
                         p.words = 0
                     }
+                    flickEnabled && key.hint != null && !p.flickOff && dy > flickStart(key) && abs(dx) < dy * FLICK_SLANT -> {
+                        // Flicking down for the symbol in the corner; the preview shows it.
+                        removeCallbacks(p)
+                        p.mode = Mode.FLICK
+                        relabelPreview(key, key.hint)
+                    }
                     gesturesEnabled && key.isLetter && pointers.size() == 1 &&
                         distance > maxOf(touchSlop * 1.5f, l.keyWidth * 0.55f) -> {
                         removeCallbacks(p)
@@ -453,6 +463,31 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 invalidate()
             }
             Mode.SPACE_SWIPE -> Unit
+            Mode.FLICK -> {
+                val dx = x - p.downX
+                val dy = y - p.downY
+                if (dy > key.bounds.height() * FLICK_REACH || abs(dx) > maxOf(l.keyWidth * 0.8f, dy * FLICK_SLANT * 1.5f)) {
+                    // Too far, or too sideways, for a flick: a glide, or a slide to another key.
+                    if (gesturesEnabled && key.isLetter && pointers.size() == 1) {
+                        p.mode = Mode.GESTURE
+                        hidePreview(key)
+                        releaseVisual(key)
+                        trail.start(p.downX, p.downY, time)
+                        trail.add(x, y, time)
+                        lastGestureNotify = time
+                        listener?.onGestureStart()
+                    } else {
+                        p.mode = Mode.PRESS
+                        p.moved = true
+                        p.flickOff = true
+                        relabelPreview(key, keyLabel(key))
+                    }
+                    invalidate()
+                } else {
+                    // Back above the line, the letter again.
+                    relabelPreview(key, if (dy > flickStart(key)) key.hint ?: keyLabel(key) else keyLabel(key))
+                }
+            }
             Mode.DELETE_SWIPE -> {
                 val words = ((p.anchorX - x) / (l.keyWidth * 0.9f)).toInt().coerceAtLeast(0)
                 if (words != p.words) {
@@ -507,8 +542,28 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 releaseVisual(key)
                 listener?.onDeleteSwipe(p.words, true)
             }
+            Mode.FLICK -> {
+                releaseVisual(key)
+                val hint = key.hint
+                // Lifted below the line: the symbol. Brought back up first: the letter after all.
+                if (hint != null && y - p.downY > flickStart(key)) listener?.onAlternative(key, hint)
+                else listener?.onKeyTap(key, p.downX, p.downY)
+            }
             Mode.DONE -> releaseVisual(key)
         }
+    }
+
+    /** How far down a flick has to go before it counts. */
+    private fun flickStart(key: Key) = maxOf(touchSlop, key.bounds.height() * FLICK_START)
+
+    private fun keyLabel(key: Key) = if (shifted && key.isLetter) key.label.uppercase() else key.label
+
+    /** Shows [label] in [key]'s preview bubble, if it has one up. */
+    private fun relabelPreview(key: Key, label: String) {
+        val i = previews.indexOfFirst { it.key === key && it.hiddenAt == 0L }
+        if (i < 0 || previews[i].label == label) return
+        previews[i] = Preview(key, label, previews[i].shownAt)
+        overlay?.invalidate()
     }
 
     private fun openPanel(p: Pointer, key: Key) {
@@ -538,7 +593,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
             if (blooms.size > 8) blooms.removeAt(0)
         }
         if (previewsEnabled && key.preview) {
-            val label = if (shifted && key.isLetter) key.label.uppercase() else key.label
+            val label = keyLabel(key)
             previews.removeAll { it.key === key }
             previews.add(Preview(key, label, now))
             overlay?.invalidate()
@@ -603,6 +658,12 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         private const val GESTURE_NOTIFY_MS = 90L
         /** How far, in key widths, a space-bar swipe must end from where it began to count. */
         internal const val SWIPE_MIN_KEYS = 0.4f
+        /** A flick down counts past this share of the key's height... */
+        private const val FLICK_START = 0.3f
+        /** ...and stops being a flick (and becomes a glide) past this many key heights. */
+        private const val FLICK_REACH = 1.4f
+        /** A flick may lean this far sideways for each step down. */
+        private const val FLICK_SLANT = 0.6f
         private const val PAD_MAX_WIDTH_DP = 520f
         /** Limits on a split key's width, its gap included. */
         private const val SPLIT_KEY_MIN_DP = 40f

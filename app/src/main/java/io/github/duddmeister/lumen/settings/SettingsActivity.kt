@@ -206,6 +206,7 @@ class SettingsActivity : Activity() {
             addView(kit.divider())
             toggle(Prefs.NUMBER_ROW, R.string.number_row, null, prefs.numberRow)
             toggle(Prefs.SYMBOL_HINTS, R.string.symbol_hints, R.string.symbol_hints_summary, prefs.symbolHints)
+            toggle(Prefs.FLICK_SYMBOLS, R.string.flick_symbols, R.string.flick_symbols_summary, prefs.flickSymbols)
             toggle(Prefs.SPLIT, R.string.split_keyboard, R.string.split_keyboard_summary, prefs.splitKeyboard)
             addView(kit.slider(getString(R.string.keyboard_height), 80, 130, prefs.heightPercent, { "$it%" }) {
                 prefs.set(Prefs.HEIGHT, it)
