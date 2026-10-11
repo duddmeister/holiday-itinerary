@@ -31,6 +31,8 @@ abstract class PanelView(context: Context, protected val painter: KeyPainter) : 
         fun onPanelKey(code: Int)
         /** A finger landed on something tappable (for haptics and sound). */
         fun onPanelFeedback()
+        /** The panel's search button was tapped. */
+        fun onPanelSearch() {}
     }
 
     var host: Host? = null

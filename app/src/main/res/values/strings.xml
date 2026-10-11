@@ -73,6 +73,17 @@
     <string name="clear_learned_summary">Forget everything Lumen has learned</string>
     <string name="clear_learned_confirm">Lumen will forget the words and phrases it has learned from your typing.</string>
     <string name="clear">Clear</string>
-    <string name="privacy_note">Lumen has no internet access. Everything it learns stays on this device, and it never learns from password or incognito fields.</string>
+    <string name="privacy_note">Lumen only goes online for GIFs, sending just your GIF searches, language and region to the GIF service. Everything it learns stays on this device, and it never learns from password or incognito fields.</string>
+
+    <string name="section_gifs">GIFs</string>
+    <string name="gifs">GIF search</string>
+    <string name="gifs_summary">Find and send GIFs from GIPHY or KLIPY. Uses the internet; only your GIF searches are sent.</string>
+    <string name="gif_service">GIF service</string>
+    <string name="gif_key">API key</string>
+    <string name="gif_key_hint">Paste your key</string>
+    <string name="gif_key_builtin">Using the built-in key</string>
+    <string name="gif_get_key">Get a free key</string>
+    <string name="gif_get_key_summary">From the chosen service\'s website</string>
+    <string name="gif_get_key_action">Get key</string>
     <string name="about_body">Lumen %1$s\n\nEnglish dictionary from the Android Open Source Project (Apache License 2.0). Emoji data from Unicode and GitHub\'s gemoji (MIT).</string>
 </resources>

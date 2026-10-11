@@ -5,6 +5,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
+import android.net.Uri
+import android.text.Editable
+import android.text.TextWatcher
 import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Build
@@ -26,6 +29,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import io.github.duddmeister.lumen.BuildConfig
 import io.github.duddmeister.lumen.R
+import io.github.duddmeister.lumen.data.GifService
 import io.github.duddmeister.lumen.ime.EngineHolder
 import io.github.duddmeister.lumen.keyboard.Icon
 import io.github.duddmeister.lumen.keyboard.Icons
@@ -186,6 +190,46 @@ class SettingsActivity : Activity() {
             toggle(Prefs.DELETE_SWIPE, R.string.delete_swipe, R.string.delete_swipe_summary, prefs.deleteSwipe, last = true)
         })
 
+        // GIFs
+        root.addView(kit.section(getString(R.string.section_gifs)))
+        root.addView(kit.card().apply {
+            toggle(Prefs.GIFS, R.string.gifs, R.string.gifs_summary, prefs.gifs)
+            val keyField = EditText(this@SettingsActivity)
+            addView(kit.chips(getString(R.string.gif_service), GifService.entries.map { it.title }, prefs.gifService.ordinal) {
+                prefs.gifService = GifService.entries[it]
+                showGifKey(keyField)
+            })
+            addView(kit.text(getString(R.string.gif_key), 16f).apply { setPadding(dp(20), dp(14), dp(20), 0) })
+            addView(keyField.apply {
+                id = R.id.gif_key_field
+                setHintTextColor(p.secondary)
+                setTextColor(p.text)
+                textSize = 15f
+                isSingleLine = true
+                // A password-style field, so keyboards (Lumen included) never learn the key.
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                background = kit.rounded(p.chip, dp(14f))
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                showGifKey(this)
+                addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+                    override fun afterTextChanged(s: Editable?) = prefs.set(Prefs.keyPref(prefs.gifService), s?.toString()?.trim().orEmpty())
+                })
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    setMargins(dp(14), dp(8), dp(14), dp(10))
+                }
+            })
+            addView(kit.divider())
+            addView(kit.actionRow(getString(R.string.gif_get_key), getString(R.string.gif_get_key_summary), getString(R.string.gif_get_key_action)) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(prefs.gifService.keyPage)))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    // No browser: nothing to open.
+                }
+            })
+        })
+
         // Privacy
         root.addView(kit.section(getString(R.string.section_privacy)))
         root.addView(kit.card().apply {
@@ -217,6 +261,13 @@ class SettingsActivity : Activity() {
     private fun LinearLayout.toggle(key: String, title: Int, summary: Int?, value: Boolean, last: Boolean = false) {
         addView(kit.switchRow(getString(title), summary?.let { getString(it) }, value) { prefs.set(key, it) })
         if (!last) addView(kit.divider())
+    }
+
+    /** Puts the key saved for the chosen GIF service in [field]. */
+    private fun showGifKey(field: EditText) {
+        val service = prefs.gifService
+        field.setText(prefs.store.getString(Prefs.keyPref(service), ""))
+        field.hint = getString(if (service.builtInKey.isEmpty()) R.string.gif_key_hint else R.string.gif_key_builtin)
     }
 
     override fun onResume() {

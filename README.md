@@ -22,9 +22,11 @@ make it feel at home on any phone.
 - **Predictions.** Word completions, next-word predictions, emoji suggestions
   (🍕 when you type “pizza”), smart punctuation spacing, double-space full stop and
   auto-capitalisation.
-- **Learns you, privately.** New words and phrases are learned on the device.
-  Lumen has no internet permission, and it never learns from password or
-  incognito fields.
+- **Search from the keyboard.** Find any emoji by name (“pizza”, “lol”), search
+  GIFs and send them straight into the conversation, or look something up on the
+  web with the text you've selected already filled in.
+- **Learns you, privately.** New words and phrases are learned on the device and
+  never leave it, and Lumen never learns from password or incognito fields.
 - **Eleven themes.** Aurora, Material You, Glass (real background blur on
   Android 12+), Graphite, Midnight (AMOLED), Frost, Paper, Sakura, Ocean, Forest
   and Sunset. Four key shapes plus a borderless mode, all switchable from the keyboard.
@@ -46,6 +48,8 @@ make it feel at home on any phone.
 
 ![Glide trail, accents, key pop-ups, paste chip, clipboard and theme panels](docs/screenshots/features.png)
 
+![Searching emoji by name, and searching GIFs, from the keyboard](docs/screenshots/search.png)
+
 ![Typing on a folded phone, then unfolding mid-word: the same word carries on with the keys split either side of the hinge](docs/screenshots/foldable.png)
 
 ![The Lumen app in light and dark mode](docs/screenshots/settings.png)
@@ -60,6 +64,24 @@ make it feel at home on any phone.
 The release APK is signed with a debug key so it installs directly. Use your
 own signing key before publishing it anywhere.
 
+## GIFs
+
+GIF search uses [GIPHY](https://developers.giphy.com/) or
+[KLIPY](https://partner.klipy.com/), and both need a free API key. (Tenor's API,
+which many keyboards used, was shut down in June 2026.)
+
+1. Get a key. For GIPHY, sign in to the developer dashboard, choose
+   **Create an App** and pick **API**. For KLIPY, sign up to the partner panel and
+   add a key under **API Keys**.
+2. In the Lumen app, under **GIFs**, choose the service and paste the key.
+
+To build a key into the app instead, add a repository secret named
+`GIPHY_API_KEY` or `KLIPY_API_KEY` (CI builds pick it up), or pass
+`-PgiphyApiKey=...` or `-PklipyApiKey=...` to Gradle. Anyone with the APK can read
+a built-in key, so keep those builds to yourself. Free keys allow about 100
+requests an hour; Lumen reuses pages it loaded in the last ten minutes, so
+reopening the GIF panel costs nothing.
+
 ## Build
 
 You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
@@ -73,10 +95,11 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 
 | Package | What lives there |
 | --- | --- |
-| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words, a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning and the glide decoder. Unit-tested on the JVM. |
+| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words, a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning, the glide decoder and emoji search. Unit-tested on the JVM. |
 | `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, cursor and delete swipes, animations) and the glide trail. |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
-| `ui/` | The suggestion strip, emoji, clipboard and theme panels, and the root view that handles window insets. |
+| `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets. |
+| `data/` | Emoji data, clipboard history, and GIFs: the GIPHY/KLIPY client, preview loading and the content provider that hands GIFs to apps. |
 | `theme/` | Theme definitions, including Material You colours from the wallpaper. |
 | `settings/` | The companion app: setup, live theme gallery and preferences. |
 
@@ -85,8 +108,12 @@ in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Privacy
 
-Lumen never connects to the internet. Learned words stay in the app's private
-storage, are left out of backups and transfers to a new phone, and can be cleared
-from the app. Clipboard history is kept in memory for an hour (pinned clips are
-saved), and clips that apps mark as sensitive, such as passwords, are never
-recorded.
+Lumen only goes online for GIFs. Opening the GIF panel loads trending GIFs from
+the service you chose (GIPHY or KLIPY), and your GIF searches go there too, with
+your language and region; like any website, the service also sees your IP
+address. Nothing else you type is sent anywhere, and with GIF search turned off
+Lumen never connects at all. Web search hands your search to your browser or
+search app. Learned words stay in the app's private storage, are left out of
+backups and transfers to a new phone, and can be cleared from the app. Clipboard
+history is kept in memory for an hour (pinned clips are saved), and clips that
+apps mark as sensitive, such as passwords, are never recorded.

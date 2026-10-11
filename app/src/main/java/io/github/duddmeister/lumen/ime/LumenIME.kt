@@ -1,14 +1,21 @@
 package io.github.duddmeister.lumen.ime
 
+import android.app.SearchManager
+import android.content.ActivityNotFoundException
+import android.content.ClipDescription
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.icu.text.BreakIterator
 import android.inputmethodservice.InputMethodService
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.LruCache
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsetsController
@@ -16,9 +23,16 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputContentInfo
 import android.view.inputmethod.InputMethodManager
 import io.github.duddmeister.lumen.data.ClipboardHistory
 import io.github.duddmeister.lumen.data.EmojiData
+import io.github.duddmeister.lumen.data.Gif
+import io.github.duddmeister.lumen.data.GifApi
+import io.github.duddmeister.lumen.data.GifFiles
+import io.github.duddmeister.lumen.data.GifImages
+import io.github.duddmeister.lumen.data.GifPage
+import io.github.duddmeister.lumen.data.HttpStatusException
 import io.github.duddmeister.lumen.engine.CharFolding
 import io.github.duddmeister.lumen.engine.KeyGeometry
 import io.github.duddmeister.lumen.engine.SuggestionEngine
@@ -39,20 +53,24 @@ import io.github.duddmeister.lumen.theme.KeyboardTheme
 import io.github.duddmeister.lumen.theme.Themes
 import io.github.duddmeister.lumen.ui.ClipboardPanelView
 import io.github.duddmeister.lumen.ui.EmojiPanelView
+import io.github.duddmeister.lumen.ui.GifPanelView
 import io.github.duddmeister.lumen.ui.InputRootView
 import io.github.duddmeister.lumen.ui.PanelView
+import io.github.duddmeister.lumen.ui.SearchBarView
 import io.github.duddmeister.lumen.ui.SuggestionStripView
 import io.github.duddmeister.lumen.ui.ThemePanelView
 import io.github.duddmeister.lumen.ui.dp
+import java.io.IOException
+import java.net.URLEncoder
 import java.util.concurrent.Executors
 import java.util.function.Consumer
 
 /** Lumen's input method service: wires the views, the input logic and the settings together. */
 class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripView.Listener, PanelView.Host,
-    InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener {
+    SearchBarView.Listener, InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private enum class Shift { OFF, ONE_SHOT, AUTO, LOCKED }
-    private enum class Panel { EMOJI, CLIPBOARD, THEMES }
+    private enum class Panel { EMOJI, GIF, CLIPBOARD, THEMES }
 
     /** What the user was looking at when a configuration change (folding, unfolding, rotating) rebuilt the keyboard. */
     private class Carry(val mode: KeyboardMode, val shift: Shift, val panel: Panel?)
@@ -69,7 +87,16 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private var emojiPanel: EmojiPanelView? = null
     private var clipboardPanel: ClipboardPanelView? = null
     private var themePanel: ThemePanelView? = null
+    private var gifPanel: GifPanelView? = null
     private var emojiData: EmojiData? = null
+    private val gifImages by lazy { GifImages() }
+    private val gifWorker = Executors.newSingleThreadExecutor { r -> Thread(r, "lumen-gifs").apply { isDaemon = true } }
+    /** Counts the text fields typed into, so a GIF still downloading when the user moves on is dropped. */
+    private var fieldCount = 0
+
+    /** Set while the keys type into the search bar instead of the app. */
+    private var search: SearchBarView.Kind? = null
+    private val searchQuery = StringBuilder()
 
     private var editor = EditorContext(null)
     private var mode = KeyboardMode.TEXT
@@ -136,6 +163,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             blurListener?.let { getSystemService(WindowManager::class.java)?.removeCrossWindowBlurEnabledListener(it) }
         }
         gestureWorker.shutdown()
+        gifWorker.shutdownNow()
+        gifImages.shutdown()
         super.onDestroy()
     }
 
@@ -143,10 +172,12 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val r = InputRootView(this, painter)
         r.keyboard.listener = this
         r.strip.listener = this
+        r.searchBar.listener = this
         root = r
         emojiPanel = null
         clipboardPanel = null
         themePanel = null
+        gifPanel = null
         applyTheme()
         applySettings()
         layout?.let { r.keyboard.setKeyboard(it) }
@@ -157,6 +188,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
+        if (!restarting) fieldCount++
         editor = EditorContext(attribute)
         val ic = currentInputConnection
         if (restarting && ic != null) {
@@ -198,16 +230,20 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         shiftHeld = false
         gestureActive = false
         // Back to the keys before the window shows, without a fade.
+        search = null
+        searchQuery.setLength(0)
+        root?.showSearch(null, animate = false)
         root?.showPanel(null, animate = false)
         applyTheme()
         applySettings()
         rebuildLayout()
-        root?.keyboard?.enterIcon = editor.enterIcon
+        root?.keyboard?.enterIcon = enterIcon()
         logic.refreshPredictions(currentInputConnection)
         updateShift()
         refreshStrip()
         when (c?.panel) {
             Panel.EMOJI -> openEmoji()
+            Panel.GIF -> openGif(gifPanel?.query)
             Panel.CLIPBOARD -> openClipboard()
             Panel.THEMES -> openThemes()
             null -> Unit
@@ -216,6 +252,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     override fun onFinishInputView(finishingInput: Boolean) {
         logic.finish()
+        search = null
         root?.keyboard?.cancelTouches()
         // Leave an open panel in place: changing what the window shows while the
         // system animates it away leaves a ghost of the keyboard on screen.
@@ -253,6 +290,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val shown = root?.panel ?: return null
         return when {
             shown === emojiPanel -> Panel.EMOJI
+            shown === gifPanel -> Panel.GIF
             shown === clipboardPanel -> Panel.CLIPBOARD
             shown === themePanel -> Panel.THEMES
             else -> null
@@ -265,6 +303,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         when (key) {
             Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS -> applyTheme()
             Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS, Prefs.SPLIT -> rebuildLayout()
+            Prefs.GIFS, Prefs.GIF_SERVICE, Prefs.GIPHY_KEY, Prefs.KLIPY_KEY -> {
+                val panel = gifPanel
+                if (panel != null && root?.panel === panel && isInputViewShown) openGif(panel.query)
+            }
         }
         refreshStrip()
     }
@@ -287,12 +329,15 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val config = resources.configuration
         val short = if (config.screenHeightDp > 0) config.screenHeightDp < SHORT_SCREEN_DP
         else config.orientation == Configuration.ORIENTATION_LANDSCAPE
+        root?.strip?.gifsEnabled = prefs.gifs
+        // While searching, the keys only type into the search bar.
+        val typingIntoApp = search == null
         root?.keyboard?.apply {
             previewsEnabled = prefs.keyPreviews
-            gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT
+            gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && typingIntoApp
             trailEnabled = prefs.glideTrail
-            cursorControlEnabled = prefs.spaceCursor
-            deleteSwipeEnabled = prefs.deleteSwipe
+            cursorControlEnabled = prefs.spaceCursor && typingIntoApp
+            deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
             heightScale = prefs.heightPercent / 100f
@@ -355,8 +400,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         root?.keyboard?.let {
             it.setKeyboard(l)
             it.spaceLabel = if (mode == KeyboardMode.TEXT) "English" else null
-            it.enterIcon = editor.enterIcon
-            it.gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT
+            it.enterIcon = enterIcon()
+            it.gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && search == null
         }
         updateShift()
     }
@@ -409,7 +454,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     private fun updateShift() {
         if (!shiftHeld && (shift == Shift.OFF || shift == Shift.AUTO)) {
-            shift = if (!autoCapsSuppressed && mode == KeyboardMode.TEXT && logic.autoCapitalize()) Shift.AUTO else Shift.OFF
+            val autoCaps = search == null && !autoCapsSuppressed && mode == KeyboardMode.TEXT && logic.autoCapitalize()
+            shift = if (autoCaps) Shift.AUTO else Shift.OFF
         }
         root?.keyboard?.let {
             it.shifted = shift != Shift.OFF
@@ -469,6 +515,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     override fun onKeyTap(key: Key, x: Float, y: Float) {
+        if (search != null) {
+            onSearchKey(key)
+            return
+        }
         if (key.code != KeyCodes.SHIFT) autoCapsSuppressed = false
         when (key.code) {
             KeyCodes.SHIFT -> Unit
@@ -502,12 +552,18 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     override fun onKeyRepeat(key: Key) {
-        if (key.code == KeyCodes.DELETE) logic.onDelete(true)
+        if (key.code != KeyCodes.DELETE) return
+        if (search != null) deleteSearchChar() else logic.onDelete(true)
     }
 
     override fun onAlternative(key: Key, text: String) {
         autoCapsSuppressed = false
         val shown = if (key.isLetter && shift != Shift.OFF) text.uppercase() else text
+        if (search != null) {
+            if (key.isLetter) consumeShift()
+            appendSearch(shown)
+            return
+        }
         if (key.code == KeyCodes.TEXT) {
             logic.onText(shown)
         } else {
@@ -534,12 +590,14 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onPanelOpened() = feedback.tick()
 
     override fun onCursorSteps(steps: Int) {
+        if (search != null) return
         logic.onCursorSteps(steps)
         feedback.tick()
         updateShift()
     }
 
     override fun onDeleteSwipe(words: Int, done: Boolean) {
+        if (search != null) return
         logic.onDeleteSwipe(words, done)
         if (!done) feedback.tick()
     }
@@ -569,6 +627,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onGestureEnd(trail: GestureTrail) {
         gestureActive = false
         root?.strip?.setGesturePreview(null)
+        if (search != null) return
         val decoder = EngineHolder.decoder
         val g = keyGeometry()
         if (decoder == null || g == null) {
@@ -589,7 +648,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     private fun refreshStrip() {
         val strip = root?.strip ?: return
-        if (gestureActive) return
+        if (gestureActive || search != null) return
         val clip = if (logic.composing.isEmpty) clipboard.freshClip() else null
         strip.setClip(clip)
         if (!prefs.suggestions || !editor.suggestionsAllowed) {
@@ -658,8 +717,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         feedback.tick()
         when (action) {
             SuggestionStripView.Action.TOGGLE -> Unit
+            SuggestionStripView.Action.SEARCH -> startSearch(SearchBarView.Kind.WEB, selectedText())
             SuggestionStripView.Action.CLIPBOARD -> openClipboard()
             SuggestionStripView.Action.EMOJI -> openEmoji()
+            SuggestionStripView.Action.GIF -> openGif()
             SuggestionStripView.Action.THEMES -> openThemes()
             SuggestionStripView.Action.SETTINGS -> openSettings()
             SuggestionStripView.Action.HIDE -> requestHideSelf(0)
@@ -738,12 +799,271 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onPanelFeedback() = feedback.key(0)
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        // Back closes an open panel before it hides the keyboard.
-        if (keyCode == KeyEvent.KEYCODE_BACK && root?.panel != null && isInputViewShown) {
-            onPanelClose()
-            return true
+        // Back leaves a search, or closes an open panel, before it hides the keyboard.
+        if (keyCode == KeyEvent.KEYCODE_BACK && isInputViewShown) {
+            if (search != null) {
+                onSearchBack()
+                return true
+            }
+            if (root?.panel != null) {
+                onPanelClose()
+                return true
+            }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    // ------------------------------------------------------------ search
+
+    private fun enterIcon(): Icon = when (search) {
+        null -> editor.enterIcon
+        SearchBarView.Kind.EMOJI -> Icon.DONE
+        else -> Icon.SEARCH
+    }
+
+    private fun selectedText(): String =
+        currentInputConnection?.getSelectedText(0)?.toString()?.replace('\n', ' ')?.trim()?.take(MAX_QUERY).orEmpty()
+
+    /** Opens the search bar; the keys type into it until the search ends. */
+    private fun startSearch(kind: SearchBarView.Kind, initial: String = "") {
+        val r = root ?: return
+        logic.finish() // commit the word being typed in the app first
+        search = kind
+        searchQuery.setLength(0)
+        searchQuery.append(initial)
+        r.showSearch(kind, initial, if (kind == SearchBarView.Kind.GIF) "Search ${prefs.gifService.title}" else null)
+        shift = Shift.OFF
+        if (mode != KeyboardMode.TEXT) setMode(KeyboardMode.TEXT) else rebuildLayout()
+        applySettings()
+        updateShift()
+        updateSearchResults()
+    }
+
+    /** Leaves the search bar for the keys. */
+    private fun endSearch() {
+        if (search == null) return
+        search = null
+        searchQuery.setLength(0)
+        root?.showSearch(null)
+        root?.keyboard?.enterIcon = enterIcon()
+        applySettings()
+        updateShift()
+        logic.refreshPredictions(currentInputConnection)
+        refreshStrip()
+    }
+
+    private fun onSearchKey(key: Key) {
+        when (key.code) {
+            KeyCodes.SHIFT -> Unit
+            KeyCodes.DELETE -> deleteSearchChar()
+            KeyCodes.SPACE -> {
+                appendSearch(" ")
+                if (symbolTyped && mode != KeyboardMode.TEXT) setMode(KeyboardMode.TEXT)
+            }
+            KeyCodes.ENTER -> submitSearch()
+            KeyCodes.SYMBOLS -> setMode(KeyboardMode.SYMBOLS)
+            KeyCodes.SYMBOLS_MORE -> setMode(KeyboardMode.SYMBOLS_MORE)
+            KeyCodes.ALPHABET -> setMode(KeyboardMode.TEXT)
+            KeyCodes.EMOJI -> {
+                endSearch()
+                openEmoji()
+            }
+            KeyCodes.TEXT -> appendSearch(key.text ?: key.label)
+            else -> {
+                val upper = key.isLetter && shift != Shift.OFF
+                if (mode != KeyboardMode.TEXT && !Character.isDigit(key.code)) symbolTyped = true
+                if (key.isLetter) consumeShift()
+                appendSearch(String(Character.toChars(if (upper) Character.toUpperCase(key.code) else key.code)))
+            }
+        }
+    }
+
+    private fun appendSearch(text: String) {
+        if (searchQuery.length + text.length > MAX_QUERY) return
+        searchQuery.append(text)
+        searchChanged()
+    }
+
+    private fun deleteSearchChar() {
+        if (searchQuery.isEmpty()) return
+        val breaks = BreakIterator.getCharacterInstance()
+        breaks.setText(searchQuery.toString())
+        val start = breaks.preceding(searchQuery.length).coerceAtLeast(0)
+        searchQuery.delete(start, searchQuery.length)
+        searchChanged()
+    }
+
+    private fun searchChanged() {
+        root?.searchBar?.setQuery(searchQuery.toString())
+        updateSearchResults()
+        updateShift()
+    }
+
+    private fun updateSearchResults() {
+        if (search == SearchBarView.Kind.EMOJI) root?.searchBar?.setResults(emojiData?.search(searchQuery) ?: emptyList())
+    }
+
+    private fun submitSearch() {
+        val query = searchQuery.toString().trim()
+        when (search) {
+            SearchBarView.Kind.EMOJI -> {
+                endSearch()
+                openEmoji()
+            }
+            SearchBarView.Kind.GIF -> {
+                endSearch()
+                openGif(query)
+            }
+            SearchBarView.Kind.WEB -> if (query.isNotEmpty()) {
+                endSearch()
+                webSearch(query)
+            }
+            null -> Unit
+        }
+    }
+
+    /** Searches the web in the user's browser or search app, then gets out of the way. */
+    private fun webSearch(query: String) {
+        val intent = Intent(Intent.ACTION_WEB_SEARCH)
+            .putExtra(SearchManager.QUERY, query)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            val page = Uri.parse("https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8"))
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (e2: ActivityNotFoundException) {
+                root?.strip?.flash("No app can search the web")
+                return
+            }
+        }
+        requestHideSelf(0)
+    }
+
+    override fun onSearchBack() {
+        val kind = search
+        endSearch()
+        when (kind) {
+            SearchBarView.Kind.EMOJI -> openEmoji()
+            SearchBarView.Kind.GIF -> openGif(gifPanel?.query)
+            else -> Unit
+        }
+    }
+
+    override fun onSearchClear() {
+        searchQuery.setLength(0)
+        searchChanged()
+    }
+
+    override fun onSearchEmoji(emoji: String) {
+        feedback.key(0)
+        logic.onText(emoji)
+        emojiData?.recordUse(emoji)
+    }
+
+    override fun onPanelSearch() {
+        val shown = root?.panel ?: return
+        when {
+            shown === emojiPanel -> startSearch(SearchBarView.Kind.EMOJI)
+            shown === gifPanel -> startSearch(SearchBarView.Kind.GIF, gifPanel?.query.orEmpty())
+        }
+    }
+
+    // ------------------------------------------------------------ GIFs
+
+    private val gifSource = object : GifPanelView.Source {
+        /** Recent pages, so the panel reopens instantly and spares the key's hourly allowance. */
+        private val pages = LruCache<String, Pair<Long, GifPage>>(PAGES_KEPT)
+
+        override val unavailable: String?
+            get() = when {
+                !prefs.gifs -> "GIFs are turned off. Turn them on in Lumen's settings."
+                prefs.gifKey.isEmpty() -> "GIF search needs a free ${prefs.gifService.title} API key. Add one in Lumen's settings, under GIFs."
+                else -> null
+            }
+
+        override val attribution: String
+            get() = "Powered by ${prefs.gifService.title}"
+
+        override fun load(query: String?, pos: String?, done: (GifPage?, String?) -> Unit) {
+            val service = prefs.gifService
+            val key = prefs.gifKey
+            val cacheKey = listOf(service.id, key, query, pos).joinToString("\n")
+            val cached = pages.get(cacheKey)
+            if (cached != null && SystemClock.elapsedRealtime() - cached.first < PAGE_FRESH_MS) {
+                done(cached.second, null)
+                return
+            }
+            val api = GifApi(service, key)
+            val name = service.title
+            gifWorker.execute {
+                val (page, error) = try {
+                    (if (query == null) api.featured(pos) else api.search(query, pos)) to null
+                } catch (e: HttpStatusException) {
+                    null to when (e.code) {
+                        400, 401, 403 -> "$name didn't accept the API key. Check it in Lumen's settings."
+                        429 -> "$name limits how many GIFs a key can load each hour. Try again a little later."
+                        else -> "$name is having trouble. Tap to try again."
+                    }
+                } catch (e: IOException) {
+                    null to "Couldn't reach $name. Check your connection, then tap to try again."
+                } catch (e: org.json.JSONException) {
+                    null to "$name sent something unexpected. Tap to try again."
+                }
+                main.post {
+                    if (page != null) pages.put(cacheKey, SystemClock.elapsedRealtime() to page)
+                    done(page, error)
+                }
+            }
+        }
+
+        override fun preview(gif: Gif, ready: () -> Unit): Drawable? = gifImages.get(gif.previewUrl, ready)
+    }
+
+    private fun openGif(query: String? = null) {
+        val r = root ?: return
+        val panel = gifPanel ?: GifPanelView(this, painter, gifSource).also {
+            it.host = this
+            it.onGif = { gif -> sendGif(gif) }
+            gifPanel = it
+        }
+        panel.show(query)
+        r.showPanel(panel)
+    }
+
+    /**
+     * Sends [gif] as an image where the app accepts GIFs (through [GifFiles] and
+     * its provider), or as a link where it does not.
+     */
+    private fun sendGif(gif: Gif) {
+        feedback.tick()
+        val accepts = currentInputEditorInfo?.contentMimeTypes
+            ?.any { ClipDescription.compareMimeTypes("image/gif", it) } == true
+        if (!accepts) {
+            logic.onText(gif.pageUrl)
+            return
+        }
+        val panel = gifPanel
+        val field = fieldCount
+        panel?.setSending(gif)
+        gifWorker.execute {
+            val uri = try { GifFiles.download(this, gif) } catch (e: IOException) { null }
+            main.post {
+                panel?.setSending(null)
+                // Not into another field the user moved to while it downloaded.
+                if (field != fieldCount) return@post
+                val ic = currentInputConnection ?: return@post
+                if (uri == null) {
+                    panel?.notice("Couldn't download that GIF")
+                    return@post
+                }
+                val description = ClipDescription(gif.description.ifEmpty { "GIF" }, arrayOf("image/gif"))
+                val content = InputContentInfo(uri, description, Uri.parse(gif.pageUrl))
+                val sent = ic.commitContent(content, InputConnection.INPUT_CONTENT_GRANT_READ_URI_PERMISSION, null)
+                if (!sent) logic.onText(gif.pageUrl)
+            }
+        }
     }
 
     private companion object {
@@ -753,5 +1073,9 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         const val LARGE_SCREEN_DP = 600
         /** Screens shorter than this get lower key rows. */
         const val SHORT_SCREEN_DP = 480
+        const val MAX_QUERY = 120
+        const val PAGES_KEPT = 12
+        /** How long a page of GIFs is shown again without asking the service. */
+        const val PAGE_FRESH_MS = 10 * 60_000L
     }
 }

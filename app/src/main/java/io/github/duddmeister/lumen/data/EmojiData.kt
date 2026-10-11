@@ -3,6 +3,8 @@ package io.github.duddmeister.lumen.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Paint
+import io.github.duddmeister.lumen.engine.EmojiSearch
+import io.github.duddmeister.lumen.engine.SuggestionEngine
 
 /** One emoji and, when it supports them, its five skin-tone variants. */
 class Emoji(val base: String, val variants: List<String>)
@@ -14,7 +16,11 @@ class EmojiCategory(val name: String, val icon: String, val emoji: List<Emoji>)
  * device's emoji font can actually draw, plus the user's recents and preferred
  * skin tones.
  */
-class EmojiData private constructor(val categories: List<EmojiCategory>, private val prefs: SharedPreferences) {
+class EmojiData private constructor(
+    val categories: List<EmojiCategory>,
+    private val prefs: SharedPreferences,
+    private val index: EmojiSearch?,
+) {
 
     private val recents = ArrayList<String>(prefs.getString(KEY_RECENTS, "")!!.split(' ').filter { it.isNotEmpty() })
     private val tones = HashMap<String, String>().apply {
@@ -37,6 +43,14 @@ class EmojiData private constructor(val categories: List<EmojiCategory>, private
     /** The form to show for [base]: the user's last chosen skin tone, if any. */
     fun display(base: String): String = tones[base] ?: base
 
+    /** Emoji matching [query] that this device can draw, in the user's skin tones. */
+    fun search(query: CharSequence): List<String> =
+        index?.search(query, SEARCH_LIMIT * 2)
+            ?.filter { variantsByBase.containsKey(it) }
+            ?.take(SEARCH_LIMIT)
+            ?.map { display(it) }
+            ?: emptyList()
+
     fun recordUse(emoji: String) {
         recents.remove(emoji)
         recents.add(0, emoji)
@@ -53,6 +67,7 @@ class EmojiData private constructor(val categories: List<EmojiCategory>, private
         private const val KEY_RECENTS = "emoji_recents"
         private const val KEY_TONES = "emoji_tones"
         private const val MAX_RECENTS = 32
+        private const val SEARCH_LIMIT = 80
 
         private val ICONS = mapOf(
             "Smileys & Emotion" to "😀", "People & Body" to "👋", "Animals & Nature" to "🐻",
@@ -87,7 +102,13 @@ class EmojiData private constructor(val categories: List<EmojiCategory>, private
                 }
             }
             flush()
-            return EmojiData(categories, prefs)
+            val index = try {
+                val keywords = context.assets.open("emoji/keywords.txt").bufferedReader().use { SuggestionEngine.readEmojiKeywords(it) }
+                context.assets.open("emoji/search.txt").bufferedReader().use { EmojiSearch.read(it, keywords) }
+            } catch (e: java.io.IOException) {
+                null
+            }
+            return EmojiData(categories, prefs, index)
         }
     }
 }
