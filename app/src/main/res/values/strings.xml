@@ -65,6 +65,10 @@
     <string name="voice_failed">Voice typing stopped. Tap the microphone to try again.</string>
     <string name="split_keyboard">Split on large screens</string>
     <string name="split_keyboard_summary">Splits the keys between your thumbs when a foldable is open, or on a tablet</string>
+    <string name="one_handed">One-handed on phones</string>
+    <string name="one_handed_summary">Moves the keys over to your thumb. The toolbar button turns it on, and the buttons beside the keys swap sides or go back to full width.</string>
+    <string name="floating_keyboard">Floating on large screens</string>
+    <string name="floating_keyboard_summary">Makes the keyboard a card you can drag anywhere when a foldable is open, or on a tablet. The toolbar button turns it on; the button under the keys docks it again.</string>
 
     <string name="key_previews">Pop-up on key press</string>
     <string name="light_effects">Light effects</string>

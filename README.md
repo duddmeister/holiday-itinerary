@@ -51,6 +51,10 @@ make it feel at home on any phone.
   Fold or unfold mid-word and you carry on with the same word, suggestions, page
   and panel. Number pads stay compact on wide screens, and the app becomes a
   centred column that keeps its place.
+- **One-handed or floating.** On a phone, the toolbar's one-handed button moves the
+  keys over to your thumb, with buttons beside them to swap sides or go back to the
+  full width. On a tablet or an open foldable, the keyboard can float instead: a
+  card you drag anywhere by its handle, while the app keeps the whole screen.
 - **Built to be light.** No third-party libraries; the keyboard is a handful of
   custom views drawn on the canvas.
 
@@ -141,7 +145,7 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 | `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, cursor and delete swipes, animations) and the glide trail. |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
 | `update/` | The in-app updater: finds the latest GitHub release, downloads it and hands it to Android's package installer. |
-| `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets. |
+| `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets and the one-handed and floating keyboards. |
 | `data/` | Emoji data, clipboard history, and GIFs: the GIPHY/KLIPY client, preview loading and the content provider that hands GIFs to apps. |
 | `theme/` | Theme definitions, including Material You colours from the wallpaper. |
 | `settings/` | The companion app: setup, live theme gallery and preferences. |

@@ -208,6 +208,8 @@ class SettingsActivity : Activity() {
             toggle(Prefs.SYMBOL_HINTS, R.string.symbol_hints, R.string.symbol_hints_summary, prefs.symbolHints)
             toggle(Prefs.FLICK_SYMBOLS, R.string.flick_symbols, R.string.flick_symbols_summary, prefs.flickSymbols)
             toggle(Prefs.SPLIT, R.string.split_keyboard, R.string.split_keyboard_summary, prefs.splitKeyboard)
+            toggle(Prefs.ONE_HANDED, R.string.one_handed, R.string.one_handed_summary, prefs.oneHanded)
+            toggle(Prefs.FLOATING, R.string.floating_keyboard, R.string.floating_keyboard_summary, prefs.floating)
             addView(kit.slider(getString(R.string.keyboard_height), 80, 130, prefs.heightPercent, { "$it%" }) {
                 prefs.set(Prefs.HEIGHT, it)
             })
