@@ -173,9 +173,9 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         // Number and phone pads stay compact and centred on wide screens.
         val pad = l.mode == KeyboardMode.NUMBER || l.mode == KeyboardMode.PHONE
         val side = if (pad) maxOf(sidePadding, (w - context.dp(PAD_MAX_WIDTH_DP)) / 2f) else sidePadding
-        // Split halves keep thumb-sized keys at the edges; the spare width opens between them.
+        // Split halves keep thumb-sized keys near the edges; spare width opens between them.
         val splitUnit = if (l.isSplit) {
-            (w / SPLIT_UNITS_ACROSS).coerceIn(context.dp(SPLIT_KEY_MIN_DP), context.dp(SPLIT_KEY_MAX_DP))
+            (w / l.splitUnitsAcross).coerceIn(context.dp(SPLIT_KEY_MIN_DP), context.dp(SPLIT_KEY_MAX_DP))
         } else 0f
         l.layout(width, rowHeightPx(), side, topPadding, gapX, gapY, splitUnit)
     }
@@ -202,7 +202,6 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
 
         val cursorKey = activeKey(Mode.SPACE_SWIPE)
         val deleteKey = activeKey(Mode.DELETE_SWIPE)
-        // A split keyboard has two space bars; only the first carries the label.
         val labelledSpace = l.keys.firstOrNull { it.code == KeyCodes.SPACE }
         for (key in l.keys) {
             val press = pressAmount(key, now)
@@ -605,9 +604,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         /** How far, in key widths, a space-bar swipe must end from where it began to count. */
         internal const val SWIPE_MIN_KEYS = 0.4f
         private const val PAD_MAX_WIDTH_DP = 520f
-        /** Split key width is the view width over this, within the limits below. */
-        private const val SPLIT_UNITS_ACROSS = 14.5f
-        private const val SPLIT_KEY_MIN_DP = 42f
-        private const val SPLIT_KEY_MAX_DP = 52f
+        /** Limits on a split key's width, its gap included. */
+        private const val SPLIT_KEY_MIN_DP = 40f
+        private const val SPLIT_KEY_MAX_DP = 64f
     }
 }

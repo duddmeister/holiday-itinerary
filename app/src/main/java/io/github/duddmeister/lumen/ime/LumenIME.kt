@@ -425,10 +425,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val l = layout ?: return null
         if (l.mode != KeyboardMode.TEXT || l.width == 0) return null
         if (geometryLayout === l && geometryWidth == l.width) return geometry
-        val centers = HashMap<Char, FloatArray>()
+        val centers = HashMap<Char, ArrayList<FloatArray>>()
         for (k in l.keys) {
             if (k.isLetter || k.code == '\''.code) {
-                centers[CharFolding.fold(k.code.toChar())] = floatArrayOf(k.bounds.centerX(), k.bounds.centerY())
+                centers.getOrPut(CharFolding.fold(k.code.toChar())) { ArrayList(1) }.add(floatArrayOf(k.bounds.centerX(), k.bounds.centerY()))
             }
         }
         return KeyGeometry(l.keyWidth, l.rowHeight, centers).also {

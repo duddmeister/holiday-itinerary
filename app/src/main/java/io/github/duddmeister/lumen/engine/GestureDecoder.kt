@@ -88,7 +88,8 @@ class GestureDecoder(private val lexicon: Lexicon, private val history: UserHist
                 var idealLength = 0f
                 var onLayout = true
                 for (i in letters.indices) {
-                    val c = geometry.center(letters[i])
+                    // A letter on both halves of a split keyboard: the key nearest the path so far.
+                    val c = if (i == 0) geometry.center(letters[0], xs[0], ys[0]) else geometry.center(letters[i], px[i - 1], py[i - 1])
                     if (c == null) { onLayout = false; break }
                     px[i] = c[0]; py[i] = c[1]
                     if (i > 0) idealLength += geometry.distanceInKeys(px[i - 1], py[i - 1], px[i], py[i])

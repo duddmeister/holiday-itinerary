@@ -9,55 +9,96 @@ class SplitLayoutTest {
     private fun split(options: LayoutOptions = LayoutOptions(split = true), mode: KeyboardMode = KeyboardMode.TEXT) =
         Layouts.build(mode, options)
 
+    private fun name(key: Key) = when (key.code) {
+        KeyCodes.SHIFT -> "⇧"
+        KeyCodes.DELETE -> "⌫"
+        KeyCodes.ENTER -> "⏎"
+        KeyCodes.SPACE -> "_"
+        KeyCodes.EMOJI -> "☺"
+        else -> key.label
+    }
+
+    /** The row's halves; a bridging space bar is shown on both. */
     private fun halves(row: KeyRow): Pair<String, String> {
-        fun names(keys: List<Key>) = keys.joinToString("") {
-            when (it.code) {
-                KeyCodes.SHIFT -> "⇧"
-                KeyCodes.DELETE -> "⌫"
-                KeyCodes.SPACE -> "_"
-                else -> it.label
-            }
-        }
-        return names(row.keys.subList(0, row.splitAt)) to names(row.keys.subList(row.splitAt, row.keys.size))
+        val left = row.keys.subList(0, row.splitAt) + if (row.bridged) listOf(row.keys[row.splitAt]) else emptyList()
+        return left.joinToString("") { name(it) } to row.keys.subList(row.splitAt, row.keys.size).joinToString("") { name(it) }
     }
 
     @Test
-    fun breaksRowsWhereThumbsMeet() {
+    fun repeatsTheMiddleKeyOfOddRowsOnBothHalves() {
         val qwerty = split().rows
         assertEquals("qwert" to "yuiop", halves(qwerty[0]))
-        assertEquals("asdfg" to "hjkl", halves(qwerty[1]))
-        assertEquals("⇧zxcv" to "bnm⌫", halves(qwerty[2]))
+        assertEquals("asdfg" to "ghjkl", halves(qwerty[1]))
+        assertEquals("⇧zxcv" to "vbnm⌫", halves(qwerty[2]))
+        assertEquals("?123,☺_" to "_.⏎", halves(qwerty[3]))
+
+        val azerty = split(LayoutOptions(letters = LetterLayout.AZERTY, split = true)).rows
+        assertEquals("qsdfg" to "hjklm", halves(azerty[1]))
+        assertEquals("⇧wxcv" to "vbn'⌫", halves(azerty[2]))
 
         val colemak = split(LayoutOptions(letters = LetterLayout.COLEMAK, split = true)).rows
-        assertEquals("qwfpg" to "jluy", halves(colemak[0]))
+        assertEquals("qwfpg" to "gjluy", halves(colemak[0]))
         assertEquals("arstd" to "hneio", halves(colemak[1]))
 
         val withNumbers = split(LayoutOptions(numberRow = true, split = true)).rows
         assertEquals("12345" to "67890", halves(withNumbers[0]))
+
+        val symbols = split(mode = KeyboardMode.SYMBOLS).rows
+        assertEquals("@#\$_&" to "-+()/", halves(symbols[1]))
+        assertEquals("=\\<*\"':" to ":;!?⌫", halves(symbols[2]))
     }
 
     @Test
-    fun givesEachThumbASpaceBar() {
-        // Emoji key on the left: the 4-unit space bar is cut 2 + 2 so both halves match.
+    fun repeatedKeysTypeAndOfferTheSameAsTheOriginal() {
+        val row = split().rows[1]
+        val (left, right) = row.keys[row.splitAt - 1] to row.keys[row.splitAt]
+        assertTrue("two keys, not one key twice", left !== right)
+        assertEquals(left.code, right.code)
+        assertEquals(left.hint, right.hint)
+        assertEquals(left.popup, right.popup)
+        assertEquals(left.width, right.width, 1e-6f)
+    }
+
+    @Test
+    fun halvesMatchAndLineUpAtTheOpening() {
+        val rows = split().rows
+        val half = 4 + 4f / 3
+        // Shift and delete are 4/3 of a key, so the halves are 5⅓ keys wide.
+        assertEquals(4f / 3, rows[2].keys.first().width, 1e-6f)
+        assertEquals(4f / 3, rows[2].keys.last().width, 1e-6f)
+        for (i in listOf(0, 2, 3)) {
+            assertEquals("row $i left", half, rows[i].leftUnits, 1e-4f)
+            assertEquals("row $i right", half, rows[i].rightUnits, 1e-4f)
+        }
+        // The top row stretches to fill its halves...
+        assertTrue(rows[0].keys.all { kotlin.math.abs(it.width - half / 5) < 1e-4f })
+        // ...while the shorter second row keeps whole keys, leaving room at the outer edges.
+        assertTrue(rows[1].keys.all { it.width == 1f })
+        assertEquals(5f, rows[1].leftUnits, 1e-6f)
+        assertEquals(5f, rows[1].rightUnits, 1e-6f)
+    }
+
+    @Test
+    fun oneSpaceBarSpansTheOpening() {
         val bottom = split().rows.last()
-        assertEquals(2, bottom.keys.count { it.code == KeyCodes.SPACE })
-        val (left, right) = halves(bottom)
-        assertTrue(left.endsWith("_"))
-        assertTrue(right.startsWith("_"))
-        val spaces = bottom.keys.filter { it.code == KeyCodes.SPACE }.map { it.width }
-        assertEquals(listOf(2f, 2f), spaces)
+        assertEquals(1, bottom.keys.count { it.code == KeyCodes.SPACE })
+        assertTrue(bottom.bridged)
+        val space = bottom.keys[bottom.splitAt]
+        assertEquals(KeyCodes.SPACE, space.code)
+        // As in Gboard: from the C column on the left to the N column on the right.
+        assertEquals(2f, bottom.bridgeLeft, 1e-4f)
+        assertEquals(5f, space.width, 1e-4f)
 
-        // Without the emoji key the 5-unit bar is cut down the middle.
+        // Without the emoji key it reaches as far into either half.
         val email = split(LayoutOptions(field = FieldKind.EMAIL, split = true)).rows.last()
-        assertEquals(listOf(2.5f, 2.5f), email.keys.filter { it.code == KeyCodes.SPACE }.map { it.width })
-    }
+        assertEquals(3f, email.bridgeLeft, 1e-4f)
+        assertEquals(6f, email.keys[email.splitAt].width, 1e-4f)
 
-    @Test
-    fun keepsANarrowSpaceBarWhole() {
-        // URL fields have a 3.5-unit space bar: too short to cut, so the row breaks after it.
+        // URL fields keep their .com key; the space bar gives way on that side.
         val url = split(LayoutOptions(field = FieldKind.URL, split = true)).rows.last()
-        assertEquals(1, url.keys.count { it.code == KeyCodes.SPACE })
-        assertEquals(KeyCodes.SPACE, url.keys[url.splitAt - 1].code)
+        assertEquals("?123/_" to "_..com⏎", halves(url))
+        assertEquals(3f, url.bridgeLeft, 1e-4f)
+        assertEquals(3f + 5f / 3, url.keys[url.splitAt].width, 1e-4f)
     }
 
     @Test
@@ -72,29 +113,21 @@ class SplitLayoutTest {
     }
 
     @Test
-    fun keepsEveryKeyAndTheGridWidth() {
+    fun keepsEveryKeyInOrder() {
         for (letters in LetterLayout.entries) {
-            val whole = Layouts.build(KeyboardMode.TEXT, LayoutOptions(letters = letters))
-            val halves = Layouts.build(KeyboardMode.TEXT, LayoutOptions(letters = letters, split = true))
-            for ((a, b) in whole.rows.zip(halves.rows)) {
-                assertEquals(a.keys.sumOf { it.width.toDouble() }, b.keys.sumOf { it.width.toDouble() }, 1e-6)
-                assertEquals(a.keys.filter { it.code != KeyCodes.SPACE }.map { it.code }, b.keys.filter { it.code != KeyCodes.SPACE }.map { it.code })
-                assertTrue("${letters.id}: both halves have keys", b.splitAt in 1 until b.keys.size)
+            for (mode in listOf(KeyboardMode.TEXT, KeyboardMode.SYMBOLS, KeyboardMode.SYMBOLS_MORE)) {
+                val whole = Layouts.build(mode, LayoutOptions(letters = letters))
+                val halves = Layouts.build(mode, LayoutOptions(letters = letters, split = true))
+                val grid = whole.rows.maxOf { it.units }
+                for ((a, b) in whole.rows.zip(halves.rows)) {
+                    val codes = b.keys.map { it.code }.toMutableList()
+                    // A repeated middle key is the only addition.
+                    if (!b.bridged && codes[b.splitAt - 1] == codes[b.splitAt]) codes.removeAt(b.splitAt)
+                    assertEquals("${letters.id} $mode", a.keys.map { it.code }, codes)
+                    assertTrue("${letters.id} $mode: both halves have keys", b.splitAt in 1 until b.keys.size)
+                    if (a.units > grid - 1e-3f) assertEquals("${letters.id} $mode: matching halves", b.leftUnits, b.rightUnits, 1e-4f)
+                }
             }
         }
-    }
-
-    @Test
-    fun plansFromWidthsAlone() {
-        // Ten equal keys break exactly in the middle.
-        assertEquals(5, SplitPlan.plan(FloatArray(10) { 1f }, 10f).index)
-        // Nine keys offset by half a unit: G and H tie, and the left half takes G.
-        assertEquals(5, SplitPlan.plan(FloatArray(9) { 1f }, 10f).index)
-        // A single key cannot split.
-        assertEquals(-1, SplitPlan.plan(floatArrayOf(4f), 10f).index)
-        // A space bar across the middle is cut at the middle when both parts stay wide enough.
-        val cut = SplitPlan.plan(floatArrayOf(1.5f, 1f, 5f, 1f, 1.5f), 10f, spaceIndex = 2)
-        assertEquals(2, cut.cutKey)
-        assertEquals(2.5f, cut.leftWidth, 1e-6f)
     }
 }

@@ -38,7 +38,8 @@ make it feel at home on any phone.
   right to finish the word you're typing with the suggestion, or to jump forward
   a word.
 - **Made for foldables.** Open a foldable (or use a tablet) and the keys split
-  between your thumbs, with the opening over the hinge and a space bar on each side.
+  between your thumbs: five columns a side with the opening over the hinge, G and V
+  on both halves, and one long space bar across the middle.
   Fold or unfold mid-word and you carry on with the same word, suggestions, page
   and panel. Number pads stay compact on wide screens, and the app becomes a
   centred column that keeps its place.

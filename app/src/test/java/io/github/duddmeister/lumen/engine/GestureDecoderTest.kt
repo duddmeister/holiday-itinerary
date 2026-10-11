@@ -3,18 +3,26 @@ package io.github.duddmeister.lumen.engine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.hypot
 import kotlin.random.Random
 
 class GestureDecoderTest {
     private val geometry = KeyGeometry.qwerty()
 
-    /** A finger-like path through the word's keys: noisy key hits joined by smooth curves. */
-    private fun gesture(word: String, random: Random, noise: Float = 0.2f): Pair<FloatArray, FloatArray> {
+    /**
+     * A finger-like path through the word's keys: noisy key hits joined by smooth curves.
+     * [keys] gives where a letter's keys are, for letters with more than one (a split keyboard).
+     */
+    private fun gesture(
+        word: String, random: Random, noise: Float = 0.2f, geometry: KeyGeometry = this.geometry,
+        keys: (Char) -> List<FloatArray> = { listOf(geometry.center(it)!!) },
+    ): Pair<FloatArray, FloatArray> {
         val letters = GestureDecoder.pathLetters(word)!!
         val kx = FloatArray(letters.length)
         val ky = FloatArray(letters.length)
         for (i in letters.indices) {
-            val c = geometry.center(letters[i])!!
+            // A finger takes the nearer of a letter's keys.
+            val c = keys(letters[i]).minBy { if (i == 0) 0f else hypot(it[0] - kx[i - 1], it[1] - ky[i - 1]) }
             kx[i] = c[0] + (random.nextFloat() * 2 - 1 + random.nextFloat() * 2 - 1) * noise * geometry.keyWidth
             ky[i] = c[1] + (random.nextFloat() * 2 - 1 + random.nextFloat() * 2 - 1) * noise * geometry.keyHeight
         }
@@ -38,13 +46,16 @@ class GestureDecoderTest {
         return xs.toFloatArray() to ys.toFloatArray()
     }
 
-    private fun accuracy(words: List<String>, decoder: GestureDecoder, seed: Int): Pair<Float, Float> {
+    private fun accuracy(
+        words: List<String>, decoder: GestureDecoder, seed: Int,
+        geometry: KeyGeometry = this.geometry, keys: (Char) -> List<FloatArray> = { listOf(geometry.center(it)!!) },
+    ): Pair<Float, Float> {
         val random = Random(seed)
         var top1 = 0
         var top3 = 0
         val misses = ArrayList<String>()
         for (w in words) {
-            val (xs, ys) = gesture(w, random)
+            val (xs, ys) = gesture(w, random, geometry = geometry, keys = keys)
             val result = decoder.decode(xs, ys, xs.size, geometry).map { it.text }
             val path = GestureDecoder.pathLetters(w)
             // Words with identical key paths ("to"/"too") cannot be told apart by shape alone.
@@ -78,6 +89,23 @@ class GestureDecoderTest {
         assertTrue("common top3 $top3", top3 >= 0.93f)
         assertTrue("longer top1 $l1", l1 >= 0.80f)
         assertTrue("longer top3 $l3", l3 >= 0.93f)
+    }
+
+    @Test
+    fun decodesOnASplitKeyboard() {
+        val decoder = GestureDecoder(TestAssets.lexicon, UserHistory()).apply { buildIndex() }
+        val centers = SplitQwerty.centers()
+        val split = KeyGeometry(100f, 140f, centers)
+        val keys = { c: Char -> centers.getValue(c) }
+        val (top1, top3) = accuracy(topWords(400, 2), decoder, 7, split, keys)
+        println("split keyboard: top1=%.3f top3=%.3f".format(top1, top3))
+        assertTrue("split top1 $top1", top1 >= 0.80f)
+        assertTrue("split top3 $top3", top3 >= 0.93f)
+        // Through the G beside the H on the right half, and the one beside the D on the left.
+        for (word in listOf("high", "edge")) {
+            val (xs, ys) = gesture(word, Random(1), noise = 0.1f, geometry = split, keys = keys)
+            assertEquals(word, decoder.decode(xs, ys, xs.size, split).first().text)
+        }
     }
 
     @Test
