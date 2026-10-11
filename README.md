@@ -32,7 +32,11 @@ make it feel at home on any phone.
   GIFs and send them straight into the conversation, or look something up on the
   web with the text you've selected already filled in.
 - **Learns you, privately.** New words and phrases are learned on the device and
-  never leave it, and Lumen never learns from password or incognito fields.
+  stay there unless you back them up, and Lumen never learns from password or
+  incognito fields.
+- **Comes with you.** Back up your settings and the words Lumen has learned to a
+  file you choose, then restore them on a new phone. The restored words join any
+  it has learned there already.
 - **Eleven themes.** Aurora, Material You, Glass (real background blur on
   Android 12+), Graphite, Midnight (AMOLED), Frost, Paper, Sakura, Ocean, Forest
   and Sunset. Four key shapes plus a borderless mode, all switchable from the keyboard.
@@ -148,7 +152,7 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 | `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets and the one-handed and floating keyboards. |
 | `data/` | Emoji data, clipboard history, and GIFs: the GIPHY/KLIPY client, preview loading and the content provider that hands GIFs to apps. |
 | `theme/` | Theme definitions, including Material You colours from the wallpaper. |
-| `settings/` | The companion app: setup, live theme gallery and preferences. |
+| `settings/` | The companion app: setup, live theme gallery, preferences, and backups. |
 
 The dictionary and emoji assets are generated from upstream data by the scripts
 in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -164,7 +168,9 @@ updates from there.
 With GIF search and automatic update checks turned off, Lumen never connects on
 its own. Voice typing hands what you say to your phone's speech service (usually
 Google's), which may send it online; Lumen keeps no recordings. Web search hands your search to your browser or search app. Learned
-words stay in the app's private storage, are left out of backups and transfers
-to a new phone, and can be cleared from the app. Clipboard history is kept in
+words stay in the app's private storage, are left out of Android's backups and
+transfers to a new phone, and can be cleared from the app. The app's Backup
+section saves them, with your settings, only to a file you choose; GIF service
+keys and clipboard text are never included. Clipboard history is kept in
 memory for an hour (pinned clips are saved), and clips that apps mark as
 sensitive, such as passwords, are never recorded.
