@@ -46,27 +46,37 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
         invalidate()
     }
 
-    /** Shows [view] in place of the strip and keys, or returns to the keys when null. */
-    fun showPanel(view: View?) {
+    /**
+     * Shows [view] in place of the strip and keys, or returns to the keys when null.
+     * [animate] fades the change in; pass false while the keyboard is not on screen.
+     */
+    fun showPanel(view: View?, animate: Boolean = true) {
         if (view === panel) return
         panel?.let { removeView(it) }
         panel = view
         if (view != null) {
             addView(view, indexOfChild(overlay))
-            view.alpha = 0f
-            view.animate().alpha(1f).setDuration(140).start()
+            fadeIn(view, animate)
             keyboard.cancelTouches()
         }
         strip.visibility = if (view == null) VISIBLE else INVISIBLE
         keyboard.visibility = if (view == null) VISIBLE else INVISIBLE
         if (view == null) {
-            keyboard.alpha = 0f
-            strip.alpha = 0f
-            keyboard.animate().alpha(1f).setDuration(140).start()
-            strip.animate().alpha(1f).setDuration(140).start()
+            fadeIn(keyboard, animate)
+            fadeIn(strip, animate)
         }
         requestLayout()
         invalidate()
+    }
+
+    private fun fadeIn(v: View, animate: Boolean) {
+        v.animate().cancel()
+        if (animate) {
+            v.alpha = 0f
+            v.animate().alpha(1f).setDuration(140).start()
+        } else {
+            v.alpha = 1f
+        }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

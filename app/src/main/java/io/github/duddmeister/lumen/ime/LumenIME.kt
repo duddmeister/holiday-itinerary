@@ -197,7 +197,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         // A new input view has no touches in progress, whatever the old one had.
         shiftHeld = false
         gestureActive = false
-        root?.showPanel(null)
+        // Back to the keys before the window shows, without a fade.
+        root?.showPanel(null, animate = false)
         applyTheme()
         applySettings()
         rebuildLayout()
@@ -216,7 +217,9 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onFinishInputView(finishingInput: Boolean) {
         logic.finish()
         root?.keyboard?.cancelTouches()
-        root?.showPanel(null)
+        // Leave an open panel in place: changing what the window shows while the
+        // system animates it away leaves a ghost of the keyboard on screen.
+        // onStartInputView returns to the keys before the keyboard shows again.
         EngineHolder.save(this)
         super.onFinishInputView(finishingInput)
     }

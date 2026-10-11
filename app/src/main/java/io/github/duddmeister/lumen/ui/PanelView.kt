@@ -103,6 +103,12 @@ abstract class PanelView(context: Context, protected val painter: KeyPainter) : 
         }
     }
 
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        // A hidden keyboard should not keep drawing a fling.
+        if (visibility != VISIBLE) scroller.forceFinished(true)
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         content.set(0f, headerHeight, w.toFloat(), h - footerHeight)
         layoutFooter()
