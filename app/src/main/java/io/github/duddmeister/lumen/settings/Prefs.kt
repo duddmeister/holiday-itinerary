@@ -30,6 +30,7 @@ class Prefs(context: Context) {
     val keyBackgrounds get() = bool(KEY_BACKGROUNDS, true)
     val heightPercent get() = int(HEIGHT, 100).coerceIn(80, 130)
     val numberRow get() = bool(NUMBER_ROW, false)
+    val splitKeyboard get() = bool(SPLIT, true)
     val symbolHints get() = bool(SYMBOL_HINTS, true)
     val keyPreviews get() = bool(KEY_PREVIEWS, true)
     val lightEffects get() = bool(LIGHT_EFFECTS, true)
@@ -58,6 +59,7 @@ class Prefs(context: Context) {
         const val LAYOUT = "layout"
         const val HEIGHT = "keyboard_height"
         const val NUMBER_ROW = "number_row"
+        const val SPLIT = "split_keyboard"
         const val SYMBOL_HINTS = "symbol_hints"
         const val KEY_PREVIEWS = "key_previews"
         const val LIGHT_EFFECTS = "light_effects"

@@ -168,7 +168,16 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     }
 
     private fun layoutKeys() {
-        layout?.layout(width, rowHeightPx(), sidePadding, topPadding, gapX, gapY)
+        val l = layout ?: return
+        val w = width.toFloat()
+        // Number and phone pads stay compact and centred on wide screens.
+        val pad = l.mode == KeyboardMode.NUMBER || l.mode == KeyboardMode.PHONE
+        val side = if (pad) maxOf(sidePadding, (w - context.dp(PAD_MAX_WIDTH_DP)) / 2f) else sidePadding
+        // Split halves keep thumb-sized keys at the edges; the spare width opens between them.
+        val splitUnit = if (l.isSplit) {
+            (w / SPLIT_UNITS_ACROSS).coerceIn(context.dp(SPLIT_KEY_MIN_DP), context.dp(SPLIT_KEY_MAX_DP))
+        } else 0f
+        l.layout(width, rowHeightPx(), side, topPadding, gapX, gapY, splitUnit)
     }
 
     // ---------------------------------------------------------------- drawing
@@ -193,6 +202,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
 
         val cursorKey = activeKey(Mode.CURSOR)
         val deleteKey = activeKey(Mode.DELETE_SWIPE)
+        // A split keyboard has two space bars; only the first carries the label.
+        val labelledSpace = l.keys.firstOrNull { it.code == KeyCodes.SPACE }
         for (key in l.keys) {
             val press = pressAmount(key, now)
             if ((key.pressed && now - key.pressedAt < PRESS_MS) || key.releasedAt > 0) animating = true
@@ -211,7 +222,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
             }
             painter.drawKey(
                 canvas, key, if (key === deleteKey) 1f else press, shifted, icon = icon,
-                showHint = hintsVisible, spaceLabel = spaceLabel,
+                showHint = hintsVisible, spaceLabel = if (key === labelledSpace) spaceLabel else null,
             )
         }
 
@@ -592,5 +603,10 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         private const val REPEAT_INTERVAL_MS = 70L
         private const val REPEAT_MIN_MS = 35L
         private const val GESTURE_NOTIFY_MS = 90L
+        private const val PAD_MAX_WIDTH_DP = 520f
+        /** Split key width is the view width over this, within the limits below. */
+        private const val SPLIT_UNITS_ACROSS = 14.5f
+        private const val SPLIT_KEY_MIN_DP = 42f
+        private const val SPLIT_KEY_MAX_DP = 52f
     }
 }

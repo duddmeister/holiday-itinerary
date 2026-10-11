@@ -22,6 +22,8 @@ class LayoutOptions(
     val numberRow: Boolean = false,
     val symbolHints: Boolean = true,
     val emojiKey: Boolean = true,
+    /** Split letters and symbols into two halves for thumb typing on large screens. */
+    val split: Boolean = false,
 )
 
 /** Builds every keyboard Lumen shows. */
@@ -62,12 +64,36 @@ object Layouts {
     private fun punct(c: String, popup: String) =
         Key(c.codePointAt(0), c, style = KeyStyle.FUNCTIONAL, popup = chars(popup), preview = true)
 
-    fun build(mode: KeyboardMode, options: LayoutOptions): KeyboardLayout = when (mode) {
-        KeyboardMode.TEXT -> letters(options)
-        KeyboardMode.SYMBOLS -> symbols(options)
-        KeyboardMode.SYMBOLS_MORE -> symbolsMore()
-        KeyboardMode.NUMBER -> numberPad()
-        KeyboardMode.PHONE -> phonePad()
+    fun build(mode: KeyboardMode, options: LayoutOptions): KeyboardLayout {
+        val layout = when (mode) {
+            KeyboardMode.TEXT -> letters(options)
+            KeyboardMode.SYMBOLS -> symbols(options)
+            KeyboardMode.SYMBOLS_MORE -> symbolsMore()
+            KeyboardMode.NUMBER -> numberPad()
+            KeyboardMode.PHONE -> phonePad()
+        }
+        // Number and phone pads stay whole; the view keeps them compact instead.
+        val splittable = mode == KeyboardMode.TEXT || mode == KeyboardMode.SYMBOLS || mode == KeyboardMode.SYMBOLS_MORE
+        return if (options.split && splittable) split(layout) else layout
+    }
+
+    /** Breaks every row in two, cutting a wide space bar so each thumb gets one. */
+    private fun split(layout: KeyboardLayout): KeyboardLayout {
+        val units = layout.rows.maxOf { r -> r.keys.sumOf { it.width.toDouble() }.toFloat() }
+        val rows = layout.rows.map { row ->
+            val widths = FloatArray(row.keys.size) { row.keys[it].width }
+            val plan = SplitPlan.plan(widths, units, row.keys.indexOfFirst { it.code == KeyCodes.SPACE })
+            if (plan.cutKey >= 0) {
+                val keys = row.keys.toMutableList()
+                val width = keys[plan.cutKey].width
+                keys[plan.cutKey] = space(plan.leftWidth)
+                keys.add(plan.cutKey + 1, space(width - plan.leftWidth))
+                KeyRow(keys, row.heightFactor, splitAt = plan.cutKey + 1)
+            } else {
+                KeyRow(row.keys, row.heightFactor, splitAt = plan.index)
+            }
+        }
+        return KeyboardLayout(layout.mode, rows, layout.name)
     }
 
     private fun numberRow() = KeyRow(

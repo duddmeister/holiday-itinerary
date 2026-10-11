@@ -32,6 +32,11 @@ make it feel at home on any phone.
   with pins and a one-tap paste chip, space-bar cursor control, swipe left from
   backspace to delete whole words, long-press for accents and symbols, an optional
   number row, and QWERTY, QWERTZ, AZERTY, Colemak and Dvorak layouts.
+- **Made for foldables.** Open a foldable (or use a tablet) and the keys split
+  between your thumbs, with the opening over the hinge and a space bar on each side.
+  Fold or unfold mid-word and you carry on with the same word, suggestions, page
+  and panel. Number pads stay compact on wide screens, and the app becomes a
+  centred column that keeps its place.
 - **Built to be light.** No third-party libraries; the keyboard is a handful of
   custom views drawn on the canvas.
 
@@ -40,6 +45,8 @@ make it feel at home on any phone.
 ![Every Lumen theme](docs/screenshots/themes.png)
 
 ![Glide trail, accents, key pop-ups, paste chip, clipboard and theme panels](docs/screenshots/features.png)
+
+![Typing on a folded phone, then unfolding mid-word: the same word carries on with the keys split either side of the hinge](docs/screenshots/foldable.png)
 
 ![The Lumen app in light and dark mode](docs/screenshots/settings.png)
 

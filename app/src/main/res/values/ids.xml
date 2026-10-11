@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stable ids so scroll position and typed text survive folding, unfolding and rotation. -->
+    <item name="settings_scroll" type="id" />
+    <item name="try_field" type="id" />
+</resources>

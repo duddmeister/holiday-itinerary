@@ -14,6 +14,7 @@ import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import io.github.duddmeister.lumen.data.ClipboardHistory
@@ -51,6 +52,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private enum class Shift { OFF, ONE_SHOT, AUTO, LOCKED }
+    private enum class Panel { EMOJI, CLIPBOARD, THEMES }
+
+    /** What the user was looking at when a configuration change (folding, unfolding, rotating) rebuilt the keyboard. */
+    private class Carry(val mode: KeyboardMode, val shift: Shift, val panel: Panel?)
 
     private lateinit var prefs: Prefs
     private lateinit var feedback: Feedback
@@ -85,6 +90,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private var symbolTyped = false
     private var gestureActive = false
     private var previewPending = false
+    private var carry: Carry? = null
 
     // ------------------------------------------------------------ lifecycle
 
@@ -152,16 +158,45 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         editor = EditorContext(attribute)
+        val ic = currentInputConnection
+        if (restarting && ic != null) {
+            // Same field, restarted: folding or unfolding, rotating, or the app asking.
+            // Ask the editor where the cursor is: the EditorInfo still describes where
+            // it was when input began.
+            val selection = liveSelection(ic)
+            if (selection != null) {
+                logic.restart(editor, selection[0], selection[1])
+                return
+            }
+            // Without the live cursor, commit the word being typed and start afresh.
+            logic.finish()
+        }
         logic.start(editor)
+    }
+
+    /** The editor's current selection, or null if it cannot say. */
+    private fun liveSelection(ic: InputConnection): IntArray? {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val s = ic.getSurroundingText(0, 0, 0)
+            if (s != null && s.offset >= 0) return intArrayOf(s.offset + s.selectionStart, s.offset + s.selectionEnd)
+        }
+        val e = ic.getExtractedText(ExtractedTextRequest(), 0) ?: return null
+        if (e.startOffset < 0 || e.selectionStart < 0) return null
+        return intArrayOf(e.startOffset + e.selectionStart, e.startOffset + e.selectionEnd)
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         editor = EditorContext(info)
-        mode = editor.mode
+        // After a configuration change, come back to the same page, shift and panel.
+        val c = carry
+        mode = c?.mode ?: editor.mode
         symbolTyped = false
-        shift = Shift.OFF
+        shift = c?.shift ?: Shift.OFF
         autoCapsSuppressed = false
+        // A new input view has no touches in progress, whatever the old one had.
+        shiftHeld = false
+        gestureActive = false
         root?.showPanel(null)
         applyTheme()
         applySettings()
@@ -170,6 +205,12 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         logic.refreshPredictions(currentInputConnection)
         updateShift()
         refreshStrip()
+        when (c?.panel) {
+            Panel.EMOJI -> openEmoji()
+            Panel.CLIPBOARD -> openClipboard()
+            Panel.THEMES -> openThemes()
+            null -> Unit
+        }
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -193,9 +234,26 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
+        // The framework may rebuild the input view inside super (it does when the
+        // screen size changes); onStartInputView uses this to restore the state.
+        carry = Carry(mode, shift, shownPanel())
+        try {
+            super.onConfigurationChanged(newConfig)
+        } finally {
+            carry = null
+        }
         applyTheme()
         applySettings()
+    }
+
+    private fun shownPanel(): Panel? {
+        val shown = root?.panel ?: return null
+        return when {
+            shown === emojiPanel -> Panel.EMOJI
+            shown === clipboardPanel -> Panel.CLIPBOARD
+            shown === themePanel -> Panel.THEMES
+            else -> null
+        }
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
@@ -203,7 +261,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         applySettings()
         when (key) {
             Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS -> applyTheme()
-            Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS -> rebuildLayout()
+            Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS, Prefs.SPLIT -> rebuildLayout()
         }
         refreshStrip()
     }
@@ -221,7 +279,11 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             emojiSuggestions = prefs.emojiSuggestions
             autoCaps = prefs.autoCaps
         }
-        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        // Short screens (phones in landscape, flip phones' cover screens) get lower rows;
+        // an unfolded foldable in landscape has room for full-height ones.
+        val config = resources.configuration
+        val short = if (config.screenHeightDp > 0) config.screenHeightDp < SHORT_SCREEN_DP
+        else config.orientation == Configuration.ORIENTATION_LANDSCAPE
         root?.keyboard?.apply {
             previewsEnabled = prefs.keyPreviews
             gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT
@@ -231,7 +293,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
             heightScale = prefs.heightPercent / 100f
-            rowHeightDp = if (landscape) 40f else 54f
+            rowHeightDp = if (short) 40f else 54f
         }
     }
 
@@ -282,6 +344,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             numberRow = prefs.numberRow,
             symbolHints = prefs.symbolHints,
             emojiKey = editor.fieldKind == FieldKind.TEXT,
+            split = splitActive(),
         )
         val l = Layouts.build(mode, options)
         layout = l
@@ -294,6 +357,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         }
         updateShift()
     }
+
+    /** Split for thumb typing on large screens: an unfolded foldable or a tablet. */
+    private fun splitActive(): Boolean =
+        prefs.splitKeyboard && resources.configuration.smallestScreenWidthDp >= LARGE_SCREEN_DP
 
     private fun setMode(m: KeyboardMode) {
         if (mode == m) return
@@ -679,5 +746,9 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private companion object {
         const val DOUBLE_TAP_MS = 320L
         const val NEVER = Long.MIN_VALUE / 2
+        /** Smallest width of large screens (Android's tablet breakpoint). */
+        const val LARGE_SCREEN_DP = 600
+        /** Screens shorter than this get lower key rows. */
+        const val SHORT_SCREEN_DP = 480
     }
 }
