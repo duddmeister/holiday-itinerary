@@ -5,13 +5,14 @@ following projects; their licences are reproduced below.
 
 | Data | Source | Licence | Used for |
 | --- | --- | --- | --- |
-| English word list (`app/src/main/assets/dict/en_US.txt`, `en_US_shortcuts.txt`) | [AOSP LatinIME](https://android.googlesource.com/platform/packages/inputmethods/LatinIME) `dictionaries/en_US_wordlist.combined.gz` | Apache License 2.0 | Dictionary, frequencies and typo shortcuts |
+| English word lists (`app/src/main/assets/dict/en_US.txt`, `en_GB.txt` and their `_shortcuts.txt`) | [AOSP LatinIME](https://android.googlesource.com/platform/packages/inputmethods/LatinIME) `dictionaries/en_US_wordlist.combined.gz` and `en_GB_wordlist.combined.gz` | Apache License 2.0 | Dictionaries, frequencies and typo shortcuts |
 | Emoji list (`app/src/main/assets/emoji/emoji.txt`) | [Unicode emoji-test.txt 16.0](https://unicode.org/Public/emoji/16.0/emoji-test.txt) | Unicode License v3 | Emoji panel, ordering and skin tones |
 | Emoji keywords (`app/src/main/assets/emoji/keywords.txt`) | [GitHub gemoji](https://github.com/github/gemoji) `db/emoji.json` | MIT | Emoji suggestions |
 
 The files were converted with `tools/build_dictionary.py` and `tools/build_emoji.py`.
 Lumen adds a small list of newer everyday words to the dictionary and writes its own
-starter phrase list (`en_US_predictions.txt`).
+starter phrase list (`en_US_predictions.txt`). The British English dictionary is the
+US one in British spelling, using the en_GB list's spellings (see the script).
 
 ---
 

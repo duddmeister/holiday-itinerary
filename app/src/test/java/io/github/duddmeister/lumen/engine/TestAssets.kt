@@ -17,11 +17,12 @@ object TestAssets {
     fun reader(path: String): BufferedReader = File(root, path).bufferedReader()
 
     val lexicon: Lexicon by lazy { reader("dict/en_US.txt").use { Lexicon.read(it) } }
+    private val britishLexicon: Lexicon by lazy { reader("dict/en_GB.txt").use { Lexicon.read(it) } }
 
-    fun engine(history: UserHistory = UserHistory()): SuggestionEngine = SuggestionEngine(
-        lexicon,
-        reader("dict/en_US_shortcuts.txt").use { SuggestionEngine.readShortcuts(it) },
-        reader("dict/en_US_predictions.txt").use { NextWordModel.read(it) },
+    fun engine(history: UserHistory = UserHistory(), spelling: Spelling = Spelling.AMERICAN): SuggestionEngine = SuggestionEngine(
+        if (spelling == Spelling.BRITISH) britishLexicon else lexicon,
+        reader("dict/${spelling.locale}_shortcuts.txt").use { SuggestionEngine.readShortcuts(it) },
+        reader("dict/${spelling.locale}_predictions.txt").use { NextWordModel.read(it) },
         history,
         reader("emoji/keywords.txt").use { SuggestionEngine.readEmojiKeywords(it) },
     )

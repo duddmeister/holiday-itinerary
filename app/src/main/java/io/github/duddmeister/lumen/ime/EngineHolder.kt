@@ -7,6 +7,8 @@ import android.util.Log
 import io.github.duddmeister.lumen.engine.GestureDecoder
 import io.github.duddmeister.lumen.engine.Lexicon
 import io.github.duddmeister.lumen.engine.NextWordModel
+import io.github.duddmeister.lumen.engine.Shortcut
+import io.github.duddmeister.lumen.engine.Spelling
 import io.github.duddmeister.lumen.engine.SuggestionEngine
 import io.github.duddmeister.lumen.engine.UserHistory
 import java.io.File
@@ -31,42 +33,68 @@ object EngineHolder {
     @Volatile var decoder: GestureDecoder? = null
         private set
 
-    /** Starts loading if needed; [onReady] runs on the main thread once the engine exists. */
-    fun load(context: Context, onReady: () -> Unit) {
-        if (engine != null) { onReady(); return }
+    /** How [engine] spells; while another spelling loads, still the old one. */
+    var spelling: Spelling? = null
+        private set
+    private var wanted: Spelling? = null
+
+    /**
+     * Makes sure the engine spells in [spelling], loading it if needed; [onReady] runs
+     * on the main thread once it does. A new spelling keeps the words learned so far.
+     */
+    fun load(context: Context, spelling: Spelling, onReady: () -> Unit) {
+        if (engine != null && this.spelling == spelling && !loading) { onReady(); return }
         waiting.add(onReady)
-        if (loading) return
+        wanted = spelling
+        if (!loading) start(context.applicationContext)
+    }
+
+    private fun start(app: Context) {
+        val spelling = wanted ?: return
         loading = true
-        val app = context.applicationContext
+        // A running engine hands on its learned words; otherwise they come from storage.
+        val readHistory = engine == null
         io.execute {
             try {
                 val started = System.currentTimeMillis()
                 val assets = app.assets
-                val lexicon = assets.open("dict/en_US.txt").bufferedReader().use { Lexicon.read(it) }
-                val shortcuts = assets.open("dict/en_US_shortcuts.txt").bufferedReader().use { SuggestionEngine.readShortcuts(it) }
-                val predictions = assets.open("dict/en_US_predictions.txt").bufferedReader().use { NextWordModel.read(it) }
+                val lexicon = assets.open("dict/${spelling.locale}.txt").bufferedReader().use { Lexicon.read(it) }
+                val shortcuts = assets.open("dict/${spelling.locale}_shortcuts.txt").bufferedReader().use { SuggestionEngine.readShortcuts(it) }
+                val predictions = assets.open("dict/${spelling.locale}_predictions.txt").bufferedReader().use { NextWordModel.read(it) }
                 val emoji = assets.open("emoji/keywords.txt").bufferedReader().use { SuggestionEngine.readEmojiKeywords(it) }
                 val file = File(app.filesDir, HISTORY_FILE)
-                val history = if (file.isFile) {
+                val stored = if (readHistory && file.isFile) {
                     try { file.bufferedReader().use { UserHistory.read(it) } } catch (e: Exception) { UserHistory() }
                 } else UserHistory()
-                val built = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
-                val gestures = GestureDecoder(lexicon, history)
-                // Snapshot learned words while only this thread can see the history.
-                val learned = gestures.learnedWords()
-                Log.i(TAG, "Dictionary ready: ${lexicon.wordCount} words in ${System.currentTimeMillis() - started} ms")
-                main.post {
-                    engine = built
-                    loading = false
-                    waiting.forEach { it() }
-                    waiting.clear()
-                }
-                gestures.buildIndex(learned)
-                main.post { decoder = gestures }
+                Log.i(TAG, "Dictionary ready: ${lexicon.wordCount} words (${spelling.locale}) in ${System.currentTimeMillis() - started} ms")
+                main.post { publish(app, spelling, lexicon, shortcuts, predictions, emoji, stored) }
             } catch (e: Exception) {
                 Log.e(TAG, "Could not load the dictionary", e)
                 main.post { loading = false }
             }
+        }
+    }
+
+    private fun publish(
+        app: Context, spelling: Spelling, lexicon: Lexicon, shortcuts: Map<String, Shortcut>,
+        predictions: NextWordModel, emoji: Map<String, List<String>>, stored: UserHistory,
+    ) {
+        loading = false
+        // Another spelling was chosen while this one loaded.
+        if (wanted != spelling) { start(app); return }
+        val history = engine?.history ?: stored
+        val built = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
+        val gestures = GestureDecoder(lexicon, history)
+        // Snapshot learned words here, on the thread that owns the history.
+        val learned = gestures.learnedWords()
+        engine = built
+        decoder = null
+        this.spelling = spelling
+        waiting.forEach { it() }
+        waiting.clear()
+        io.execute {
+            gestures.buildIndex(learned)
+            main.post { if (engine === built) decoder = gestures }
         }
     }
 

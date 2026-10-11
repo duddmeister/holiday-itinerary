@@ -129,11 +129,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         clipboard.start()
         prefs.store.registerOnSharedPreferenceChangeListener(this)
         applySettings()
-        EngineHolder.load(this) {
-            logic.updateSuggestions()
-            logic.refreshPredictions(currentInputConnection)
-            refreshStrip()
-        }
+        loadDictionary()
         Thread({
             val data = EmojiData.load(this, prefs.store)
             main.post {
@@ -302,6 +298,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         when (key) {
             Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS -> applyTheme()
             Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS, Prefs.SPLIT -> rebuildLayout()
+            Prefs.SPELLING -> {
+                loadDictionary()
+                rebuildLayout()
+            }
             Prefs.GIFS, Prefs.GIF_SERVICE, Prefs.GIPHY_KEY, Prefs.KLIPY_KEY -> {
                 val panel = gifPanel
                 if (panel != null && root?.panel === panel && isInputViewShown) openGif(panel.query)
@@ -311,6 +311,15 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     // ------------------------------------------------------------ setup
+
+    /** Loads (or switches to) the dictionary for the chosen spelling. */
+    private fun loadDictionary() {
+        EngineHolder.load(this, prefs.spelling) {
+            logic.updateSuggestions()
+            logic.refreshPredictions(currentInputConnection)
+            refreshStrip()
+        }
+    }
 
     private fun applySettings() {
         feedback.configure(prefs.haptics, prefs.hapticStrength, prefs.sound, prefs.soundVolume)
@@ -398,7 +407,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         geometry = null
         root?.keyboard?.let {
             it.setKeyboard(l)
-            it.spaceLabel = if (mode == KeyboardMode.TEXT) "English" else null
+            it.spaceLabel = if (mode == KeyboardMode.TEXT) prefs.spelling.language else null
             it.enterIcon = enterIcon()
             it.gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && search == null
         }
