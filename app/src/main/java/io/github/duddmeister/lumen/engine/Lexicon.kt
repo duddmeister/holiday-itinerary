@@ -193,9 +193,21 @@ class Lexicon private constructor(
                 next[i] = v
                 if (v < min) min = v
             }
-            if (min <= q.maxCost) visit(child, depth + 1, q, rows, collector, taken)
+            if (min <= q.maxCost || swapWithin(c, row, q)) visit(child, depth + 1, q, rows, collector, taken)
             child = nextSibling[child]
         }
+    }
+
+    /**
+     * Whether swapping [c] with the letter after it could still come in under the budget,
+     * though everything else costs too much. That swap is only counted a letter later, so
+     * without this "ot" would never reach "to".
+     */
+    private fun swapWithin(c: Char, row: FloatArray, q: FuzzyQuery): Boolean {
+        for (i in 2..q.input.length) {
+            if (q.input[i - 1] == c && row[i - 2] + TRANSPOSE_COST <= q.maxCost) return true
+        }
+        return false
     }
 
     companion object {

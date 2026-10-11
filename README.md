@@ -17,8 +17,9 @@ make it feel at home on any phone.
 - **Glide typing.** Slide across the letters and Lumen matches the shape and
   position of your path against 60,000 words, with a live preview as you glide.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
-  exactly where you tapped, fixes missing apostrophes (`dont` → `don't`), and one
-  tap of backspace undoes it.
+  exactly where you tapped, so a slip is fixed even when it spells another word
+  (`bur` → `but`). It adds missing apostrophes (`theyre` → `they're`), leaves chat
+  shorthand alone (`ngl`, `ppl`, `nah`), and one tap of backspace undoes it.
 - **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
   as you speak, then land in the text with the right spaces and capitals. It
   listens in British or American English to match your spelling.

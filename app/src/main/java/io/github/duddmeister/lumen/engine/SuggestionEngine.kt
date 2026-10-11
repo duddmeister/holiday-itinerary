@@ -81,7 +81,8 @@ class SuggestionEngine(
 
         val maxCost = when {
             n <= 1 -> 0f
-            n == 2 -> 0.6f
+            // Enough for a tap squarely on a neighbouring key ("ti" for "to").
+            n == 2 -> 0.85f
             n <= 4 -> 1.25f
             n <= 7 -> 2f
             else -> 2.5f
@@ -132,7 +133,16 @@ class SuggestionEngine(
             !options.autoCorrect || folded in rejected -> null
             shortcut != null && shortcut.autoCorrect && lexicon.findExact(typed) < 0 ->
                 applyCase(shortcut.replacement, word)
-            !typedIsWord && !hasDigits -> ranked.firstOrNull { isAutoCorrectable(it, n) }?.let { applyCase(it.text, word) }
+            !typedIsWord && !hasDigits -> {
+                val lowercase = typed.none { it.isUpperCase() }
+                // Only a close second to the best guess, or the best way to finish what was
+                // typed: a guess far behind is usually wrong ("gir" isn't "air" or "girt").
+                val best = ranked.firstOrNull()?.score ?: 0f
+                val bestFinish = ranked.firstOrNull { CharFolding.fold(it.text).startsWith(folded) }
+                ranked.firstOrNull {
+                    isAutoCorrectable(it, n, lowercase) && (it === bestFinish || best - it.score <= AUTOCORRECT_MARGIN)
+                }?.let { applyCase(it.text, word) }
+            }
             // A slip first, so "tue" (meant "the") isn't taken for "Tue".
             node >= 0 -> slipFix(node, word, learnedCount, ranked, predicted)?.let { applyCase(it.text, word) }
                 ?: caseFix(typed, node, word)
@@ -151,11 +161,18 @@ class SuggestionEngine(
         return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji)
     }
 
-    private fun isAutoCorrectable(c: Candidate, typedLength: Int): Boolean {
+    private fun isAutoCorrectable(c: Candidate, typedLength: Int, lowercase: Boolean): Boolean {
         if (c.kind == Suggestion.Kind.SHORTCUT) return c.cost == 0f
         if (typedLength < 2) return false
+        // Typed in lower case, a slip far more likely means an everyday word than an
+        // abbreviation or a little-known name: "ppl" isn't "PPP", "lolol" isn't "Rollo".
+        if (lowercase && c.kind != Suggestion.Kind.LEARNED && c.text.any { it.isUpperCase() }) {
+            if (c.text.length > 1 && c.text.all { !it.isLetter() || it.isUpperCase() }) return false
+            if (c.freq < NAME_MIN_FREQ) return false
+        }
         val maxAuto = when {
-            typedLength == 2 -> 0.45f
+            // One neighbouring key, even squarely on it ("ti" for "to"), or two letters swapped.
+            typedLength == 2 -> 0.8f
             typedLength <= 4 -> 1f
             typedLength <= 7 -> 1.6f
             else -> 2.2f
@@ -305,6 +322,10 @@ class SuggestionEngine(
         const val LEARNED_BASE_FREQ = 110
         const val LEARNED_THRESHOLD = 2
         const val MIN_AUTOCORRECT_FREQ = 40
+        /** How far behind the best guess a correction may score (measured on simulated typing). */
+        const val AUTOCORRECT_MARGIN = 20f
+        /** Lower-case typing is corrected to a name only this common ("London", not "Rollo"). */
+        const val NAME_MIN_FREQ = 100
         /**
          * A slip costing this much at most: two letters swapped (0.6), or a tap on a
          * neighbouring key that leaned towards the key meant...
