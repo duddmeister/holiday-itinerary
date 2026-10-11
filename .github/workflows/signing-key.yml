@@ -1,0 +1,51 @@
+name: Create signing key
+
+# Run once, by hand, to give Lumen its own signing key. The key is made here and
+# goes straight into this repository's secrets, so nobody ever sees it. Needs a
+# LUMEN_SETUP_TOKEN secret first: a fine-grained token for this repository with
+# "Secrets: Read and write" (see the README). The token's secret is removed after.
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  key:
+    name: Create Lumen's signing key
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.LUMEN_SETUP_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Create the key and store it as secrets
+        shell: bash
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Add the LUMEN_SETUP_TOKEN secret first (see the README)."
+            exit 1
+          fi
+          existing=$(gh api "repos/$GH_REPO/actions/secrets" --jq '.secrets[].name')
+          if printf '%s\n' "$existing" | grep -qx LUMEN_SIGNING_KEY; then
+            # A new key would stop updates installing over the Lumen people already have.
+            echo "::error::Lumen already has a signing key. Delete the LUMEN_SIGNING_KEY secret first if you really want a new one."
+            exit 1
+          fi
+          password=$(openssl rand -hex 24)
+          echo "::add-mask::$password"
+          export LUMEN_KEY_PASSWORD="$password"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/lumen.p12" -storetype PKCS12 -alias lumen \
+            -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA -validity 36500 \
+            -dname "CN=Lumen" -storepass:env LUMEN_KEY_PASSWORD -keypass:env LUMEN_KEY_PASSWORD > /dev/null
+          # The password first: once the key is there, so is everything it needs.
+          printf '%s' "$password" | gh secret set LUMEN_SIGNING_PASSWORD
+          base64 -w0 "$RUNNER_TEMP/lumen.p12" | gh secret set LUMEN_SIGNING_KEY
+          echo "Lumen's signing certificate:"
+          keytool -list -v -keystore "$RUNNER_TEMP/lumen.p12" -storetype PKCS12 -storepass:env LUMEN_KEY_PASSWORD | grep "SHA256:"
+          rm -f "$RUNNER_TEMP/lumen.p12"
+          # The setup token isn't needed any more.
+          gh secret delete LUMEN_SETUP_TOKEN

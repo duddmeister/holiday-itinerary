@@ -75,21 +75,26 @@ you tap **Check**.
 
 Every merge to `main` is built, signed with Lumen's own key and published as a
 release, which is what the app updates from. The key lives in two repository
-secrets (**Settings → Secrets and variables → Actions**), never in the code:
+secrets, `LUMEN_SIGNING_KEY` and `LUMEN_SIGNING_PASSWORD`, never in the code:
+whoever holds it can ship updates to your keyboard.
 
-- `LUMEN_SIGNING_KEY`: a PKCS12 keystore holding a key named `lumen`, base64-encoded.
-- `LUMEN_SIGNING_PASSWORD`: its password.
+To create it once, without anyone seeing it:
 
-```sh
-keytool -genkeypair -keystore lumen.p12 -storetype PKCS12 -alias lumen \
-  -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Lumen"
-base64 -w0 lumen.p12   # paste the output into LUMEN_SIGNING_KEY
-```
+1. [Make a fine-grained token](https://github.com/settings/personal-access-tokens/new)
+   for this repository only, with **Repository permissions → Secrets: Read and
+   write** and a short expiry.
+2. Add it as a repository secret named `LUMEN_SETUP_TOKEN`
+   (**Settings → Secrets and variables → Actions → New repository secret**).
+3. Run the **Create signing key** workflow from the **Actions** tab. It makes
+   the key straight into the two secrets and deletes `LUMEN_SETUP_TOKEN`; you
+   can then delete the token itself.
 
-Keep a copy of the keystore and its password somewhere safe: with a new key,
-the next version has to be installed fresh. Whoever holds the key can ship
-updates to your keyboard, so never commit it. Without the secrets, CI signs with
-a throwaway debug key and publishes no release; those APKs (the `lumen-apk`
+To bring your own key instead, put a base64 PKCS12 keystore holding a key named
+`lumen` in `LUMEN_SIGNING_KEY` and its password in `LUMEN_SIGNING_PASSWORD`.
+
+Secrets can't be read back, so no copy of the key exists anywhere else; deleting
+it means installing the next version fresh. Without the secrets, CI signs with a
+throwaway debug key and publishes no release; those APKs (the `lumen-apk`
 artifact of each **Build** run) only install after uninstalling Lumen.
 
 ## GIFs
