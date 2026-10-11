@@ -145,8 +145,30 @@ class SuggestionEngineTest {
         val cases = mapOf("facebok" to "Facebook", "chirstmas" to "Christmas", "englsih" to "English", "londno" to "London")
         for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
         assertTrue(corrected(tapped("icrd")) != "ICRC")
-        // A guess far behind the best one isn't forced on the user ("gir" was "air").
-        assertNull(corrected(tapped("gir")))
+        // A guess far behind the best one isn't forced on the user: "gir" was "air".
+        assertEquals("girl", corrected(tapped("gir")))
+    }
+
+    /** A word missing its last letter, as when a tap doesn't register: "wil" is "will". */
+    @Test
+    fun finishesWordsMissingALetter() {
+        val cases = mapOf(
+            "ful" to "full", "wil" to "will", "hav" to "have", "lik" to "like", "kno" to "know",
+            "wha" to "what", "som" to "some", "muc" to "much", "stil" to "still",
+        )
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        // Not to names or abbreviations, and not past what's typed on purpose.
+        assertNull(corrected(tapped("nav")))
+        for (w in listOf("abt", "tho", "thx", "cuz", "fam", "brb")) assertNull(w, corrected(tapped(w)))
+    }
+
+    @Test
+    fun separatesWordsRunTogether() {
+        val cases = mapOf(
+            "abit" to "a bit", "aswell" to "as well", "infact" to "in fact", "atleast" to "at least",
+            "eachother" to "each other", "thankyou" to "thank you",
+        )
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
     }
 
     /** A rare word the user has typed before, or put back after a correction, is theirs. */

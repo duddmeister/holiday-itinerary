@@ -181,7 +181,10 @@ class SuggestionEngine(
         if (c.kind == Suggestion.Kind.COMPLETION) {
             if (c.cost > 0f) return false
             val extra = c.text.length - typedLength
-            if (!(typedLength >= 4 && extra <= 1) && !(typedLength >= 6 && extra <= 2)) return false
+            // Three letters are finished only as an everyday word one longer: "ful" is "full"
+            // (but "nav" isn't "Navy").
+            val dropped = typedLength == 3 && extra == 1 && c.freq >= SHORT_FINISH_FREQ && c.text.none { it.isUpperCase() }
+            if (!dropped && !(typedLength >= 4 && extra <= 1) && !(typedLength >= 6 && extra <= 2)) return false
         }
         return c.freq >= MIN_AUTOCORRECT_FREQ || c.kind == Suggestion.Kind.LEARNED
     }
@@ -326,6 +329,8 @@ class SuggestionEngine(
         const val AUTOCORRECT_MARGIN = 20f
         /** Lower-case typing is corrected to a name only this common ("London", not "Rollo"). */
         const val NAME_MIN_FREQ = 100
+        /** Three letters short of an everyday word by one ("wil", "hav") are finished as it. */
+        const val SHORT_FINISH_FREQ = 120
         /**
          * A slip costing this much at most: two letters swapped (0.6), or a tap on a
          * neighbouring key that leaned towards the key meant...

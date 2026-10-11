@@ -64,7 +64,7 @@ EXTRA_WORDS = {
     "insta": 80, "Snapchat": 90, "fb": 70, "tldr": 50, "srsly": 50, "cya": 80, "gtg": 70,
     "otw": 60, "wya": 70, "xoxo": 70, "xo": 60, "bae": 70, "hun": 70, "luv": 60,
     "aight": 70, "ight": 60, "alr": 60, "bcuz": 50, "kk": 80, "k": 80, "tyvm": 50,
-    "ilysm": 50, "yh": 50, "dw": 50, "xd": 60, "mb": 60,
+    "ilysm": 50, "yh": 50, "dw": 50, "xd": 60, "mb": 60, "abt": 70, "res": 60,
 }
 
 # ("ik" and "gl" stay out: each is a slip away from "ok" or "go".)
@@ -96,6 +96,11 @@ EXTRA_SHORTCUTS = {
     "thatll": "that'll", "theres": "there's", "thats": "that's", "mustnt": "mustn't",
     "neednt": "needn't", "shant": "shan't", "ive": "I've", "dont": "don't",
     "were": "we're", "wed": "we'd", "shell": "she'll", "hell": "he'll", "well": "we'll", "its": "it's",
+    # Two words run together.
+    "abit": "a bit", "alittle": "a little", "aswell": "as well", "atleast": "at least", "atall": "at all",
+    "infact": "in fact", "incase": "in case", "infront": "in front", "inspite": "in spite",
+    "eachother": "each other", "noone": "no one", "thankyou": "thank you", "ofcourse": "of course",
+    "ontop": "on top", "everytime": "every time",
 }
 
 # Recognised, so never "corrected" into something else, but never offered either.

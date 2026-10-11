@@ -94,11 +94,11 @@ class SplitLayoutTest {
         assertEquals(3f, email.bridgeLeft, 1e-4f)
         assertEquals(6f, email.keys[email.splitAt].width, 1e-4f)
 
-        // URL fields keep their .com key; the space bar gives way on that side.
+        // So do address fields, with "/" for "@" (".com" is held on the full stop).
         val url = split(LayoutOptions(field = FieldKind.URL, split = true)).rows.last()
-        assertEquals("?123/_" to "_..com⏎", halves(url))
+        assertEquals("?123/_" to "_.⏎", halves(url))
         assertEquals(3f, url.bridgeLeft, 1e-4f)
-        assertEquals(3f + 5f / 3, url.keys[url.splitAt].width, 1e-4f)
+        assertEquals(6f, url.keys[url.splitAt].width, 1e-4f)
     }
 
     @Test

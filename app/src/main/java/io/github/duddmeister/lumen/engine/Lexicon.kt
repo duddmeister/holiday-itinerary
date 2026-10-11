@@ -213,6 +213,8 @@ class Lexicon private constructor(
     companion object {
         private const val MAX_DEPTH = 48
         const val TRANSPOSE_COST = 0.6f
+        /** A letter missed out of a word (measured on simulated typing; see [FuzzyQuery.insertCost]). */
+        const val DROPPED_COST = 0.75f
 
         /** Reads "word<TAB>frequency[<TAB>flags]" lines; '#' starts a comment line. */
         fun read(reader: BufferedReader): Lexicon {
@@ -328,6 +330,9 @@ abstract class FuzzyQuery(
     open fun insertCost(c: Char, previous: Char): Float = when {
         CharFolding.isConnector(c) -> 0.15f
         c == previous -> 0.5f
+        // A tap that never registered is commoner than a stray one ("wich" is "which"), so a
+        // letter left out costs less than one too many. Two letters are too few to tell.
+        input.length >= 3 -> Lexicon.DROPPED_COST
         else -> 1f
     }
 

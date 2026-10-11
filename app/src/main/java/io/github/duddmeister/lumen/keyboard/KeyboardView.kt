@@ -86,6 +86,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     private val gapX = context.dp(5.5f)
     private val gapY = context.dp(9f)
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    /** When a character or space was last tapped. */
+    private var typedAt = 0L
 
     private enum class Mode { PRESS, PANEL, GESTURE, SPACE_SWIPE, DELETE_SWIPE, FLICK, DONE }
 
@@ -101,8 +103,33 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         var words = 0
         var repeats = 0
         var moved = false
+        /** Slid off the key it came down on, to the one it's on now. */
+        var switched = false
         /** Went past a flick: from here on it's a slide. */
         var flickOff = false
+        /** Where and when the finger came down, kept when a slide takes it to another key. */
+        var startX = 0f
+        var startY = 0f
+        var downAt = 0L
+        /** Came down while the user was tapping keys: a glide has to be unmistakable. */
+        var afterTyping = false
+        /** How far the finger has travelled, leaving out the jitter of a finger at rest. */
+        var travel = 0f
+        var travelX = 0f
+        var travelY = 0f
+        /** The path so far, for a glide only recognised part way along. */
+        var pathX = FloatArray(16)
+        var pathY = FloatArray(16)
+        var pathT = LongArray(16)
+        var pathCount = 0
+
+        fun record(x: Float, y: Float, time: Long) {
+            if (pathCount == pathX.size) {
+                pathX = pathX.copyOf(pathCount * 2); pathY = pathY.copyOf(pathCount * 2); pathT = pathT.copyOf(pathCount * 2)
+            }
+            pathX[pathCount] = x; pathY[pathCount] = y; pathT[pathCount] = time
+            pathCount++
+        }
 
         /** Long press and key repeat share one timer. */
         override fun run() {
@@ -344,7 +371,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val i = event.actionIndex
-                down(event.getPointerId(i), event.getX(i), event.getY(i))
+                down(event.getPointerId(i), event.getX(i), event.getY(i), event.eventTime)
             }
             MotionEvent.ACTION_MOVE -> {
                 for (i in 0 until event.pointerCount) {
@@ -366,13 +393,15 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         return true
     }
 
-    private fun down(id: Int, x: Float, y: Float) {
+    private fun down(id: Int, x: Float, y: Float, time: Long) {
         val held = ArrayList<Pointer>()
         for (i in 0 until pointers.size()) {
             val other = pointers.valueAt(i)
             if (other.mode == Mode.GESTURE) return // one finger at a time while gliding
             val k = other.key
-            if (other.mode == Mode.PRESS && k != null && (k.isCharacter || k.code == KeyCodes.SPACE)) held.add(other)
+            // A key part way into a flick counts too: the thumb was rolling off it, not flicking.
+            val pressing = other.mode == Mode.PRESS || other.mode == Mode.FLICK
+            if (pressing && k != null && (k.isCharacter || k.code == KeyCodes.SPACE)) held.add(other)
         }
         // Rollover: a new finger commits keys that are still held, so fast typing keeps its order.
         for (other in held) {
@@ -381,12 +410,16 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
             other.mode = Mode.DONE
             releaseVisual(k)
             listener?.onKeyTap(k, other.downX, other.downY)
+            typedAt = time
         }
         // Committing may have switched layouts (e.g. space returning from symbols), so look up afresh.
         val key = layout?.keyAt(x, y) ?: return
         val p = Pointer(id)
         p.key = key
         p.downX = x; p.downY = y; p.x = x; p.y = y
+        p.startX = x; p.startY = y; p.downAt = time
+        p.travelX = x; p.travelY = y
+        p.afterTyping = time - typedAt < FAST_TYPING_MS
         pointers.put(id, p)
         pressVisual(key, x, y)
         listener?.onKeyDown(key)
@@ -406,6 +439,15 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 val dy = y - p.downY
                 val distance = hypot(dx, dy)
                 if (distance > touchSlop) p.moved = true
+                val step = hypot(x - p.travelX, y - p.travelY)
+                if (step >= touchSlop / 3f) {
+                    p.travel += step
+                    p.travelX = x; p.travelY = y
+                }
+                val glideable = gesturesEnabled && key.isLetter && pointers.size() == 1
+                if (glideable) p.record(x, y, time)
+                // Heading down a key with a symbol in its corner: a flick, until it goes too far.
+                val flickShaped = flickEnabled && key.hint != null && !p.flickOff && dy > 0f && abs(dx) < dy * FLICK_SLANT
                 when {
                     key.code == KeyCodes.SPACE && spaceSwipesEnabled && abs(dx) > touchSlop * 1.5f -> {
                         // A swipe, not a space: it acts once, when the finger lifts.
@@ -419,33 +461,34 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                         p.anchorX = p.downX - touchSlop
                         p.words = 0
                     }
-                    flickEnabled && key.hint != null && !p.flickOff && dy > flickStart(key) && abs(dx) < dy * FLICK_SLANT -> {
+                    flickShaped && dy > flickStart(key) -> {
                         // Flicking down for the symbol in the corner; the preview shows it.
                         removeCallbacks(p)
                         p.mode = Mode.FLICK
                         relabelPreview(key, key.hint)
                     }
-                    gesturesEnabled && key.isLetter && pointers.size() == 1 &&
-                        distance > maxOf(touchSlop * 1.5f, l.keyWidth * 0.55f) -> {
+                    glideable && !flickShaped && p.travel > glideStart(l, p, time) -> {
                         removeCallbacks(p)
                         p.mode = Mode.GESTURE
                         hidePreview(key)
                         releaseVisual(key)
-                        trail.start(p.downX, p.downY, time)
-                        trail.add(x, y, time)
+                        trail.start(p.startX, p.startY, p.downAt)
+                        for (i in 0 until p.pathCount) trail.add(p.pathX[i], p.pathY[i], p.pathT[i])
                         lastGestureNotify = time
                         listener?.onGestureStart()
                         invalidate()
                     }
                     p.moved && key.isCharacter -> {
                         val under = l.keyAt(x, y)
-                        if (under != null && under !== key && under.isCharacter) {
+                        // A thumb rolling over the edge as it lifts stays on its key.
+                        if (under != null && under !== key && under.isCharacter && wellInside(under, x, y)) {
                             // Sliding without glide typing: follow the finger to the key it rests on.
                             removeCallbacks(p)
                             hidePreview(key)
                             releaseVisual(key)
                             p.key = under
                             p.downX = x; p.downY = y
+                            p.switched = true
                             pressVisual(under, x, y)
                             listener?.onKeyDown(under)
                             if (under.popup.isNotEmpty()) postDelayed(p, longPressDelay)
@@ -466,13 +509,15 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
             Mode.FLICK -> {
                 val dx = x - p.downX
                 val dy = y - p.downY
+                if (gesturesEnabled && key.isLetter && pointers.size() == 1) p.record(x, y, time)
                 if (dy > key.bounds.height() * FLICK_REACH || abs(dx) > maxOf(l.keyWidth * 0.8f, dy * FLICK_SLANT * 1.5f)) {
                     // Too far, or too sideways, for a flick: a glide, or a slide to another key.
                     if (gesturesEnabled && key.isLetter && pointers.size() == 1) {
                         p.mode = Mode.GESTURE
                         hidePreview(key)
                         releaseVisual(key)
-                        trail.start(p.downX, p.downY, time)
+                        trail.start(p.startX, p.startY, p.downAt)
+                        for (i in 0 until p.pathCount) trail.add(p.pathX[i], p.pathY[i], p.pathT[i])
                         trail.add(x, y, time)
                         lastGestureNotify = time
                         listener?.onGestureStart()
@@ -513,10 +558,11 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 releaseVisual(key)
                 when {
                     key.code == KeyCodes.DELETE && p.repeats > 0 -> listener?.onKeyRelease(key)
-                    // Taps use where the finger landed; slides use where it came to rest.
-                    p.moved -> listener?.onKeyTap(key, x, y)
+                    // Taps use where the finger landed; slides to another key, where it came to rest.
+                    p.switched -> listener?.onKeyTap(key, x, y)
                     else -> listener?.onKeyTap(key, p.downX, p.downY)
                 }
+                if (key.isCharacter || key.code == KeyCodes.SPACE) typedAt = time
             }
             Mode.PANEL -> {
                 val panel = p.panel
@@ -548,13 +594,37 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 // Lifted below the line: the symbol. Brought back up first: the letter after all.
                 if (hint != null && y - p.downY > flickStart(key)) listener?.onAlternative(key, hint)
                 else listener?.onKeyTap(key, p.downX, p.downY)
+                typedAt = time
             }
             Mode.DONE -> releaseVisual(key)
         }
     }
 
+    /** Whether ([x], [y]) is well inside [key], not just over its edge. */
+    private fun wellInside(key: Key, x: Float, y: Float): Boolean {
+        val b = key.bounds
+        val insetX = b.width() * SLIDE_INSET
+        val insetY = b.height() * SLIDE_INSET
+        return x > b.left + insetX && x < b.right - insetX && y > b.top + insetY && y < b.bottom - insetY
+    }
+
     /** How far down a flick has to go before it counts. */
     private fun flickStart(key: Key) = maxOf(touchSlop, key.bounds.height() * FLICK_START)
+
+    /**
+     * How far a finger must travel to be glide typing. Just after a tap the user is typing,
+     * and a thumb rolling off a key mustn't start a glide (which lost the letter, or typed a
+     * word): then the distance starts at a few keys and comes down over half a second, as in
+     * Android's own keyboard. The path is kept meanwhile, so a glide recognised late loses
+     * none of it.
+     */
+    private fun glideStart(l: KeyboardLayout, p: Pointer, time: Long): Float {
+        val near = maxOf(touchSlop * 1.5f, l.keyWidth * 0.55f)
+        val held = time - p.downAt
+        if (!p.afterTyping || held >= GLIDE_SETTLE_MS) return near
+        val far = l.keyWidth * GLIDE_AFTER_TYPING_KEYS
+        return far - (far - near) * held / GLIDE_SETTLE_MS
+    }
 
     private fun keyLabel(key: Key) = if (shifted && key.isLetter) key.label.uppercase() else key.label
 
@@ -658,12 +728,23 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         private const val GESTURE_NOTIFY_MS = 90L
         /** How far, in key widths, a space-bar swipe must end from where it began to count. */
         internal const val SWIPE_MIN_KEYS = 0.4f
-        /** A flick down counts past this share of the key's height... */
-        private const val FLICK_START = 0.3f
+        /**
+         * A flick down counts past this share of the key's height (about 4 mm on a phone)...
+         * A thumb typing fast often rolls a couple of millimetres down a key as it lifts, and
+         * at 0.3 that typed ")" in the middle of "full".
+         */
+        private const val FLICK_START = 0.6f
         /** ...and stops being a flick (and becomes a glide) past this many key heights. */
         private const val FLICK_REACH = 1.4f
         /** A flick may lean this far sideways for each step down. */
         private const val FLICK_SLANT = 0.6f
+        /** A finger down this soon after a tap is typing, not starting a glide... */
+        private const val FAST_TYPING_MS = 350L
+        /** ...unless it travels this many key widths, coming down to the usual over [GLIDE_SETTLE_MS]. */
+        private const val GLIDE_AFTER_TYPING_KEYS = 3f
+        private const val GLIDE_SETTLE_MS = 450L
+        /** A slide moves the press to another key once this share of that key's size inside it. */
+        private const val SLIDE_INSET = 0.2f
         private const val PAD_MAX_WIDTH_DP = 520f
         /** Limits on a split key's width, its gap included. */
         private const val SPLIT_KEY_MIN_DP = 40f

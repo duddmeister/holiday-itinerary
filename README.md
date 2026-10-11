@@ -18,8 +18,10 @@ make it feel at home on any phone.
   position of your path against 60,000 words, with a live preview as you glide.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, so a slip is fixed even when it spells another word
-  (`bur` → `but`). It adds missing apostrophes (`theyre` → `they're`), leaves chat
-  shorthand alone (`ngl`, `ppl`, `nah`), and one tap of backspace undoes it.
+  (`bur` → `but`), as is a letter that never registered (`wich` → `which`). It adds
+  missing apostrophes (`theyre` → `they're`) and spaces (`abit` → `a bit`), leaves
+  chat shorthand alone (`ngl`, `ppl`, `nah`), corrects searches typed in the
+  browser's address bar but never web addresses, and one tap of backspace undoes it.
 - **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
   as you speak, then land in the text with the right spaces and capitals. It
   listens in British or American English to match your spelling.
