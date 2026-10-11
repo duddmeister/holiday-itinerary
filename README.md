@@ -34,9 +34,9 @@ make it feel at home on any phone.
   with pins and a one-tap paste chip, swipe left from backspace to delete whole
   words, long-press for accents and symbols, an optional number row, and QWERTY,
   QWERTZ, AZERTY, Colemak and Dvorak layouts.
-- **A space bar that does more.** Slide along it to move the cursor a word at a
-  time (or a letter, if you prefer). A quick swipe left jumps back a word, and a
-  quick swipe right finishes the word you're typing with the suggestion.
+- **A space bar that does more.** Swipe left on it to jump back a word. Swipe
+  right to finish the word you're typing with the suggestion, or to jump forward
+  a word.
 - **Made for foldables.** Open a foldable (or use a tablet) and the keys split
   between your thumbs, with the opening over the hinge and a space bar on each side.
   Fold or unfold mid-word and you carry on with the same word, suggestions, page

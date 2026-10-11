@@ -335,8 +335,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             previewsEnabled = prefs.keyPreviews
             gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && typingIntoApp
             trailEnabled = prefs.glideTrail
-            cursorControlEnabled = prefs.spaceCursor && typingIntoApp
-            cursorByWords = prefs.cursorByWords
+            spaceSwipesEnabled = prefs.spaceCursor && typingIntoApp
             deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
@@ -589,22 +588,15 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     override fun onPanelOpened() = feedback.tick()
 
-    override fun onCursorSteps(steps: Int) {
-        if (search != null) return
-        if (prefs.cursorByWords) logic.onCursorWords(steps) else logic.onCursorSteps(steps)
-        feedback.tick()
-        updateShift()
-    }
-
     /**
-     * A quick swipe along the space bar. Right finishes the word being typed with the
+     * A swipe along the space bar. Right finishes the word being typed with the
      * suggestion; otherwise the cursor jumps a word that way.
      */
     override fun onSpaceSwipe(direction: Int) {
         if (search != null) return
         feedback.tick()
         when {
-            direction > 0 && logic.composing.isNotEmpty -> {
+            direction > 0 && logic.typingWord -> {
                 autoCapsSuppressed = false
                 // A glided word is already the best match: just finish it.
                 if (logic.composingFromGesture) logic.onSpace() else logic.onPick(bestSuggestion(), emoji = false)

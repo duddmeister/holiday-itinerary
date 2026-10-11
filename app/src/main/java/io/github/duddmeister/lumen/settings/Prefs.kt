@@ -48,9 +48,8 @@ class Prefs(context: Context) {
     val soundVolume get() = int(SOUND_VOLUME, 40).coerceIn(0, 100)
     val learnWords get() = bool(LEARN, true)
     val clipboardHistory get() = bool(CLIPBOARD, true)
+    /** Swipes on the space bar move by words and finish words. */
     val spaceCursor get() = bool(SPACE_CURSOR, true)
-    /** Space-bar slides move the cursor a word at a time, rather than a letter. */
-    val cursorByWords get() = bool(CURSOR_BY_WORDS, true)
     val deleteSwipe get() = bool(DELETE_SWIPE, true)
     val longPressDelay get() = int(LONG_PRESS, 300).coerceIn(150, 700)
     val gifs get() = bool(GIFS, true)
@@ -91,7 +90,6 @@ class Prefs(context: Context) {
         const val LEARN = "learn_words"
         const val CLIPBOARD = "clipboard_history"
         const val SPACE_CURSOR = "space_cursor"
-        const val CURSOR_BY_WORDS = "cursor_by_words"
         const val DELETE_SWIPE = "delete_swipe"
         const val LONG_PRESS = "long_press_delay"
         const val GIFS = "gifs"
