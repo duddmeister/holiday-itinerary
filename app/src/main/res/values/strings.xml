@@ -94,7 +94,12 @@
     <string name="update_check_failed">Couldn\'t check for updates</string>
     <string name="update_retry">Try again</string>
     <string name="auto_updates">Check automatically</string>
-    <string name="auto_updates_summary">Look for a new version on GitHub when you open this app</string>
+    <string name="auto_updates_summary">Look for a new version on GitHub every day, and let you know when one is out</string>
+    <string name="updates_channel">Lumen updates</string>
+    <string name="update_notification_tap">Tap to update.</string>
+    <string name="update_alerts_off">Update notifications are off</string>
+    <string name="update_alerts_off_summary">Turn them on to hear when a new version is out.</string>
+    <string name="update_alerts_on">Turn on</string>
     <string name="section_gifs">GIFs</string>
     <string name="gifs">GIF search</string>
     <string name="gifs_summary">Find and send GIFs from GIPHY or KLIPY. Uses the internet; only your GIF searches are sent.</string>

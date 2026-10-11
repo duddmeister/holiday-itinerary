@@ -69,19 +69,31 @@ object Updater {
     private val busy: Boolean
         get() = state is State.Checking || state is State.Downloading || state is State.Installing
 
+    /** Reads an answer from GitHub's API; tests stand in for GitHub here. */
+    internal var fetch: (String) -> String = { url -> String(Http.get(url, MAX_ANSWER_BYTES), Charsets.UTF_8) }
+
+    /**
+     * The newest release, or null when there's none Lumen can install. Blocks, and throws
+     * [IOException] or [JSONException] when GitHub can't be read.
+     */
+    internal fun latest(): Release? = try {
+        Releases.parse(fetch("https://api.github.com/repos/$repo/releases/latest"))
+    } catch (e: HttpStatusException) {
+        // 404: nothing released yet.
+        if (e.code == 404) null else throw e
+    }
+
     /** Looks for a newer release. Unless [now], skips it when the last look was recent. */
     fun check(now: Boolean) {
         if (!enabled || busy) return
         if (!now && state !is State.Idle && SystemClock.elapsedRealtime() - checkedAt < RECHECK_MS) return
-        val url = "https://api.github.com/repos/$repo/releases/latest"
         set(State.Checking)
         worker.execute {
             val next = try {
-                val release = Releases.parse(String(Http.get(url, MAX_ANSWER_BYTES), Charsets.UTF_8))
+                val release = latest()
                 if (release != null && release.versionCode > BuildConfig.VERSION_CODE) State.Available(release) else State.Current
             } catch (e: HttpStatusException) {
-                // 404: nothing released yet.
-                if (e.code == 404) State.Current else State.Failed("GitHub couldn't answer (error ${e.code}). Try again later.", null)
+                State.Failed("GitHub couldn't answer (error ${e.code}). Try again later.", null)
             } catch (e: IOException) {
                 State.Failed("Couldn't reach GitHub. Check your connection, then try again.", null)
             } catch (e: JSONException) {

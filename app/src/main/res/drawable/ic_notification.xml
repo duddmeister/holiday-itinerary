@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher icon's key and sparkles, cropped to fit a status bar icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="52"
+    android:viewportHeight="52">
+    <group
+        android:translateX="-28"
+        android:translateY="-28">
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M41,35h26a9,9 0,0 1,9 9v20a9,9 0,0 1,-9 9h-26a9,9 0,0 1,-9 -9v-20a9,9 0,0 1,9 -9z"
+            android:strokeWidth="3.5"
+            android:strokeColor="#FFFFFFFF" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54,42.5Q55.5,52.5 65.5,54Q55.5,55.5 54,65.5Q52.5,55.5 42.5,54Q52.5,52.5 54,42.5Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M70,38.5Q70.6,42.4 74.5,43Q70.6,43.6 70,47.5Q69.4,43.6 65.5,43Q69.4,42.4 70,38.5Z" />
+    </group>
+</vector>

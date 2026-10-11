@@ -69,11 +69,11 @@ make it feel at home on any phone.
 
 ### Updates
 
-The Lumen app keeps itself current. When a new version is out, its **Updates**
-card offers it, and **Update** installs it over the old one, keeping your
-settings and learned words. Android asks once to let Lumen install apps, and
-then confirms each update. Turn off **Check automatically** to check only when
-you tap **Check**.
+The Lumen app keeps itself current. Once a day it looks for a new version and,
+when one is out, sends a notification; tap it (or **Update** on the app's
+**Updates** card) to install it over the old one, keeping your settings and
+learned words. Android asks once to let Lumen install apps, and then confirms
+each update. Turn off **Check automatically** to check only when you tap **Check**.
 
 ### Releases (for the repository owner)
 
@@ -150,7 +150,8 @@ The keyboard only goes online for GIFs. Opening the GIF panel loads trending
 GIFs from the service you chose (GIPHY or KLIPY), and your GIF searches go there
 too, with your language and region; like any website, the service also sees your
 IP address. Nothing else you type is sent anywhere. The Lumen app asks GitHub
-whether a new version is out when you open it, and downloads updates from there.
+whether a new version is out when you open it and once a day, and downloads
+updates from there.
 With GIF search and automatic update checks turned off, Lumen never connects on
 its own. Web search hands your search to your browser or search app. Learned
 words stay in the app's private storage, are left out of backups and transfers
