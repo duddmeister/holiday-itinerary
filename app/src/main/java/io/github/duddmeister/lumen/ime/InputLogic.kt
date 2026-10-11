@@ -412,31 +412,32 @@ class InputLogic(private val host: Host) {
             return
         }
         phantomSpace = false
-        if (repeating && deleteRepeats > WORD_DELETE_AFTER) {
-            deleteWordBefore(ic)
-            host.onInputChanged()
-            return
-        }
-        val before = ic.getTextBeforeCursor(32, 0)
-        if (before.isNullOrEmpty()) {
-            host.sendKey(KeyEvent.KEYCODE_DEL)
-            host.onInputChanged()
-            return
-        }
-        val n = lastGraphemeLength(before)
-        deleteBefore(ic, n)
-        val rest = before.subSequence(0, before.length - n)
-        if (!repeating && rest.isNotEmpty() && TextContext.isWordChar(rest[rest.length - 1]) && !TextContext.isWordChar(before[before.length - 1])) {
-            // Backspacing into a word brings its suggestions back.
-            resumeAtCursor(ic, rest)
-        } else {
-            refreshPredictions(ic, rest)
+        val before = ic.getTextBeforeCursor(64, 0)
+        when {
+            // The editor won't say what's before the cursor: delete with key events.
+            before == null -> host.sendKey(KeyEvent.KEYCODE_DEL)
+            // Nothing before the cursor. A tap still sends a backspace, for apps that act on
+            // one in an empty field (removing a recipient, say). A held key stops here: many
+            // apps take a backspace in an empty field as "close", hiding the keyboard mid-hold.
+            before.isEmpty() -> if (!repeating) host.sendKey(KeyEvent.KEYCODE_DEL)
+            repeating && deleteRepeats > WORD_DELETE_AFTER -> deleteWordBefore(ic, before)
+            else -> {
+                val n = lastGraphemeLength(before)
+                deleteBefore(ic, n)
+                val rest = before.subSequence(0, before.length - n)
+                if (!repeating && rest.isNotEmpty() && TextContext.isWordChar(rest[rest.length - 1]) && !TextContext.isWordChar(before[before.length - 1])) {
+                    // Backspacing into a word brings its suggestions back.
+                    resumeAtCursor(ic, rest)
+                } else {
+                    refreshPredictions(ic, rest)
+                }
+            }
         }
         host.onInputChanged()
     }
 
-    private fun deleteWordBefore(ic: InputConnection) {
-        val before = ic.getTextBeforeCursor(64, 0) ?: return
+    /** Deletes the word before the cursor, with any spaces after it; [before] is the text up to the cursor, not empty. */
+    private fun deleteWordBefore(ic: InputConnection, before: CharSequence) {
         var i = before.length
         while (i > 0 && !TextContext.isWordChar(before[i - 1])) i--
         while (i > 0 && TextContext.isWordChar(before[i - 1])) i--
