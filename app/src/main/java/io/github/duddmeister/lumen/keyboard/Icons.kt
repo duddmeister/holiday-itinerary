@@ -186,6 +186,33 @@ object Icons {
                 canvas.drawArc(oval, 0f, 180f, false, paint)
                 canvas.drawLine(12f, 17.2f, 12f, 20.5f, paint)
             }
+            Icon.ONE_HANDED -> {
+                // Keys moved over to the right, towards the thumb.
+                oval.set(9.5f, 6.5f, 20.5f, 17.5f)
+                canvas.drawRoundRect(oval, 2.4f, 2.4f, paint)
+                canvas.drawLine(12.8f, 10.5f, 17.2f, 10.5f, paint)
+                canvas.drawLine(12.8f, 13.8f, 17.2f, 13.8f, paint)
+                canvas.drawPath(path("oneHandedArrow") { poly(3.5f, 8.5f, 7f, 12f, 3.5f, 15.5f) }, paint)
+            }
+            Icon.FLOAT -> {
+                // Keys lifted off the bottom.
+                oval.set(3.5f, 4f, 20.5f, 12f)
+                canvas.drawRoundRect(oval, 2.2f, 2.2f, paint)
+                canvas.drawLine(7.5f, 8f, 16.5f, 8f, paint)
+                canvas.drawPath(path("floatArrow") { poly(8.5f, 19.5f, 12f, 16f, 15.5f, 19.5f) }, paint)
+            }
+            Icon.EXPAND -> {
+                canvas.drawLine(4f, 12f, 20f, 12f, paint)
+                canvas.drawPath(path("expandLeft") { poly(7.5f, 8.5f, 4f, 12f, 7.5f, 15.5f) }, paint)
+                canvas.drawPath(path("expandRight") { poly(16.5f, 8.5f, 20f, 12f, 16.5f, 15.5f) }, paint)
+            }
+            Icon.DOCK -> {
+                // Keys along the bottom, and an arrow down to them.
+                oval.set(3.5f, 12.5f, 20.5f, 20f)
+                canvas.drawRoundRect(oval, 2.2f, 2.2f, paint)
+                canvas.drawLine(7.5f, 16.3f, 16.5f, 16.3f, paint)
+                canvas.drawPath(path("dockArrow") { poly(8.5f, 4.5f, 12f, 8f, 15.5f, 4.5f) }, paint)
+            }
             Icon.TRASH -> {
                 canvas.drawLine(5.5f, 7f, 18.5f, 7f, paint)
                 canvas.drawPath(path("trashLid") { poly(9.8f, 7f, 9.8f, 4.8f, 14.2f, 4.8f, 14.2f, 7f) }, paint)

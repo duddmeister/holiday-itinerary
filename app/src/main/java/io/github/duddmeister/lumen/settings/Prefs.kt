@@ -19,6 +19,7 @@ class Prefs(context: Context) {
     fun set(key: String, value: Boolean) = store.edit().putBoolean(key, value).apply()
     fun set(key: String, value: Int) = store.edit().putInt(key, value).apply()
     fun set(key: String, value: String) = store.edit().putString(key, value).apply()
+    fun set(key: String, value: Float) = store.edit().putFloat(key, value).apply()
 
     var theme: String
         get() = store.getString(THEME, Themes.DEFAULT) ?: Themes.DEFAULT
@@ -38,6 +39,15 @@ class Prefs(context: Context) {
     val heightPercent get() = int(HEIGHT, 100).coerceIn(80, 130)
     val numberRow get() = bool(NUMBER_ROW, false)
     val splitKeyboard get() = bool(SPLIT, true)
+    /** One-handed on a phone held upright: the keys narrow towards one side. */
+    val oneHanded get() = bool(ONE_HANDED, false)
+    /** One-handed towards the left edge rather than the right. */
+    val oneHandedLeft get() = bool(ONE_HANDED_LEFT, false)
+    /** Floating on a large screen: the keyboard is a card that can go anywhere. */
+    val floating get() = bool(FLOATING, false)
+    /** Where the floating keyboard sits, as shares (0 to 1) of the room across and down. */
+    val floatX get() = store.getFloat(FLOAT_X, 0.5f).coerceIn(0f, 1f)
+    val floatY get() = store.getFloat(FLOAT_Y, 1f).coerceIn(0f, 1f)
     val symbolHints get() = bool(SYMBOL_HINTS, true)
     /** A flick down on a key types the symbol in its corner. */
     val flickSymbols get() = bool(FLICK_SYMBOLS, true)
@@ -88,6 +98,11 @@ class Prefs(context: Context) {
         const val HEIGHT = "keyboard_height"
         const val NUMBER_ROW = "number_row"
         const val SPLIT = "split_keyboard"
+        const val ONE_HANDED = "one_handed"
+        const val ONE_HANDED_LEFT = "one_handed_left"
+        const val FLOATING = "floating"
+        const val FLOAT_X = "float_x"
+        const val FLOAT_Y = "float_y"
         const val SYMBOL_HINTS = "symbol_hints"
         const val FLICK_SYMBOLS = "flick_symbols"
         const val KEY_PREVIEWS = "key_previews"

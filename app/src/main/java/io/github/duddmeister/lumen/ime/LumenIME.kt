@@ -71,7 +71,8 @@ import java.util.function.Consumer
 
 /** Lumen's input method service: wires the views, the input logic and the settings together. */
 class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripView.Listener, PanelView.Host,
-    SearchBarView.Listener, InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener, VoiceTyping.Listener {
+    SearchBarView.Listener, InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener, VoiceTyping.Listener,
+    InputRootView.Listener {
 
     private enum class Shift { OFF, ONE_SHOT, AUTO, LOCKED }
     private enum class Panel { EMOJI, GIF, CLIPBOARD, THEMES }
@@ -113,6 +114,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private var theme: KeyboardTheme = Themes.aurora
     private var blurAvailable = false
     private var blurListener: Consumer<Boolean>? = null
+    private val location = IntArray(2)
 
     private var shift = Shift.OFF
     private var shiftHeld = false
@@ -177,6 +179,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         r.keyboard.listener = this
         r.strip.listener = this
         r.searchBar.listener = this
+        r.listener = this
         root = r
         emojiPanel = null
         clipboardPanel = null
@@ -312,6 +315,10 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         when (key) {
             Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS -> applyTheme()
             Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS, Prefs.SPLIT -> rebuildLayout()
+            Prefs.FLOATING -> {
+                applyTheme()
+                rebuildLayout()
+            }
             Prefs.SPELLING -> {
                 loadDictionary()
                 rebuildLayout()
@@ -367,11 +374,43 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             heightScale = prefs.heightPercent / 100f
             rowHeightDp = if (short) 40f else 54f
         }
+        applyKeyboardMode()
     }
+
+    /** One-handed or floating, as set and as this screen allows; with the toolbar button to match. */
+    private fun applyKeyboardMode() {
+        val r = root ?: return
+        r.floating = floatingActive()
+        r.floatX = prefs.floatX
+        r.floatY = prefs.floatY
+        r.oneHanded = when {
+            !oneHandedOffered() || !prefs.oneHanded -> null
+            prefs.oneHandedLeft -> InputRootView.Side.LEFT
+            else -> InputRootView.Side.RIGHT
+        }
+        // The way back is beside the keys (one-handed) or under them (floating).
+        r.strip.modeIcon = when {
+            largeScreen() -> if (r.floating) null else Icon.FLOAT
+            oneHandedOffered() -> if (r.oneHanded != null) null else Icon.ONE_HANDED
+            else -> null
+        }
+    }
+
+    private fun largeScreen() = resources.configuration.smallestScreenWidthDp >= LARGE_SCREEN_DP
+
+    /** Floating is for large screens: an unfolded foldable or a tablet. */
+    private fun floatingActive() = prefs.floating && largeScreen()
+
+    /** One-handed is for a phone held upright; held sideways, both thumbs reach. */
+    private fun oneHandedOffered() =
+        !largeScreen() && resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
+
+    /** Glass blurs the whole keyboard window; floating, that window covers the app too. */
+    private fun blurUsable() = blurAvailable && !floatingActive()
 
     private fun applyTheme() {
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        theme = Themes.resolve(this, prefs.theme, night, blurAvailable)
+        theme = Themes.resolve(this, prefs.theme, night, blurUsable())
         painter.shape = prefs.keyShape
         painter.keyBackgrounds = prefs.keyBackgrounds
         root?.applyTheme(theme)
@@ -405,7 +444,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         w.navigationBarColor = Color.TRANSPARENT
         if (Build.VERSION.SDK_INT >= 29) w.isNavigationBarContrastEnforced = false
         if (Build.VERSION.SDK_INT >= 31) {
-            w.setBackgroundBlurRadius(if (theme.translucent && blurAvailable) dp(40) else 0)
+            w.setBackgroundBlurRadius(if (theme.translucent && blurUsable()) dp(40) else 0)
         }
     }
 
@@ -430,9 +469,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         updateShift()
     }
 
-    /** Split for thumb typing on large screens: an unfolded foldable or a tablet. */
-    private fun splitActive(): Boolean =
-        prefs.splitKeyboard && resources.configuration.smallestScreenWidthDp >= LARGE_SCREEN_DP
+    /** Split for thumb typing on large screens: an unfolded foldable or a tablet (unless floating). */
+    private fun splitActive(): Boolean = prefs.splitKeyboard && largeScreen() && !floatingActive()
 
     private fun setMode(m: KeyboardMode) {
         if (mode == m) return
@@ -769,6 +807,11 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             SuggestionStripView.Action.THEMES -> openThemes()
             SuggestionStripView.Action.SETTINGS -> openSettings()
             SuggestionStripView.Action.VOICE -> startVoice()
+            SuggestionStripView.Action.MODE -> if (largeScreen()) {
+                prefs.set(Prefs.FLOATING, !prefs.floating)
+            } else {
+                prefs.set(Prefs.ONE_HANDED, !prefs.oneHanded)
+            }
             SuggestionStripView.Action.HIDE -> requestHideSelf(0)
         }
     }
@@ -777,6 +820,42 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         feedback.tick()
         clipboard.dismissChip()
         logic.onText(text)
+    }
+
+    // ------------------------------------------------------------ one-handed and floating
+
+    override fun onOneHanded(side: InputRootView.Side?) {
+        feedback.tick()
+        val edit = prefs.store.edit().putBoolean(Prefs.ONE_HANDED, side != null)
+        if (side != null) edit.putBoolean(Prefs.ONE_HANDED_LEFT, side == InputRootView.Side.LEFT)
+        edit.apply()
+    }
+
+    override fun onFloatMoved(x: Float, y: Float) {
+        prefs.store.edit().putFloat(Prefs.FLOAT_X, x).putFloat(Prefs.FLOAT_Y, y).apply()
+    }
+
+    override fun onDock() {
+        feedback.tick()
+        prefs.set(Prefs.FLOATING, false)
+    }
+
+    /**
+     * Floating, the keyboard window covers the screen so the card can go anywhere, but the
+     * app isn't resized or pushed up for it (Android may still keep room for its own buttons
+     * along the bottom), and touches outside the card go straight through to the app.
+     */
+    override fun onComputeInsets(outInsets: InputMethodService.Insets) {
+        super.onComputeInsets(outInsets)
+        val r = root?.takeIf { it.floating } ?: return
+        val decor = window?.window?.decorView ?: return
+        outInsets.contentTopInsets = decor.height
+        outInsets.visibleTopInsets = decor.height
+        r.getLocationInWindow(location)
+        outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_REGION
+        outInsets.touchableRegion.set(
+            r.card.left + location[0], r.card.top + location[1], r.card.right + location[0], r.card.bottom + location[1],
+        )
     }
 
     // ------------------------------------------------------------ panels
@@ -809,7 +888,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private fun openThemes() {
         val r = root ?: return
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        val panel = themePanel ?: ThemePanelView(this, painter) { id -> Themes.resolve(this, id, night, blurAvailable) }.also {
+        val panel = themePanel ?: ThemePanelView(this, painter) { id -> Themes.resolve(this, id, night, blurUsable()) }.also {
             it.host = this
             it.onTheme = { id -> prefs.theme = id }
             it.onShape = { s -> prefs.keyShape = s }

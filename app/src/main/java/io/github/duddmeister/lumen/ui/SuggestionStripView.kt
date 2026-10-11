@@ -28,6 +28,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     enum class Action(val icon: Icon) {
         TOGGLE(Icon.SPARKLE), SEARCH(Icon.SEARCH), CLIPBOARD(Icon.CLIPBOARD), EMOJI(Icon.EMOJI), GIF(Icon.GIF),
         THEMES(Icon.PALETTE), SETTINGS(Icon.SETTINGS), VOICE(Icon.MIC), HIDE(Icon.KEYBOARD_HIDE),
+        /** One-handed or floating, whichever the screen offers; drawn with [modeIcon]. */
+        MODE(Icon.ONE_HANDED),
     }
 
     interface Listener {
@@ -55,8 +57,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     private val buttonSize = context.dp(44f)
 
     private fun actions() = listOfNotNull(
-        Action.SEARCH, Action.EMOJI, Action.GIF.takeIf { gifsEnabled }, Action.CLIPBOARD, Action.THEMES, Action.SETTINGS,
-        Action.VOICE.takeIf { voiceEnabled },
+        Action.SEARCH, Action.EMOJI, Action.GIF.takeIf { gifsEnabled }, Action.CLIPBOARD, Action.THEMES,
+        Action.MODE.takeIf { modeIcon != null }, Action.SETTINGS, Action.VOICE.takeIf { voiceEnabled },
     )
 
     /** Shows the GIF button; off when GIFs are turned off in settings. */
@@ -71,6 +73,16 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
     /** Shows the microphone; off when voice typing is turned off in settings. */
     var voiceEnabled = true
+        set(value) {
+            if (field != value) {
+                field = value
+                toolbarActions = actions()
+                invalidate()
+            }
+        }
+
+    /** The icon for the one-handed or floating button, or null to leave the button out. */
+    var modeIcon: Icon? = null
         set(value) {
             if (field != value) {
                 field = value
@@ -221,7 +233,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
             canvas.drawCircle(cx, cy, context.dp(18f), paint)
         }
         val tint = if (action == Action.TOGGLE) Colors.lerp(color, t.accent, if (active) 0.9f else 0.55f) else color
-        Icons.draw(canvas, action.icon, cx, cy, context.dp(22f), tint, paint)
+        val icon = if (action == Action.MODE) modeIcon ?: action.icon else action.icon
+        Icons.draw(canvas, icon, cx, cy, context.dp(22f), tint, paint)
     }
 
     private fun chipBounds(out: RectF) {
