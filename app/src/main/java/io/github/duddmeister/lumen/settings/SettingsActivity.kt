@@ -191,6 +191,7 @@ class SettingsActivity : Activity() {
             toggle(Prefs.SUGGESTIONS, R.string.suggestions, R.string.suggestions_summary, prefs.suggestions)
             toggle(Prefs.GLIDE, R.string.glide, R.string.glide_summary, prefs.glideTyping)
             toggle(Prefs.GLIDE_TRAIL, R.string.glide_trail, null, prefs.glideTrail)
+            toggle(Prefs.VOICE, R.string.voice_typing, R.string.voice_typing_summary, prefs.voiceTyping)
             toggle(Prefs.EMOJI_SUGGESTIONS, R.string.emoji_suggestions, R.string.emoji_suggestions_summary, prefs.emojiSuggestions)
             toggle(Prefs.AUTO_CAPS, R.string.auto_caps, null, prefs.autoCaps)
             toggle(Prefs.DOUBLE_SPACE, R.string.double_space, R.string.double_space_summary, prefs.doubleSpacePeriod, last = true)

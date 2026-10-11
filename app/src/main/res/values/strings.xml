@@ -47,6 +47,20 @@
     <string name="symbol_hints_summary">Shows symbol hints on the letter keys</string>
     <string name="keyboard_height">Keyboard height</string>
     <string name="spelling">Spelling</string>
+    <string name="voice_typing">Voice typing</string>
+    <string name="voice_typing_summary">A microphone in the toolbar. What you say goes to your phone\'s speech service (usually Google\'s); Lumen keeps no recordings.</string>
+    <string name="voice_speak">Speak now</string>
+    <string name="voice_working">Writing it down…</string>
+    <string name="voice_tap">Tap the microphone to talk</string>
+    <string name="voice_unavailable">Voice typing needs a speech service, such as the Google app</string>
+    <string name="voice_no_match">Didn\'t catch that. Tap the microphone to try again.</string>
+    <string name="voice_timeout">Didn\'t hear anything. Tap the microphone to try again.</string>
+    <string name="voice_network">Voice typing needs a connection right now.</string>
+    <string name="voice_permission">Lumen needs the microphone for voice typing.</string>
+    <string name="voice_permission_settings">To type by voice, allow the microphone for Lumen in Settings → Permissions.</string>
+    <string name="voice_busy">The speech service is busy. Try again in a moment.</string>
+    <string name="voice_language">Your speech service can\'t do this language yet.</string>
+    <string name="voice_failed">Voice typing stopped. Tap the microphone to try again.</string>
     <string name="split_keyboard">Split on large screens</string>
     <string name="split_keyboard_summary">Splits the keys between your thumbs when a foldable is open, or on a tablet</string>
 
@@ -74,7 +88,7 @@
     <string name="clear_learned_summary">Forget everything Lumen has learned</string>
     <string name="clear_learned_confirm">Lumen will forget the words and phrases it has learned from your typing.</string>
     <string name="clear">Clear</string>
-    <string name="privacy_note">Lumen only goes online for GIFs, sending just your GIF searches, language and region to the GIF service, and to check GitHub for its own updates. Everything it learns stays on this device, and it never learns from password or incognito fields.</string>
+    <string name="privacy_note">Lumen only goes online for GIFs, sending just your GIF searches, language and region to the GIF service, and to check GitHub for its own updates. Voice typing hands what you say to your phone\'s speech service. Everything Lumen learns stays on this device, and it never learns from password or incognito fields.</string>
 
     <string name="section_updates">Updates</string>
     <string name="update_unchecked">Tap Check to look for a new version</string>

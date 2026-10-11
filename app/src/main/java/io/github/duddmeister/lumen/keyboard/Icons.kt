@@ -179,6 +179,13 @@ object Icons {
                 paint.textAlign = align
                 paint.textSize = textSize
             }
+            Icon.MIC -> {
+                oval.set(9f, 3.5f, 15f, 14.5f)
+                canvas.drawRoundRect(oval, 3f, 3f, paint)
+                oval.set(5.8f, 5f, 18.2f, 17.2f)
+                canvas.drawArc(oval, 0f, 180f, false, paint)
+                canvas.drawLine(12f, 17.2f, 12f, 20.5f, paint)
+            }
             Icon.TRASH -> {
                 canvas.drawLine(5.5f, 7f, 18.5f, 7f, paint)
                 canvas.drawPath(path("trashLid") { poly(9.8f, 7f, 9.8f, 4.8f, 14.2f, 4.8f, 14.2f, 7f) }, paint)

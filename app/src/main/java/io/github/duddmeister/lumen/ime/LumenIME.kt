@@ -1,10 +1,12 @@
 package io.github.duddmeister.lumen.ime
 
 import android.app.SearchManager
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ClipDescription
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -24,6 +26,7 @@ import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
 import android.view.inputmethod.InputMethodManager
+import io.github.duddmeister.lumen.R
 import io.github.duddmeister.lumen.data.ClipboardHistory
 import io.github.duddmeister.lumen.data.EmojiData
 import io.github.duddmeister.lumen.data.Gif
@@ -59,6 +62,7 @@ import io.github.duddmeister.lumen.ui.PanelView
 import io.github.duddmeister.lumen.ui.SearchBarView
 import io.github.duddmeister.lumen.ui.SuggestionStripView
 import io.github.duddmeister.lumen.ui.ThemePanelView
+import io.github.duddmeister.lumen.ui.VoicePanelView
 import io.github.duddmeister.lumen.ui.dp
 import java.io.IOException
 import java.net.URLEncoder
@@ -67,7 +71,7 @@ import java.util.function.Consumer
 
 /** Lumen's input method service: wires the views, the input logic and the settings together. */
 class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripView.Listener, PanelView.Host,
-    SearchBarView.Listener, InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener {
+    SearchBarView.Listener, InputLogic.Host, SharedPreferences.OnSharedPreferenceChangeListener, VoiceTyping.Listener {
 
     private enum class Shift { OFF, ONE_SHOT, AUTO, LOCKED }
     private enum class Panel { EMOJI, GIF, CLIPBOARD, THEMES }
@@ -88,6 +92,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private var clipboardPanel: ClipboardPanelView? = null
     private var themePanel: ThemePanelView? = null
     private var gifPanel: GifPanelView? = null
+    private var voicePanel: VoicePanelView? = null
+    private var voice: VoiceTyping? = null
     private var emojiData: EmojiData? = null
     private val gifImages by lazy { GifImages() }
     private val gifWorker = Executors.newSingleThreadExecutor { r -> Thread(r, "lumen-gifs").apply { isDaemon = true } }
@@ -153,6 +159,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     override fun onDestroy() {
+        voice?.cancel()
         EngineHolder.save(this)
         clipboard.stop()
         prefs.store.unregisterOnSharedPreferenceChangeListener(this)
@@ -245,9 +252,12 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             Panel.THEMES -> openThemes()
             null -> Unit
         }
+        // Back from allowing the microphone: carry on into voice typing.
+        if (VoiceTyping.justGranted() && prefs.voiceTyping) startVoice()
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        voice?.cancel()
         logic.finish()
         search = null
         root?.keyboard?.cancelTouches()
@@ -340,6 +350,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val short = if (config.screenHeightDp > 0) config.screenHeightDp < SHORT_SCREEN_DP
         else config.orientation == Configuration.ORIENTATION_LANDSCAPE
         root?.strip?.gifsEnabled = prefs.gifs
+        root?.strip?.voiceEnabled = prefs.voiceTyping
         // While searching, the keys only type into the search bar.
         val typingIntoApp = search == null
         root?.keyboard?.apply {
@@ -754,6 +765,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             SuggestionStripView.Action.GIF -> openGif()
             SuggestionStripView.Action.THEMES -> openThemes()
             SuggestionStripView.Action.SETTINGS -> openSettings()
+            SuggestionStripView.Action.VOICE -> startVoice()
             SuggestionStripView.Action.HIDE -> requestHideSelf(0)
         }
     }
@@ -813,7 +825,67 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         )
     }
 
+    // ------------------------------------------------------------ voice typing
+
+    private fun startVoice() {
+        val r = root ?: return
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // A keyboard can't ask; this screen does, and voice typing starts when the keyboard is back.
+            VoicePermissionActivity.start(this)
+            return
+        }
+        val typing = voice ?: VoiceTyping(this, this).also { voice = it }
+        if (!typing.available) {
+            r.strip.flash(getString(R.string.voice_unavailable))
+            return
+        }
+        val panel = voicePanel ?: VoicePanelView(this, painter).also {
+            it.host = this
+            it.onMic = { if (typing.listening) typing.stop() else listen() }
+            voicePanel = it
+        }
+        panel.language = prefs.spelling.language
+        r.showPanel(panel)
+        listen()
+    }
+
+    private fun listen() {
+        voice?.start(prefs.spelling.locale.replace('_', '-'))
+    }
+
+    override fun onVoiceState(state: VoiceTyping.State) {
+        val panel = voicePanel ?: return
+        panel.listening = state is VoiceTyping.State.Starting || state is VoiceTyping.State.Listening
+        panel.level = (state as? VoiceTyping.State.Listening)?.level ?: 0f
+        val heard = when (state) {
+            is VoiceTyping.State.Listening -> state.heard
+            is VoiceTyping.State.Working -> state.heard
+            else -> ""
+        }
+        panel.heard = heard.isNotEmpty()
+        panel.text = heard.ifEmpty {
+            getString(
+                when (state) {
+                    VoiceTyping.State.Starting, is VoiceTyping.State.Listening -> R.string.voice_speak
+                    is VoiceTyping.State.Working -> R.string.voice_working
+                    else -> R.string.voice_tap
+                },
+            )
+        }
+        if (state is VoiceTyping.State.Failed) {
+            panel.heard = false
+            panel.text = state.message
+        }
+    }
+
+    override fun onVoiceResult(text: String) {
+        logic.onVoice(text)
+        // Said and written: back to the keys.
+        if (root?.panel === voicePanel) onPanelClose()
+    }
+
     override fun onPanelClose() {
+        voice?.cancel()
         root?.showPanel(null)
         logic.refreshPredictions(currentInputConnection)
         updateShift()
