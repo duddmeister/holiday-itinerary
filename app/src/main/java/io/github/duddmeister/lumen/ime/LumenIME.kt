@@ -54,6 +54,7 @@ import io.github.duddmeister.lumen.ui.ClipboardPanelView
 import io.github.duddmeister.lumen.ui.EmojiPanelView
 import io.github.duddmeister.lumen.ui.GifPanelView
 import io.github.duddmeister.lumen.ui.InputRootView
+import io.github.duddmeister.lumen.update.UpdateAlerts
 import io.github.duddmeister.lumen.ui.PanelView
 import io.github.duddmeister.lumen.ui.SearchBarView
 import io.github.duddmeister.lumen.ui.SuggestionStripView
@@ -130,6 +131,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         prefs.store.registerOnSharedPreferenceChangeListener(this)
         applySettings()
         loadDictionary()
+        UpdateAlerts.sync(this)
         Thread({
             val data = EmojiData.load(this, prefs.store)
             main.post {

@@ -1,9 +1,12 @@
 package io.github.duddmeister.lumen.settings
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.net.Uri
@@ -43,6 +46,7 @@ import io.github.duddmeister.lumen.theme.Themes
 import io.github.duddmeister.lumen.ui.Colors
 import io.github.duddmeister.lumen.ui.Motion
 import io.github.duddmeister.lumen.ui.dp
+import io.github.duddmeister.lumen.update.UpdateAlerts
 import io.github.duddmeister.lumen.update.Updater
 import kotlin.math.ceil
 
@@ -53,6 +57,8 @@ class SettingsActivity : Activity() {
     private lateinit var setupCard: LinearLayout
     private var updateCard: LinearLayout? = null
     private var resumed = false
+    /** Opened from the update notification: install the update once it's found. */
+    private var installWhenFound = false
     private val onUpdate: (Updater.State) -> Unit = { refreshUpdate() }
     private lateinit var hero: HeroPreview
     private lateinit var gallery: ThemeGallery
@@ -92,8 +98,16 @@ class SettingsActivity : Activity() {
             insets
         }
         setContentView(scroll)
+        installWhenFound = intent?.getBooleanExtra(UpdateAlerts.EXTRA_INSTALL, false) == true
         build(content)
         Updater.listen(onUpdate)
+        UpdateAlerts.sync(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(UpdateAlerts.EXTRA_INSTALL, false)) installWhenFound = true
     }
 
     override fun onDestroy() {
@@ -303,6 +317,17 @@ class SettingsActivity : Activity() {
             Updater.confirmShown()
             return
         }
+        if (installWhenFound) {
+            when (state) {
+                is Updater.State.Available -> {
+                    installWhenFound = false
+                    Updater.install(this, state.release)
+                    return
+                }
+                Updater.State.Current, is Updater.State.Failed -> installWhenFound = false
+                else -> {}
+            }
+        }
         card.removeAllViews()
         val current = BuildConfig.VERSION_NAME
         val lumen = getString(R.string.app_name) + " " + current
@@ -359,7 +384,34 @@ class SettingsActivity : Activity() {
         card.addView(kit.divider())
         card.addView(kit.switchRow(getString(R.string.auto_updates), getString(R.string.auto_updates_summary), prefs.autoUpdates) {
             prefs.set(Prefs.AUTO_UPDATES, it)
+            UpdateAlerts.sync(this)
+            card.post { refreshUpdate() }
         })
+        // Once Android has been asked (or never needed asking), say if notifications are off.
+        val asked = Build.VERSION.SDK_INT < 33 || prefs.notificationsAsked
+        if (prefs.autoUpdates && asked && getSystemService(NotificationManager::class.java)?.areNotificationsEnabled() == false) {
+            card.addView(kit.divider())
+            card.addView(updateRow(getString(R.string.update_alerts_off), getString(R.string.update_alerts_off_summary), getString(R.string.update_alerts_on), filled = false) {
+                try {
+                    startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                }
+            })
+        }
+    }
+
+    /** Update notifications need Android 13's permission: ask once, when Lumen is set up. */
+    private fun askForNotifications() {
+        if (Build.VERSION.SDK_INT < 33 || !Updater.enabled || !prefs.autoUpdates || prefs.notificationsAsked) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED || !isEnabled()) return
+        prefs.set(Prefs.NOTIFICATIONS_ASKED, true)
+        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATIONS) refreshUpdate()
     }
 
     private fun updateRow(title: String, subtitle: String, action: String? = null, filled: Boolean = true, onClick: () -> Unit = {}): View {
@@ -393,10 +445,14 @@ class SettingsActivity : Activity() {
             // Back from allowing Lumen to install apps: carry on with the update.
             if (state is Updater.State.NeedsPermission && packageManager.canRequestPackageInstalls()) {
                 Updater.install(this, state.release)
+            } else if (installWhenFound) {
+                Updater.check(now = true)
             } else if (prefs.autoUpdates) {
                 Updater.check(now = false)
             }
             refreshUpdate()
+            UpdateAlerts.dismissIfInstalled(this)
+            askForNotifications()
         }
         refreshSetup()
         refreshPreviews()
@@ -608,6 +664,7 @@ class SettingsActivity : Activity() {
     }
 
     private companion object {
+        const val REQUEST_NOTIFICATIONS = 1
         /** The settings column stops growing here on large screens. */
         const val MAX_CONTENT_WIDTH_DP = 640
         /** Gallery width from which three previews fit per row. */
