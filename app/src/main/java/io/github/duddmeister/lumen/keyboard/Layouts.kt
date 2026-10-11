@@ -36,6 +36,10 @@ object Layouts {
     private const val ROW2_SYMBOLS = "@#\$_&-+()/"
     private const val ROW3_SYMBOLS = "*\"':;!?"
 
+    /** Width of shift, delete, enter and the page keys at the ends of a split row: Gboard's. */
+    private const val SPLIT_WIDE = 4f / 3f
+    private const val EPSILON = 1e-3f
+
     private val numberPopups = mapOf(
         '1' to "¹½⅓¼⅛", '2' to "²⅔", '3' to "³¾⅜", '4' to "⁴", '5' to "⅝", '7' to "⅞", '0' to "ⁿ∅",
     )
@@ -77,23 +81,53 @@ object Layouts {
         return if (options.split && splittable) split(layout) else layout
     }
 
-    /** Breaks every row in two, cutting a wide space bar so each thumb gets one. */
+    /**
+     * Splits every row between the thumbs the way Gboard does on an open foldable:
+     * halves of the same width that sit against the opening, the key in the middle
+     * of an odd row (G, V) on both halves, and one space bar across the opening.
+     * A row as wide as the keyboard stretches to fill its halves; a shorter one keeps
+     * its keys and leaves the room at the outer edges.
+     */
     private fun split(layout: KeyboardLayout): KeyboardLayout {
-        val units = layout.rows.maxOf { r -> r.keys.sumOf { it.width.toDouble() }.toFloat() }
-        val rows = layout.rows.map { row ->
-            val widths = FloatArray(row.keys.size) { row.keys[it].width }
-            val plan = SplitPlan.plan(widths, units, row.keys.indexOfFirst { it.code == KeyCodes.SPACE })
-            if (plan.cutKey >= 0) {
-                val keys = row.keys.toMutableList()
-                val width = keys[plan.cutKey].width
-                keys[plan.cutKey] = space(plan.leftWidth)
-                keys.add(plan.cutKey + 1, space(width - plan.leftWidth))
-                KeyRow(keys, row.heightFactor, splitAt = plan.cutKey + 1)
-            } else {
-                KeyRow(row.keys, row.heightFactor, splitAt = plan.index)
+        val units = layout.rows.maxOf { it.units }
+        val halves = layout.rows.map(::halves)
+        val half = halves.maxOf { maxOf(it.left.units(), it.right.units()) }
+        val rows = layout.rows.zip(halves) { row, h ->
+            when {
+                h.space != null -> {
+                    val left = half - h.left.units()
+                    val space = h.space.copy(width = left + half - h.right.units())
+                    KeyRow(h.left + space + h.right, row.heightFactor, h.left.size, bridgeLeft = left)
+                }
+                row.units > units - EPSILON -> KeyRow(h.left.stretched(half) + h.right.stretched(half), row.heightFactor, h.left.size)
+                else -> KeyRow(h.left + h.right, row.heightFactor, h.left.size)
             }
         }
         return KeyboardLayout(layout.mode, rows, layout.name)
+    }
+
+    private class Halves(val left: List<Key>, val right: List<Key>, val space: Key? = null)
+
+    /** Where a row breaks, with its wide keys narrowed to [SPLIT_WIDE]. */
+    private fun halves(row: KeyRow): Halves {
+        val keys = row.keys.map { if (it.width > 1f && it.code != KeyCodes.SPACE) it.copy(width = SPLIT_WIDE) else it }
+        val space = keys.indexOfFirst { it.code == KeyCodes.SPACE }
+        if (space >= 0) return Halves(keys.subList(0, space), keys.subList(space + 1, keys.size), keys[space])
+        val chars = keys.indices.filter { keys[it].style == KeyStyle.CHARACTER }.ifEmpty { keys.indices.toList() }
+        val middle = chars[chars.size / 2]
+        return if (chars.size % 2 == 1) {
+            // Either thumb can reach the middle key.
+            Halves(keys.subList(0, middle + 1), listOf(keys[middle].copy()) + keys.subList(middle + 1, keys.size))
+        } else {
+            Halves(keys.subList(0, middle), keys.subList(middle, keys.size))
+        }
+    }
+
+    private fun List<Key>.units() = sumOf { it.width.toDouble() }.toFloat()
+
+    private fun List<Key>.stretched(to: Float): List<Key> {
+        val scale = to / units()
+        return map { it.copy(width = it.width * scale) }
     }
 
     private fun numberRow() = KeyRow(

@@ -60,11 +60,29 @@ class Key(
     internal var releasedAt = 0L
     internal var pressed = false
 
+    /** The same key, [width] units wide: a split keyboard resizes keys and repeats the middle ones. */
+    fun copy(width: Float = this.width) = Key(code, label, text, icon, width, style, hint, popup, caption, preview)
+
     override fun toString() = "Key(${if (label.isNotEmpty()) label else code.toString()})"
 }
 
-/** [splitAt] is the first key of the right half when the keyboard is split, or -1. */
-class KeyRow(val keys: List<Key>, val heightFactor: Float = 1f, val splitAt: Int = -1)
+/**
+ * [splitAt] is the first key of the right half when the keyboard is split, or -1.
+ * When [bridgeLeft] is not negative, the key at [splitAt] (the space bar) spans the
+ * opening between the halves instead, with [bridgeLeft] of its units in the left half.
+ */
+class KeyRow(val keys: List<Key>, val heightFactor: Float = 1f, val splitAt: Int = -1, val bridgeLeft: Float = -1f) {
+    val units: Float = keys.sumOf { it.width.toDouble() }.toFloat()
+
+    val bridged: Boolean get() = splitAt >= 0 && bridgeLeft >= 0f
+
+    /** Width of the left half in units, the left part of a bridging key included. */
+    val leftUnits: Float
+        get() = keys.subList(0, splitAt.coerceAtLeast(0)).sumOf { it.width.toDouble() }.toFloat() + if (bridged) bridgeLeft else 0f
+
+    /** Width of the right half in units. */
+    val rightUnits: Float get() = if (splitAt < 0) 0f else units - leftUnits
+}
 
 enum class KeyboardMode { TEXT, SYMBOLS, SYMBOLS_MORE, NUMBER, PHONE }
 
@@ -73,10 +91,16 @@ class KeyboardLayout(val mode: KeyboardMode, val rows: List<KeyRow>, val name: S
     val keys: List<Key> = rows.flatMap { it.keys }
 
     /** Grid width in units: the widest row. */
-    private val units: Float = rows.maxOf { r -> r.keys.sumOf { it.width.toDouble() }.toFloat() }
+    private val units: Float = rows.maxOf { it.units }
 
     /** Rows break into two halves with an opening between them (large screens). */
     val isSplit: Boolean = rows.any { it.splitAt > 0 }
+
+    /** Width of each half of a split layout, in units: the widest half of any row. */
+    private val halfUnits: Float = rows.filter { it.splitAt > 0 }.maxOfOrNull { maxOf(it.leftUnits, it.rightUnits) } ?: 0f
+
+    /** Units a split layout spans across the view: both halves, the margins and the opening. */
+    val splitUnitsAcross: Float get() = 2 * halfUnits + 2 * SPLIT_MARGIN + SPLIT_OPENING
 
     var width = 0
         private set
@@ -94,41 +118,62 @@ class KeyboardLayout(val mode: KeyboardMode, val rows: List<KeyRow>, val name: S
      * Positions keys inside a [width] x [height] area. Rows narrower than the grid
      * are centered and their edge keys absorb the margin as touch area.
      *
-     * A split layout with [splitUnit] > 0 keeps keys at that width (when they fit)
-     * and opens the spare width between the halves, centred so nothing sits on a
-     * foldable's hinge. Touch areas on either side meet in the middle of the opening.
+     * A split layout with [splitUnit] > 0 has two halves of keys that wide, each
+     * [SPLIT_MARGIN] from its side, and opens the rest between them over the middle,
+     * where a foldable's hinge is. Rows sit against the opening, so the inner keys
+     * line up and a short row leaves its room at the outer edge, as a staggered row
+     * does; a bridging space bar runs across. Touch areas reach the sides of the
+     * view and meet in the middle of the opening.
      */
     fun layout(width: Int, rowHeight: Float, sidePadding: Float, top: Float, gapX: Float, gapY: Float, splitUnit: Float = 0f) {
         this.width = width
         this.rowHeight = rowHeight
-        val usable = width - 2 * sidePadding
         val split = isSplit && splitUnit > 0f
-        val unit = if (split) minOf(splitUnit, usable / units) else usable / units
-        val gap = if (split) usable - units * unit else 0f
+        // On a narrow screen the keys shrink rather than close up the opening.
+        val unit = if (split) minOf(splitUnit, width / (2 * halfUnits + 2 * SPLIT_MARGIN + SPLIT_MIN_OPENING)) else (width - 2 * sidePadding) / units
         keyWidth = unit - gapX
+        val leftInner = (SPLIT_MARGIN + halfUnits) * unit
+        val rightInner = width - leftInner
+        val middle = width / 2f
         var y = top
         for ((rowIndex, row) in rows.withIndex()) {
             val h = rowHeight * row.heightFactor
-            val rowUnits = row.keys.sumOf { it.width.toDouble() }.toFloat()
-            val opening = if (row.splitAt > 0) gap else 0f
-            var x = sidePadding + (usable - rowUnits * unit - opening) / 2f
-            for ((i, key) in row.keys.withIndex()) {
-                var hitLeft = if (i == 0) 0f else x
-                if (i == row.splitAt && opening > 0f) {
-                    val middle = x + opening / 2f
-                    row.keys[i - 1].hitBounds.right = middle
-                    hitLeft = middle
-                    x += opening
-                }
-                val w = key.width * unit
-                key.bounds.set(x + gapX / 2f, y + gapY / 2f, x + w - gapX / 2f, y + h - gapY / 2f)
-                key.hitBounds.set(
-                    hitLeft,
-                    if (rowIndex == 0) 0f else y,
-                    if (i == row.keys.lastIndex) width.toFloat() else x + w,
-                    if (rowIndex == rows.lastIndex) Float.MAX_VALUE else y + h,
+            val hitTop = if (rowIndex == 0) 0f else y
+            val hitBottom = if (rowIndex == rows.lastIndex) Float.MAX_VALUE else y + h
+            // Key i spans x until x + w, and takes touches from hitLeft to hitRight.
+            fun place(i: Int, x: Float, w: Float, hitLeft: Float, hitRight: Float) {
+                row.keys[i].bounds.set(x + gapX / 2f, y + gapY / 2f, x + w - gapX / 2f, y + h - gapY / 2f)
+                row.keys[i].hitBounds.set(
+                    if (i == 0) 0f else hitLeft, hitTop, if (i == row.keys.lastIndex) width.toFloat() else hitRight, hitBottom,
                 )
-                x += w
+            }
+            if (split && row.splitAt > 0) {
+                var x = leftInner - row.leftUnits * unit
+                for (i in 0 until row.splitAt) {
+                    val w = row.keys[i].width * unit
+                    place(i, x, w, x, if (i == row.splitAt - 1 && !row.bridged) middle else x + w)
+                    x += w
+                }
+                var first = row.splitAt
+                x = rightInner
+                if (row.bridged) {
+                    val start = leftInner - row.bridgeLeft * unit
+                    x = rightInner + (row.keys[first].width - row.bridgeLeft) * unit
+                    place(first, start, x - start, start, x)
+                    first++
+                }
+                for (i in first until row.keys.size) {
+                    val w = row.keys[i].width * unit
+                    place(i, x, w, if (i == row.splitAt) middle else x, x + w)
+                    x += w
+                }
+            } else {
+                var x = (width - row.units * unit) / 2f
+                for (i in row.keys.indices) {
+                    val w = row.keys[i].width * unit
+                    place(i, x, w, x, x + w)
+                    x += w
+                }
             }
             y += h
         }
@@ -147,5 +192,18 @@ class KeyboardLayout(val mode: KeyboardMode, val rows: List<KeyRow>, val name: S
             if (d < bestDistance) { bestDistance = d; best = key }
         }
         return best
+    }
+
+    companion object {
+        // A split layout's proportions, in units (key widths): Gboard's on an open foldable.
+
+        /** Room between each side of the view and the half next to it. */
+        const val SPLIT_MARGIN = 0.58f
+
+        /** Opening between the halves when there is room for it. */
+        const val SPLIT_OPENING = 1.74f
+
+        /** The least opening before the keys shrink. */
+        const val SPLIT_MIN_OPENING = 1f
     }
 }
