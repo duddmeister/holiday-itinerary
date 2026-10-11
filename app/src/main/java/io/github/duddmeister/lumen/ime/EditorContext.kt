@@ -28,12 +28,17 @@ class EditorContext(info: EditorInfo?) {
     /** Private (incognito) fields ask keyboards not to learn from what is typed. */
     val incognito: Boolean = imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0
 
-    val suggestionsAllowed: Boolean = isText && !isPassword && !isEmail && !isUrl &&
+    /**
+     * Address fields get suggestions too: Chrome's address bar is one, and it's where most
+     * searches are typed. Autocorrect there only touches words on their own (see InputLogic).
+     */
+    val suggestionsAllowed: Boolean = isText && !isPassword && !isEmail &&
         variation != InputType.TYPE_TEXT_VARIATION_FILTER &&
         flags and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS == 0
     val autoCorrectAllowed: Boolean = suggestionsAllowed && variation != InputType.TYPE_TEXT_VARIATION_PERSON_NAME
-    val learningAllowed: Boolean = suggestionsAllowed && !incognito
-    val gesturesAllowed: Boolean = isText && !isPassword && !isUrl && !isEmail
+    /** Nothing is learned from address fields, where much of what's typed is addresses. */
+    val learningAllowed: Boolean = suggestionsAllowed && !incognito && !isUrl
+    val gesturesAllowed: Boolean = isText && !isPassword && !isEmail
     val capitalisation: Boolean = isText && flags and CAPS_FLAGS != 0
 
     val mode: KeyboardMode = when (inputClass) {

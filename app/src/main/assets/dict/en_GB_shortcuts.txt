@@ -1,10 +1,15 @@
 UnitedStates	United States	a
+abit	a bit	a
 acomodate	accommodate	a
 aint	ain't	a
+alittle	a little	a
 alot	a lot	a
 amd	and	a
 andteh	and the	a
 arent	aren't	a
+aswell	as well	a
+atall	at all	a
+atleast	at least	a
 berm	been	s
 bern	been	a
 bot	not	s
@@ -20,6 +25,8 @@ doesnt	doesn't	a
 dont	don't	a
 dormer	former	s
 dud	did	s
+eachother	each other	a
+everytime	every time	a
 fay	day	s
 fife	five	s
 foe	for	s
@@ -50,6 +57,10 @@ ifs	its	s
 il	I'll	a
 ill	I'll	s
 im	I'm	a
+incase	in case	a
+infact	in fact	a
+infront	in front	a
+inspite	in spite	a
 inteh	in the	a
 isnt	isn't	a
 itd	it'd	a
@@ -78,8 +89,11 @@ nee	new	s
 neednt	needn't	a
 nigh	high	s
 nit	not	s
+noone	no one	a
 nut	but	s
+ofcourse	of course	a
 oft	off	s
+ontop	on top	a
 os	is	a
 pater	later	s
 rook	took	s
@@ -92,6 +106,7 @@ shouldnt	shouldn't	a
 shouldve	should've	a
 sill	will	s
 sown	down	s
+thankyou	thank you	a
 thatd	that'd	a
 thatll	that'll	a
 thats	that's	a

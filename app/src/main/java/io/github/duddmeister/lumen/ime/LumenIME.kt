@@ -68,6 +68,7 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.Executors
 import java.util.function.Consumer
+import kotlin.math.hypot
 
 /** Lumen's input method service: wires the views, the input logic and the settings together. */
 class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripView.Listener, PanelView.Host,
@@ -713,18 +714,33 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         if (search != null) return
         val decoder = EngineHolder.decoder
         val g = keyGeometry()
-        if (decoder == null || g == null) {
-            refreshStrip()
-            return
+        val words = if (decoder == null || g == null) emptyList() else {
+            decoder.decode(trail.xs, trail.ys, trail.count, g, 5).map { cased(it.text) }.distinct()
         }
-        val words = decoder.decode(trail.xs, trail.ys, trail.count, g, 5).map { cased(it.text) }.distinct()
         if (words.isEmpty()) {
-            refreshStrip()
+            if (!tapInstead(trail)) refreshStrip()
             return
         }
         autoCapsSuppressed = false
         consumeShift()
         logic.onGesture(words)
+    }
+
+    /**
+     * A glide too short to spell anything was a tap that slid (a thumb rolling as it lifts):
+     * types the key it started on, rather than losing the letter.
+     */
+    private fun tapInstead(trail: GestureTrail): Boolean {
+        val l = layout ?: return false
+        if (trail.count == 0 || l.keyWidth <= 0f) return false
+        val x = trail.xs[0]
+        val y = trail.ys[0]
+        val key = l.keyAt(x, y)?.takeIf { it.isLetter } ?: return false
+        var length = 0f
+        for (i in 1 until trail.count) length += hypot(trail.xs[i] - trail.xs[i - 1], trail.ys[i] - trail.ys[i - 1])
+        if (length > l.keyWidth * TAP_SLIDE_KEYS) return false
+        onKeyTap(key, x, y)
+        return true
     }
 
     // ------------------------------------------------------------ strip
@@ -1238,6 +1254,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     private companion object {
         const val DOUBLE_TAP_MS = 320L
+        /** A "glide" no longer than this many key widths that spells nothing was a tap. */
+        const val TAP_SLIDE_KEYS = 1f
         const val NEVER = Long.MIN_VALUE / 2
         /** Smallest width of large screens (Android's tablet breakpoint). */
         const val LARGE_SCREEN_DP = 600

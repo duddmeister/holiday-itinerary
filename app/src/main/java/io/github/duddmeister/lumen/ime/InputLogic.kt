@@ -217,6 +217,18 @@ class InputLogic(private val host: Host) {
         lastCorrection = null
         ic.beginBatchEdit()
         when {
+            editor.isUrl -> {
+                // In an address, punctuation joins what's either side of it ("bbc.co.uk"):
+                // no spaces come with it, and the word before it is left as typed.
+                if (composing.isNotEmpty) {
+                    commitComposing(ic, sep, autocorrect = false)
+                } else {
+                    if (autoSpaceInserted && charBefore(ic) == ' ') deleteBefore(ic, 1)
+                    commitText(ic, sep)
+                }
+                phantomSpace = false
+                autoSpaceInserted = false
+            }
             composing.isNotEmpty -> {
                 if (composingFromGesture && !swaps) {
                     finishComposing(ic)
@@ -315,6 +327,12 @@ class InputLogic(private val host: Host) {
             phantomSpace -> {
                 phantomSpace = false
                 commitText(ic, " ")
+                lastSpaceAt = now
+            }
+            autoSpaceInserted && charBefore(ic) == ' ' -> {
+                // A picked word already brought its space: tapping space after it, out of
+                // habit, adds nothing (it used to make a full stop). A second tap still does.
+                autoSpaceInserted = false
                 lastSpaceAt = now
             }
             settings.doubleSpacePeriod && now - lastSpaceAt < DOUBLE_SPACE_MS && canAddPeriod(ic) -> {
@@ -453,6 +471,7 @@ class InputLogic(private val host: Host) {
             if (done) return
             if (composing.isNotEmpty) finishComposing(ic)
             phantomSpace = false
+            autoSpaceInserted = false
             lastCorrection = null
             swipeAnchor = selectionEnd.takeIf { it >= 0 && selectionStart == selectionEnd } ?: return
             swipeText = ic.getTextBeforeCursor(512, 0) ?: ""
@@ -527,7 +546,7 @@ class InputLogic(private val host: Host) {
         ic.endBatchEdit()
         phantomSpace = false
         autoSpaceInserted = true
-        lastSpaceAt = SystemClock.uptimeMillis()
+        lastSpaceAt = 0
         refreshPredictions(ic)
         host.onInputChanged()
     }
@@ -627,7 +646,7 @@ class InputLogic(private val host: Host) {
             engine.suggest(
                 composing, composingContext, host.keyGeometry(),
                 SuggestionOptions(
-                    autoCorrect = settings.autoCorrect && editor.autoCorrectAllowed,
+                    autoCorrect = settings.autoCorrect && editor.autoCorrectAllowed && standsAlone(),
                     emojiSuggestions = settings.emojiSuggestions,
                 ),
             )
@@ -779,7 +798,10 @@ class InputLogic(private val host: Host) {
 
     private fun commitComposing(ic: InputConnection, separator: String, autocorrect: Boolean) {
         val typed = composing.toString()
-        val correction = if (autocorrect && settings.autoCorrect && editor.autoCorrectAllowed && !composingRestored) {
+        // In an address field only a space corrects: enter goes to what was typed.
+        val correction = if (autocorrect && settings.autoCorrect && editor.autoCorrectAllowed && !composingRestored &&
+            (!editor.isUrl || separator == " ")
+        ) {
             result.autoCorrection
         } else null
         val word = correction ?: typed
@@ -787,6 +809,17 @@ class InputLogic(private val host: Host) {
         if (correction != null && correction != typed) lastCorrection = Correction(typed, correction, separator, expectedEnd)
         learn(word)
         resetComposing()
+    }
+
+    /**
+     * Whether the word being typed may be corrected where it is. In an address field, only
+     * a word on its own, as in a search typed into the browser's address bar: not one that
+     * is part of an address ("bbc" in "news.bbc").
+     */
+    private fun standsAlone(): Boolean {
+        if (!editor.isUrl) return true
+        val before = host.connection?.getTextBeforeCursor(composing.length + 1, 0) ?: return false
+        return before.length <= composing.length || before[0].isWhitespace()
     }
 
     /** Ends composition, keeping the word as it stands. Only finished (glided) words are learned. */
@@ -857,7 +890,8 @@ class InputLogic(private val host: Host) {
         /** Closing punctuation that attaches to the previous word ("word ." -> "word."). */
         private const val SWAP_PUNCTUATION = ".,!?;:)]}…"
         private const val AUTOCORRECT_TRIGGERS = ".,!?;:)\"…"
-        private const val DOUBLE_SPACE_MS = 1500L
+        /** Two taps on space this close together make a full stop: Android's own keyboard's timing. */
+        private const val DOUBLE_SPACE_MS = 1100L
         private const val RESUME_DELAY_MS = 120L
         /** Text read per word jump: plenty for the longest words. */
         private const val WORD_JUMP_REACH = 256

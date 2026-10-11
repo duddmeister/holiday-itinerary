@@ -156,6 +156,11 @@ object Layouts {
         return KeyboardLayout(KeyboardMode.TEXT, rows, o.letters.title)
     }
 
+    /**
+     * The space bar keeps its place whatever the field, so a thumb that finds it in a
+     * message finds it in a search box too (there, "." and ".com" used to sit where the
+     * right of the space bar is, and taps meant for it typed full stops).
+     */
     private fun bottomRow(o: LayoutOptions, modeCode: Int, modeLabel: String): KeyRow {
         val modeKey = mode(modeCode, modeLabel)
         val period = punct(".", "?!,'\":;-/@&…")
@@ -163,9 +168,9 @@ object Layouts {
             when (o.field) {
                 FieldKind.EMAIL -> listOf(modeKey, punct("@", "._-+"), space(5f), period, enter())
                 FieldKind.URL -> listOf(
-                    modeKey, punct("/", ":_-?&=#"), space(3.5f), period,
-                    Key(KeyCodes.TEXT, ".com", text = ".com", width = 1.5f, style = KeyStyle.FUNCTIONAL,
-                        popup = listOf(".net", ".org", ".io", ".co", ".app", ".dev"), preview = false),
+                    modeKey, punct("/", ":_-?&=#"), space(5f),
+                    Key('.'.code, ".", style = KeyStyle.FUNCTIONAL, preview = true,
+                        popup = listOf(".com", ".co.uk", ".org", ".net", ".io", ".app", ".dev")),
                     enter(),
                 )
                 FieldKind.PASSWORD -> listOf(modeKey, punct(",", ";:'\""), space(5f), period, enter())
