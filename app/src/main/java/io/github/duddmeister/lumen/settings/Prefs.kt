@@ -3,9 +3,11 @@ package io.github.duddmeister.lumen.settings
 import android.content.Context
 import android.content.SharedPreferences
 import io.github.duddmeister.lumen.data.GifService
+import io.github.duddmeister.lumen.engine.Spelling
 import io.github.duddmeister.lumen.keyboard.KeyShape
 import io.github.duddmeister.lumen.keyboard.LetterLayout
 import io.github.duddmeister.lumen.theme.Themes
+import java.util.Locale
 
 /** Typed access to every Lumen setting. Changes reach the keyboard live through [store] listeners. */
 class Prefs(context: Context) {
@@ -27,6 +29,10 @@ class Prefs(context: Context) {
     var letterLayout: LetterLayout
         get() = LetterLayout.of(store.getString(LAYOUT, null))
         set(value) = set(LAYOUT, value.id)
+    /** Which English to spell in: the user's choice, else the phone's region decides. */
+    var spelling: Spelling
+        get() = Spelling.of(store.getString(SPELLING, null)) ?: Spelling.forRegion(Locale.getDefault().country)
+        set(value) = set(SPELLING, value.id)
 
     val keyBackgrounds get() = bool(KEY_BACKGROUNDS, true)
     val heightPercent get() = int(HEIGHT, 100).coerceIn(80, 130)
@@ -70,6 +76,7 @@ class Prefs(context: Context) {
         const val KEY_SHAPE = "key_shape"
         const val KEY_BACKGROUNDS = "key_backgrounds"
         const val LAYOUT = "layout"
+        const val SPELLING = "spelling"
         const val HEIGHT = "keyboard_height"
         const val NUMBER_ROW = "number_row"
         const val SPLIT = "split_keyboard"

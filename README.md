@@ -19,6 +19,9 @@ make it feel at home on any phone.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, fixes missing apostrophes (`dont` → `don't`), and one
   tap of backspace undoes it.
+- **British or American English.** Lumen spells the way your phone's region does
+  (or the way you pick in settings): in British English, colour, favourite, realise
+  and programme are words it suggests, not typos it fixes.
 - **Predictions.** Word completions, next-word predictions, emoji suggestions
   (🍕 when you type “pizza”), smart punctuation spacing, double-space full stop and
   auto-capitalisation.
@@ -129,7 +132,7 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 
 | Package | What lives there |
 | --- | --- |
-| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words, a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning, the glide decoder and emoji search. Unit-tested on the JVM. |
+| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words (in American or British spelling), a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning, the glide decoder and emoji search. Unit-tested on the JVM. |
 | `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, cursor and delete swipes, animations) and the glide trail. |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
 | `update/` | The in-app updater: finds the latest GitHub release, downloads it and hands it to Android's package installer. |

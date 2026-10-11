@@ -46,6 +46,7 @@
     <string name="symbol_hints">Long-press for symbols</string>
     <string name="symbol_hints_summary">Shows symbol hints on the letter keys</string>
     <string name="keyboard_height">Keyboard height</string>
+    <string name="spelling">Spelling</string>
     <string name="split_keyboard">Split on large screens</string>
     <string name="split_keyboard_summary">Splits the keys between your thumbs when a foldable is open, or on a tablet</string>
 

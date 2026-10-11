@@ -32,6 +32,7 @@ import android.widget.TextView
 import io.github.duddmeister.lumen.BuildConfig
 import io.github.duddmeister.lumen.R
 import io.github.duddmeister.lumen.data.GifService
+import io.github.duddmeister.lumen.engine.Spelling
 import io.github.duddmeister.lumen.ime.EngineHolder
 import io.github.duddmeister.lumen.keyboard.Icon
 import io.github.duddmeister.lumen.keyboard.Icons
@@ -168,6 +169,10 @@ class SettingsActivity : Activity() {
         // Typing
         root.addView(kit.section(getString(R.string.section_typing)))
         root.addView(kit.card().apply {
+            addView(kit.chips(getString(R.string.spelling), Spelling.entries.map { it.title }, prefs.spelling.ordinal) {
+                prefs.spelling = Spelling.entries[it]
+            })
+            addView(kit.divider())
             toggle(Prefs.AUTO_CORRECT, R.string.autocorrect, R.string.autocorrect_summary, prefs.autoCorrect)
             toggle(Prefs.SUGGESTIONS, R.string.suggestions, R.string.suggestions_summary, prefs.suggestions)
             toggle(Prefs.GLIDE, R.string.glide, R.string.glide_summary, prefs.glideTyping)
