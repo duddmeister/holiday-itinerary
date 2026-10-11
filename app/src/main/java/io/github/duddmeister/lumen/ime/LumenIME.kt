@@ -16,7 +16,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.LruCache
-import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
@@ -254,9 +253,9 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         logic.finish()
         search = null
         root?.keyboard?.cancelTouches()
-        // Leave an open panel in place: changing what the window shows while the
-        // system animates it away leaves a ghost of the keyboard on screen.
-        // onStartInputView returns to the keys before the keyboard shows again.
+        // Leave an open panel or search in place: switching to the keys now would
+        // flash them while the keyboard slides away. onStartInputView returns to the
+        // keys before the keyboard shows again.
         EngineHolder.save(this)
         super.onFinishInputView(finishingInput)
     }
@@ -797,21 +796,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     }
 
     override fun onPanelFeedback() = feedback.key(0)
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        // Back leaves a search, or closes an open panel, before it hides the keyboard.
-        if (keyCode == KeyEvent.KEYCODE_BACK && isInputViewShown) {
-            if (search != null) {
-                onSearchBack()
-                return true
-            }
-            if (root?.panel != null) {
-                onPanelClose()
-                return true
-            }
-        }
-        return super.onKeyDown(keyCode, event)
-    }
 
     // ------------------------------------------------------------ search
 

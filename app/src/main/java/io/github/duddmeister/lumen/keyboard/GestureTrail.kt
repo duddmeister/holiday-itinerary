@@ -1,6 +1,7 @@
 package io.github.duddmeister.lumen.keyboard
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
@@ -112,6 +113,9 @@ class GestureTrail {
         glow.strokeWidth = width * 2.8f
         glow.shader = LinearGradient(tx, ty, hx, hy, Colors.withAlpha(start, 0f), Colors.withAlpha(end, 0.2f * fadeOut), Shader.TileMode.CLAMP)
         canvas.drawPath(spine, glow)
+        // Opaque, so the gradient's own alpha is all that applies (the head dot below
+        // leaves a fading color on this paint).
+        fill.color = Color.WHITE
         fill.shader = LinearGradient(
             tx, ty, hx, hy,
             intArrayOf(Colors.withAlpha(start, 0f), Colors.withAlpha(start, 0.9f * fadeOut), Colors.withAlpha(end, fadeOut)),
