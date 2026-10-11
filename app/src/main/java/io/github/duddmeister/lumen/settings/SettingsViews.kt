@@ -200,6 +200,21 @@ class SettingsKit(private val context: Context, val palette: Palette) {
     }
 }
 
+/** A vertical column that stops growing at [maxWidth], so pages stay readable on large screens. */
+@SuppressLint("ViewConstructor")
+class Column(context: Context, private val maxWidth: Int) : LinearLayout(context) {
+    init {
+        orientation = VERTICAL
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val spec = if (MeasureSpec.getSize(widthMeasureSpec) > maxWidth) {
+            MeasureSpec.makeMeasureSpec(maxWidth, MeasureSpec.EXACTLY)
+        } else widthMeasureSpec
+        super.onMeasure(spec, heightMeasureSpec)
+    }
+}
+
 /** Lays children out left to right, wrapping onto new lines. */
 @SuppressLint("ViewConstructor")
 class FlowLayout(context: Context, private val hGap: Int, private val vGap: Int) : ViewGroup(context) {

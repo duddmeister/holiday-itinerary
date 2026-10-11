@@ -2,6 +2,7 @@ package io.github.duddmeister.lumen.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.duddmeister.lumen.data.GifService
 import io.github.duddmeister.lumen.keyboard.KeyShape
 import io.github.duddmeister.lumen.keyboard.LetterLayout
 import io.github.duddmeister.lumen.theme.Themes
@@ -30,6 +31,7 @@ class Prefs(context: Context) {
     val keyBackgrounds get() = bool(KEY_BACKGROUNDS, true)
     val heightPercent get() = int(HEIGHT, 100).coerceIn(80, 130)
     val numberRow get() = bool(NUMBER_ROW, false)
+    val splitKeyboard get() = bool(SPLIT, true)
     val symbolHints get() = bool(SYMBOL_HINTS, true)
     val keyPreviews get() = bool(KEY_PREVIEWS, true)
     val lightEffects get() = bool(LIGHT_EFFECTS, true)
@@ -49,6 +51,15 @@ class Prefs(context: Context) {
     val spaceCursor get() = bool(SPACE_CURSOR, true)
     val deleteSwipe get() = bool(DELETE_SWIPE, true)
     val longPressDelay get() = int(LONG_PRESS, 300).coerceIn(150, 700)
+    val gifs get() = bool(GIFS, true)
+
+    var gifService: GifService
+        get() = GifService.of(store.getString(GIF_SERVICE, null)) ?: GifService.default
+        set(value) = set(GIF_SERVICE, value.id)
+
+    /** The API key for the GIF service: the user's own if they added one, else the one built in (if any). */
+    val gifKey: String
+        get() = gifService.let { store.getString(keyPref(it), null)?.trim().orEmpty().ifEmpty { it.builtInKey } }
 
     companion object {
         const val FILE = "lumen_settings"
@@ -58,6 +69,7 @@ class Prefs(context: Context) {
         const val LAYOUT = "layout"
         const val HEIGHT = "keyboard_height"
         const val NUMBER_ROW = "number_row"
+        const val SPLIT = "split_keyboard"
         const val SYMBOL_HINTS = "symbol_hints"
         const val KEY_PREVIEWS = "key_previews"
         const val LIGHT_EFFECTS = "light_effects"
@@ -77,5 +89,15 @@ class Prefs(context: Context) {
         const val SPACE_CURSOR = "space_cursor"
         const val DELETE_SWIPE = "delete_swipe"
         const val LONG_PRESS = "long_press_delay"
+        const val GIFS = "gifs"
+        const val GIF_SERVICE = "gif_service"
+        const val GIPHY_KEY = "giphy_api_key"
+        const val KLIPY_KEY = "klipy_api_key"
+
+        /** Where the user's own key for [service] is saved. */
+        fun keyPref(service: GifService) = when (service) {
+            GifService.GIPHY -> GIPHY_KEY
+            GifService.KLIPY -> KLIPY_KEY
+        }
     }
 }

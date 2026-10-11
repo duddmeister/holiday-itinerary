@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Only for GIFs: GIF search and the GIFs themselves. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"
@@ -36,5 +38,12 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
+
+        <!-- Hands a sent GIF to the receiving app, one read-only grant at a time. -->
+        <provider
+            android:name=".data.GifProvider"
+            android:authorities="${applicationId}.gifs"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>

@@ -15,6 +15,18 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+
+        // GIF search uses GIPHY or KLIPY, which need an API key. Build one in with
+        // -PgiphyApiKey=... / -PklipyApiKey=... or the GIPHY_API_KEY / KLIPY_API_KEY
+        // environment variables (CI reads them from repository secrets). People can
+        // also add their own key in Lumen's settings.
+        for ((property, name) in listOf("giphyApiKey" to "GIPHY_API_KEY", "klipyApiKey" to "KLIPY_API_KEY")) {
+            val key = providers.gradleProperty(property)
+                .orElse(providers.environmentVariable(name))
+                .getOrElse("")
+                .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+            buildConfigField("String", name, "\"$key\"")
+        }
     }
 
     buildTypes {
@@ -52,4 +64,6 @@ kotlin {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // The real org.json for JVM tests; the Android stub's methods just throw.
+    testImplementation("org.json:json:20240303")
 }

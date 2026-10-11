@@ -21,9 +21,12 @@ import io.github.duddmeister.lumen.theme.KeyboardTheme
 class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(context) {
     val strip = SuggestionStripView(context, painter)
     val keyboard = KeyboardView(context, painter)
+    /** Replaces the strip while searching; the keys type into it. */
+    val searchBar = SearchBarView(context, painter)
     private val overlay = Overlay(context)
     var panel: View? = null
         private set
+    val searching: Boolean get() = searchBar.visibility == VISIBLE
 
     val stripHeight = context.dp(46)
     private var insetLeft = 0
@@ -33,41 +36,81 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
     init {
         setWillNotDraw(false)
         addView(strip)
+        addView(searchBar)
         addView(keyboard)
         addView(overlay)
         keyboard.overlay = overlay
+        searchBar.visibility = GONE
     }
 
     fun applyTheme(theme: KeyboardTheme) {
         painter.theme = theme
         keyboard.applyTheme(theme)
         strip.invalidate()
+        searchBar.invalidate()
         panel?.invalidate()
         invalidate()
     }
 
-    /** Shows [view] in place of the strip and keys, or returns to the keys when null. */
-    fun showPanel(view: View?) {
+    /**
+     * Shows [view] in place of the strip and keys, or returns to the keys when null.
+     * [animate] fades the change in; pass false while the keyboard is not on screen.
+     */
+    fun showPanel(view: View?, animate: Boolean = true) {
         if (view === panel) return
         panel?.let { removeView(it) }
         panel = view
         if (view != null) {
             addView(view, indexOfChild(overlay))
-            view.alpha = 0f
-            view.animate().alpha(1f).setDuration(140).start()
+            fadeIn(view, animate)
             keyboard.cancelTouches()
+            searchBar.visibility = GONE
         }
-        strip.visibility = if (view == null) VISIBLE else INVISIBLE
+        strip.visibility = if (view == null && !searching) VISIBLE else INVISIBLE
         keyboard.visibility = if (view == null) VISIBLE else INVISIBLE
         if (view == null) {
-            keyboard.alpha = 0f
-            strip.alpha = 0f
-            keyboard.animate().alpha(1f).setDuration(140).start()
-            strip.animate().alpha(1f).setDuration(140).start()
+            fadeIn(keyboard, animate)
+            if (!searching) fadeIn(strip, animate)
         }
         requestLayout()
         invalidate()
     }
+
+    /**
+     * Shows the search bar for [kind] in place of the strip (closing any panel),
+     * or hides it when null. [animate] as for [showPanel].
+     */
+    fun showSearch(kind: SearchBarView.Kind?, initial: String = "", hint: String? = null, animate: Boolean = true) {
+        if (kind == null) {
+            if (!searching) return
+            searchBar.visibility = GONE
+            if (panel == null) {
+                strip.visibility = VISIBLE
+                fadeIn(strip, animate)
+            }
+        } else {
+            showPanel(null, animate)
+            searchBar.start(kind, initial, hint ?: kind.hint)
+            searchBar.visibility = VISIBLE
+            fadeIn(searchBar, animate)
+            strip.visibility = INVISIBLE
+        }
+        requestLayout()
+        invalidate()
+    }
+
+    private fun fadeIn(v: View, animate: Boolean) {
+        v.animate().cancel()
+        if (animate) {
+            v.alpha = 0f
+            v.animate().alpha(1f).setDuration(140).start()
+        } else {
+            v.alpha = 1f
+        }
+    }
+
+    /** Height above the keys: the strip, or the (possibly taller) search bar. */
+    private fun topHeight() = if (searching) searchBar.measuredHeight else stripHeight
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
@@ -75,7 +118,8 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
         val exact = { size: Int -> MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY) }
         keyboard.measure(exact(inner), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
         strip.measure(exact(inner), exact(stripHeight))
-        val contentHeight = stripHeight + keyboard.measuredHeight
+        searchBar.measure(exact(inner), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+        val contentHeight = topHeight() + keyboard.measuredHeight
         panel?.measure(exact(inner), exact(contentHeight))
         overlay.measure(exact(inner), exact(contentHeight))
         setMeasuredDimension(width, contentHeight + insetBottom)
@@ -83,8 +127,10 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         val left = insetLeft
+        val top = topHeight()
         strip.layout(left, 0, left + strip.measuredWidth, stripHeight)
-        keyboard.layout(left, stripHeight, left + keyboard.measuredWidth, stripHeight + keyboard.measuredHeight)
+        searchBar.layout(left, 0, left + searchBar.measuredWidth, searchBar.measuredHeight)
+        keyboard.layout(left, top, left + keyboard.measuredWidth, top + keyboard.measuredHeight)
         panel?.let { it.layout(left, 0, left + it.measuredWidth, it.measuredHeight) }
         overlay.layout(left, 0, left + overlay.measuredWidth, overlay.measuredHeight)
     }
@@ -120,7 +166,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
     private inner class Overlay(context: Context) : View(context) {
         override fun onDraw(canvas: Canvas) {
             if (keyboard.visibility != VISIBLE) return
-            if (keyboard.drawOverlay(canvas, 0f, stripHeight.toFloat())) postInvalidateOnAnimation()
+            if (keyboard.drawOverlay(canvas, 0f, keyboard.top.toFloat())) postInvalidateOnAnimation()
         }
 
         @SuppressLint("ClickableViewAccessibility")

@@ -101,12 +101,16 @@ class EmojiPanelView(context: Context, painter: KeyPainter) : PanelView(context,
         activeSection = active
     }
 
+    /** Width of the search button at the start of the header. */
+    private val searchWidth = context.dp(50f)
+
     override fun drawHeader(canvas: Canvas, bounds: RectF) {
         val t = painter.theme ?: return
+        Icons.draw(canvas, Icon.SEARCH, searchWidth / 2f + context.dp(2f), bounds.centerY(), context.dp(21f), t.stripSecondary, paint)
         if (sections.isEmpty()) return
-        val w = bounds.width() / sections.size
+        val w = (bounds.width() - searchWidth) / sections.size
         for ((i, s) in sections.withIndex()) {
-            val cx = w * (i + 0.5f)
+            val cx = searchWidth + w * (i + 0.5f)
             val cy = bounds.centerY()
             val active = i == activeSection
             if (s.icon == null) {
@@ -126,8 +130,13 @@ class EmojiPanelView(context: Context, painter: KeyPainter) : PanelView(context,
     }
 
     override fun onHeaderTap(x: Float, y: Float) {
+        if (x < searchWidth) {
+            host?.onPanelFeedback()
+            host?.onPanelSearch()
+            return
+        }
         if (sections.isEmpty()) return
-        val i = (x / (width / sections.size.toFloat())).toInt().coerceIn(0, sections.lastIndex)
+        val i = ((x - searchWidth) / ((width - searchWidth) / sections.size)).toInt().coerceIn(0, sections.lastIndex)
         host?.onPanelFeedback()
         scrollToContent(sections[i].top)
     }

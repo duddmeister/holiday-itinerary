@@ -41,6 +41,12 @@ class KeyPainter(private val context: Context) {
     var scale = 1f
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+    /**
+     * For the background and blooms, whose gradients carry their own alpha. A paint's
+     * alpha also scales its shader, so these never share [fill], which keys leave
+     * holding translucent colors.
+     */
+    private val shaded = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
     private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -239,15 +245,15 @@ class KeyPainter(private val context: Context) {
     /** Paints the theme background with its ambient glows across a [width] x [height] area. */
     fun drawBackground(canvas: Canvas, width: Float, height: Float, top: Float = 0f) {
         val t = theme ?: return
-        fill.shader = LinearGradient(0f, top, 0f, top + height, t.background, null, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, top, width, top + height, fill)
+        shaded.shader = LinearGradient(0f, top, 0f, top + height, t.background, null, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, top, width, top + height, shaded)
         for (g in t.glows) {
             val r = g.radius * width
             if (r <= 0f) continue
-            fill.shader = RadialGradient(g.x * width, top + g.y * height, r, g.color, Colors.fade(g.color, 0f), Shader.TileMode.CLAMP)
-            canvas.drawRect(0f, top, width, top + height, fill)
+            shaded.shader = RadialGradient(g.x * width, top + g.y * height, r, g.color, Colors.fade(g.color, 0f), Shader.TileMode.CLAMP)
+            canvas.drawRect(0f, top, width, top + height, shaded)
         }
-        fill.shader = null
+        shaded.shader = null
     }
 
     /** A light bloom that spreads from a pressed key; [strength] fades it out. */
@@ -256,8 +262,8 @@ class KeyPainter(private val context: Context) {
         if (strength <= 0f || radius <= 0f) return
         val alpha = if (t.dark) 0.42f else 0.3f
         val c = Colors.withAlpha(t.glow, alpha * strength)
-        fill.shader = RadialGradient(x, y, radius, intArrayOf(c, Colors.fade(c, 0.35f), Colors.fade(c, 0f)), floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP)
-        canvas.drawCircle(x, y, radius, fill)
-        fill.shader = null
+        shaded.shader = RadialGradient(x, y, radius, intArrayOf(c, Colors.fade(c, 0.35f), Colors.fade(c, 0f)), floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP)
+        canvas.drawCircle(x, y, radius, shaded)
+        shaded.shader = null
     }
 }

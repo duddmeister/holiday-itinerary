@@ -26,8 +26,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     class Item(val text: String, val primary: Boolean = false, val quoted: Boolean = false, val emoji: Boolean = false)
 
     enum class Action(val icon: Icon) {
-        TOGGLE(Icon.SPARKLE), CLIPBOARD(Icon.CLIPBOARD), EMOJI(Icon.EMOJI), THEMES(Icon.PALETTE),
-        SETTINGS(Icon.SETTINGS), HIDE(Icon.KEYBOARD_HIDE),
+        TOGGLE(Icon.SPARKLE), SEARCH(Icon.SEARCH), CLIPBOARD(Icon.CLIPBOARD), EMOJI(Icon.EMOJI), GIF(Icon.GIF),
+        THEMES(Icon.PALETTE), SETTINGS(Icon.SETTINGS), HIDE(Icon.KEYBOARD_HIDE),
     }
 
     interface Listener {
@@ -53,7 +53,18 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
     private val buttonSize = context.dp(44f)
-    private val toolbarActions = listOf(Action.CLIPBOARD, Action.EMOJI, Action.THEMES, Action.SETTINGS)
+    private val withGifs = listOf(Action.SEARCH, Action.EMOJI, Action.GIF, Action.CLIPBOARD, Action.THEMES, Action.SETTINGS)
+    private val withoutGifs = withGifs - Action.GIF
+    private val toolbarActions get() = if (gifsEnabled) withGifs else withoutGifs
+
+    /** Shows the GIF button; off when GIFs are turned off in settings. */
+    var gifsEnabled = true
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
 
     private var pressedSlot = -1
     private var pressedAction: Action? = null

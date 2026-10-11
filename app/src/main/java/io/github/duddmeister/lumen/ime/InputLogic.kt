@@ -93,6 +93,8 @@ class InputLogic(private val host: Host) {
         private set
 
     private var swipeAnchor = -1
+    /** The word being typed when the field restarted; it carries on as the same word. */
+    private var continuing: String? = null
     private var swipeText: CharSequence = ""
     private var swipeStart = -1
     private var deleteRepeats = 0
@@ -104,7 +106,15 @@ class InputLogic(private val host: Host) {
 
     // ------------------------------------------------------------ lifecycle
 
-    fun start(editor: EditorContext) {
+    /**
+     * Starts work on a field. The selection defaults to what the field reported
+     * when input began; after a restart the caller passes where the cursor is now.
+     */
+    fun start(
+        editor: EditorContext,
+        selectionStart: Int = editor.initialSelectionStart,
+        selectionEnd: Int = editor.initialSelectionEnd,
+    ) {
         this.editor = editor
         handler.removeCallbacks(resume)
         resetComposing()
@@ -113,8 +123,9 @@ class InputLogic(private val host: Host) {
         lastCorrection = null
         lastSpaceAt = 0
         swipeAnchor = -1
-        selectionStart = editor.initialSelectionStart
-        selectionEnd = editor.initialSelectionEnd
+        this.selectionStart = selectionStart
+        this.selectionEnd = selectionEnd
+        continuing = null
         pending.clear()
         pendingAt.clear()
         expectedStart = selectionStart
@@ -122,8 +133,28 @@ class InputLogic(private val host: Host) {
         refreshPredictions(null)
     }
 
+    /**
+     * The same field restarted: folding or unfolding, rotating, or the app asking.
+     * The editor still shows our word as composing, so commit it, carry on from
+     * where the cursor really is, then put the word back into composition.
+     */
+    fun restart(editor: EditorContext, selectionStart: Int, selectionEnd: Int) {
+        val word = composing.toString()
+        finish()
+        start(editor, selectionStart, selectionEnd)
+        if (word.isNotEmpty()) {
+            continuing = word
+            // Committing makes the editor report that composition ended. That report can
+            // arrive after the word is resumed, so expect it rather than mistake it for
+            // the editor dropping the resumed word.
+            expect(selectionStart, selectionEnd)
+        }
+        handler.postDelayed(resume, RESUME_DELAY_MS)
+    }
+
     fun finish() {
         handler.removeCallbacks(resume)
+        continuing = null
         if (composing.isNotEmpty) host.connection?.finishComposingText()
         resetComposing()
         phantomSpace = false
@@ -638,6 +669,8 @@ class InputLogic(private val host: Host) {
 
     /** Puts a word the cursor rests on back into composition so its suggestions show. */
     private fun resumeAtCursor(ic: InputConnection, knownBefore: CharSequence?) {
+        val carried = continuing
+        continuing = null
         if (!useComposing || composing.isNotEmpty || selectionEnd < 0 || selectionStart != selectionEnd) return
         val before = knownBefore ?: ic.getTextBeforeCursor(48, 0) ?: return
         val after = ic.getTextAfterCursor(8, 0) ?: ""
@@ -654,8 +687,17 @@ class InputLogic(private val host: Host) {
         ic.setComposingRegion(start, cursor)
         expect(cursor, cursor) // the region change is reported even though the cursor stays put
         composeStart = start
-        composing.set(word)
-        composingRestored = true
+        // The word being typed before a restart carries on: its letters were tapped on
+        // keys that may have moved (folding, unfolding), so they sit on the keys' new
+        // centres, and autocorrect stays on. Other words come back as restored text.
+        val carryOn = word == carried
+        val geometry = if (carryOn) host.keyGeometry() else null
+        composing.clear()
+        for (c in word) {
+            val center = geometry?.center(c)
+            composing.add(c, center?.get(0) ?: Float.NaN, center?.get(1) ?: Float.NaN)
+        }
+        composingRestored = !carryOn
         composingFromGesture = false
         composingContext = TextContext.contextWords(before.subSequence(0, before.length - word.length))
         updateSuggestions()

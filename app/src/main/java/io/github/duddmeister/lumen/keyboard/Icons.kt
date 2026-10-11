@@ -5,6 +5,7 @@ import android.graphics.CornerPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Typeface
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -158,6 +159,25 @@ object Icons {
                 canvas.drawPath(path("pin") { poly(9.4f, 4f, 14.6f, 4f, 14f, 10f, 17.2f, 13.4f, 6.8f, 13.4f, 10f, 10f); close() }, paint)
                 paint.pathEffect = null
                 canvas.drawLine(12f, 13.4f, 12f, 20f, paint)
+            }
+            Icon.CLEAR -> {
+                canvas.drawLine(7f, 7f, 17f, 17f, paint)
+                canvas.drawLine(17f, 7f, 7f, 17f, paint)
+            }
+            Icon.GIF -> {
+                oval.set(2.8f, 6.2f, 21.2f, 17.8f)
+                canvas.drawRoundRect(oval, 3.2f, 3.2f, paint)
+                val typeface = paint.typeface
+                val align = paint.textAlign
+                val textSize = paint.textSize
+                paint.style = Paint.Style.FILL
+                paint.typeface = Typeface.DEFAULT_BOLD
+                paint.textAlign = Paint.Align.CENTER
+                paint.textSize = 7.4f
+                canvas.drawText("GIF", 12f, 14.6f, paint)
+                paint.typeface = typeface
+                paint.textAlign = align
+                paint.textSize = textSize
             }
             Icon.TRASH -> {
                 canvas.drawLine(5.5f, 7f, 18.5f, 7f, paint)

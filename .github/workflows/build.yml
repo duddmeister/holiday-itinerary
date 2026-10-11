@@ -10,6 +10,10 @@ jobs:
   build:
     name: Test, lint and build APKs
     runs-on: ubuntu-latest
+    env:
+      # Optional: a GIPHY or KLIPY API key baked into the APKs so GIF search works out of the box.
+      GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
+      KLIPY_API_KEY: ${{ secrets.KLIPY_API_KEY }}
     steps:
       - uses: actions/checkout@v5
 

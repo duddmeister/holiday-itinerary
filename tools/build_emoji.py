@@ -14,6 +14,10 @@ Outputs:
       separated by spaces (light -> dark).
   app/src/main/assets/emoji/keywords.txt
       keyword<TAB>emoji emoji emoji  (best match first)
+  app/src/main/assets/emoji/search.txt
+      emoji<TAB>name words<TAB>other words, one line per emoji in CLDR order: the
+      words of its Unicode name, then gemoji aliases and tags and the everyday
+      words above that point to it. Powers emoji search.
 
 Usage: python3 tools/build_emoji.py path/to/emoji-test.txt path/to/emoji.json
 """
@@ -75,6 +79,7 @@ def parse_emoji_test(path):
     group = None
     by_key = {}
     tones = {}
+    names = {}
     with open(path, encoding="utf-8") as f:
         for line in f:
             if line.startswith("# group:"):
@@ -100,13 +105,14 @@ def parse_emoji_test(path):
                     tones.setdefault(strip_key(emoji), {})[used_tones.pop()] = emoji
                 continue
             by_key.setdefault(strip_key(emoji), emoji)
+            names.setdefault(emoji, name)
             group[1].append(emoji)
     variants = {}
     for key, toned in tones.items():
         base = by_key.get(key)
         if base and len(toned) == 5:
             variants[base] = [toned[t] for t in TONES]
-    return groups, by_key, variants
+    return groups, by_key, variants, names
 
 
 def build_keywords(gemoji_path, by_key, order):
@@ -147,8 +153,49 @@ def build_keywords(gemoji_path, by_key, order):
     return keywords
 
 
+WORD_RE = re.compile(r"[a-z0-9]+(?:'[a-z]+)?")
+
+
+def words(text):
+    """Lowercase search words, accents removed ("piñata" -> "pinata")."""
+    import unicodedata
+    plain = unicodedata.normalize("NFKD", text.lower())
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return WORD_RE.findall(plain.replace("’", "'"))
+
+
+def build_search(gemoji_path, by_key, names, order):
+    data = json.load(open(gemoji_path, encoding="utf-8"))
+    extra = {}
+    for item in data:
+        emoji = by_key.get(strip_key(item["emoji"]))
+        if emoji is None:
+            continue
+        found = extra.setdefault(emoji, [])
+        for alias in item.get("aliases", []):
+            found += words(alias.replace("_", " "))
+        for tag in item.get("tags", []):
+            found += words(tag)
+    for word, emojis in CURATED.items():
+        for e in emojis.split():
+            base = by_key.get(strip_key(e))
+            if base:
+                extra.setdefault(base, []).append(word)
+    lines = []
+    for emoji in sorted(order, key=order.get):
+        name_words = words(names.get(emoji, ""))
+        seen = set(name_words)
+        others = []
+        for w in extra.get(emoji, []):
+            if w not in seen:
+                seen.add(w)
+                others.append(w)
+        lines.append(f"{emoji}\t{' '.join(dict.fromkeys(name_words))}\t{' '.join(others)}")
+    return lines
+
+
 def main(test_path, gemoji_path):
-    groups, by_key, variants = parse_emoji_test(test_path)
+    groups, by_key, variants, names = parse_emoji_test(test_path)
     order = {}
     for _, emojis in groups:
         for e in emojis:
@@ -165,7 +212,11 @@ def main(test_path, gemoji_path):
     with open(os.path.join(OUT_DIR, "keywords.txt"), "w", encoding="utf-8", newline="\n") as out:
         for word in sorted(keywords):
             out.write(f"{word}\t{' '.join(keywords[word])}\n")
-    print(f"{count} emoji ({len(variants)} with skin tones), {len(keywords)} keywords -> {OUT_DIR}")
+    search = build_search(gemoji_path, by_key, names, order)
+    with open(os.path.join(OUT_DIR, "search.txt"), "w", encoding="utf-8", newline="\n") as out:
+        out.write("\n".join(search) + "\n")
+    print(f"{count} emoji ({len(variants)} with skin tones), {len(keywords)} keywords, "
+          f"{len(search)} search entries -> {OUT_DIR}")
 
 
 if __name__ == "__main__":

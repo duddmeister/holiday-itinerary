@@ -20,6 +20,7 @@ enum class KeyStyle { CHARACTER, FUNCTIONAL, ACCENT, SPACE }
 enum class Icon {
     SHIFT, SHIFT_ON, CAPS_LOCK, DELETE, ENTER, SEARCH, SEND, GO, NEXT, PREVIOUS, DONE, EMOJI,
     SPACE, SETTINGS, CLIPBOARD, PALETTE, KEYBOARD_HIDE, SPARKLE, CLOCK, PIN, TRASH, ARROW_LEFT, ARROW_RIGHT,
+    CLEAR, GIF,
 }
 
 /**
@@ -62,7 +63,8 @@ class Key(
     override fun toString() = "Key(${if (label.isNotEmpty()) label else code.toString()})"
 }
 
-class KeyRow(val keys: List<Key>, val heightFactor: Float = 1f)
+/** [splitAt] is the first key of the right half when the keyboard is split, or -1. */
+class KeyRow(val keys: List<Key>, val heightFactor: Float = 1f, val splitAt: Int = -1)
 
 enum class KeyboardMode { TEXT, SYMBOLS, SYMBOLS_MORE, NUMBER, PHONE }
 
@@ -72,6 +74,9 @@ class KeyboardLayout(val mode: KeyboardMode, val rows: List<KeyRow>, val name: S
 
     /** Grid width in units: the widest row. */
     private val units: Float = rows.maxOf { r -> r.keys.sumOf { it.width.toDouble() }.toFloat() }
+
+    /** Rows break into two halves with an opening between them (large screens). */
+    val isSplit: Boolean = rows.any { it.splitAt > 0 }
 
     var width = 0
         private set
@@ -88,23 +93,37 @@ class KeyboardLayout(val mode: KeyboardMode, val rows: List<KeyRow>, val name: S
     /**
      * Positions keys inside a [width] x [height] area. Rows narrower than the grid
      * are centered and their edge keys absorb the margin as touch area.
+     *
+     * A split layout with [splitUnit] > 0 keeps keys at that width (when they fit)
+     * and opens the spare width between the halves, centred so nothing sits on a
+     * foldable's hinge. Touch areas on either side meet in the middle of the opening.
      */
-    fun layout(width: Int, rowHeight: Float, sidePadding: Float, top: Float, gapX: Float, gapY: Float) {
+    fun layout(width: Int, rowHeight: Float, sidePadding: Float, top: Float, gapX: Float, gapY: Float, splitUnit: Float = 0f) {
         this.width = width
         this.rowHeight = rowHeight
         val usable = width - 2 * sidePadding
-        val unit = usable / units
+        val split = isSplit && splitUnit > 0f
+        val unit = if (split) minOf(splitUnit, usable / units) else usable / units
+        val gap = if (split) usable - units * unit else 0f
         keyWidth = unit - gapX
         var y = top
         for ((rowIndex, row) in rows.withIndex()) {
             val h = rowHeight * row.heightFactor
             val rowUnits = row.keys.sumOf { it.width.toDouble() }.toFloat()
-            var x = sidePadding + (units - rowUnits) * unit / 2f
+            val opening = if (row.splitAt > 0) gap else 0f
+            var x = sidePadding + (usable - rowUnits * unit - opening) / 2f
             for ((i, key) in row.keys.withIndex()) {
+                var hitLeft = if (i == 0) 0f else x
+                if (i == row.splitAt && opening > 0f) {
+                    val middle = x + opening / 2f
+                    row.keys[i - 1].hitBounds.right = middle
+                    hitLeft = middle
+                    x += opening
+                }
                 val w = key.width * unit
                 key.bounds.set(x + gapX / 2f, y + gapY / 2f, x + w - gapX / 2f, y + h - gapY / 2f)
                 key.hitBounds.set(
-                    if (i == 0) 0f else x,
+                    hitLeft,
                     if (rowIndex == 0) 0f else y,
                     if (i == row.keys.lastIndex) width.toFloat() else x + w,
                     if (rowIndex == rows.lastIndex) Float.MAX_VALUE else y + h,

@@ -5,6 +5,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
+import android.net.Uri
+import android.text.Editable
+import android.text.TextWatcher
 import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Build
@@ -20,11 +23,13 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import io.github.duddmeister.lumen.BuildConfig
 import io.github.duddmeister.lumen.R
+import io.github.duddmeister.lumen.data.GifService
 import io.github.duddmeister.lumen.ime.EngineHolder
 import io.github.duddmeister.lumen.keyboard.Icon
 import io.github.duddmeister.lumen.keyboard.Icons
@@ -61,11 +66,13 @@ class SettingsActivity : Activity() {
             )
         }
 
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        // On an unfolded foldable or a tablet the page stays a centred, readable column.
+        val content = Column(this, dp(MAX_CONTENT_WIDTH_DP))
         val scroll = ScrollView(this).apply {
+            id = R.id.settings_scroll
             isFillViewport = true
             clipToPadding = false
-            addView(content)
+            addView(content, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL))
         }
         scroll.setOnApplyWindowInsetsListener { v, insets ->
             if (Build.VERSION.SDK_INT >= 30) {
@@ -81,7 +88,7 @@ class SettingsActivity : Activity() {
         build(content)
     }
 
-    private fun build(root: LinearLayout) {
+    private fun build(root: Column) {
         val p = kit.palette
         // Hero
         root.addView(LinearLayout(this).apply {
@@ -104,6 +111,7 @@ class SettingsActivity : Activity() {
         root.addView(kit.section(getString(R.string.section_try)))
         root.addView(kit.card().apply {
             addView(EditText(this@SettingsActivity).apply {
+                id = R.id.try_field
                 hint = getString(R.string.try_hint)
                 setHintTextColor(p.secondary)
                 setTextColor(p.text)
@@ -157,6 +165,7 @@ class SettingsActivity : Activity() {
             addView(kit.divider())
             toggle(Prefs.NUMBER_ROW, R.string.number_row, null, prefs.numberRow)
             toggle(Prefs.SYMBOL_HINTS, R.string.symbol_hints, R.string.symbol_hints_summary, prefs.symbolHints)
+            toggle(Prefs.SPLIT, R.string.split_keyboard, R.string.split_keyboard_summary, prefs.splitKeyboard)
             addView(kit.slider(getString(R.string.keyboard_height), 80, 130, prefs.heightPercent, { "$it%" }) {
                 prefs.set(Prefs.HEIGHT, it)
             })
@@ -179,6 +188,46 @@ class SettingsActivity : Activity() {
             addView(kit.divider())
             toggle(Prefs.SPACE_CURSOR, R.string.space_cursor, R.string.space_cursor_summary, prefs.spaceCursor)
             toggle(Prefs.DELETE_SWIPE, R.string.delete_swipe, R.string.delete_swipe_summary, prefs.deleteSwipe, last = true)
+        })
+
+        // GIFs
+        root.addView(kit.section(getString(R.string.section_gifs)))
+        root.addView(kit.card().apply {
+            toggle(Prefs.GIFS, R.string.gifs, R.string.gifs_summary, prefs.gifs)
+            val keyField = EditText(this@SettingsActivity)
+            addView(kit.chips(getString(R.string.gif_service), GifService.entries.map { it.title }, prefs.gifService.ordinal) {
+                prefs.gifService = GifService.entries[it]
+                showGifKey(keyField)
+            })
+            addView(kit.text(getString(R.string.gif_key), 16f).apply { setPadding(dp(20), dp(14), dp(20), 0) })
+            addView(keyField.apply {
+                id = R.id.gif_key_field
+                setHintTextColor(p.secondary)
+                setTextColor(p.text)
+                textSize = 15f
+                isSingleLine = true
+                // A password-style field, so keyboards (Lumen included) never learn the key.
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                background = kit.rounded(p.chip, dp(14f))
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                showGifKey(this)
+                addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+                    override fun afterTextChanged(s: Editable?) = prefs.set(Prefs.keyPref(prefs.gifService), s?.toString()?.trim().orEmpty())
+                })
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    setMargins(dp(14), dp(8), dp(14), dp(10))
+                }
+            })
+            addView(kit.divider())
+            addView(kit.actionRow(getString(R.string.gif_get_key), getString(R.string.gif_get_key_summary), getString(R.string.gif_get_key_action)) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(prefs.gifService.keyPage)))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    // No browser: nothing to open.
+                }
+            })
         })
 
         // Privacy
@@ -212,6 +261,13 @@ class SettingsActivity : Activity() {
     private fun LinearLayout.toggle(key: String, title: Int, summary: Int?, value: Boolean, last: Boolean = false) {
         addView(kit.switchRow(getString(title), summary?.let { getString(it) }, value) { prefs.set(key, it) })
         if (!last) addView(kit.divider())
+    }
+
+    /** Puts the key saved for the chosen GIF service in [field]. */
+    private fun showGifKey(field: EditText) {
+        val service = prefs.gifService
+        field.setText(prefs.store.getString(Prefs.keyPref(service), ""))
+        field.hint = getString(if (service.builtInKey.isEmpty()) R.string.gif_key_hint else R.string.gif_key_builtin)
     }
 
     override fun onResume() {
@@ -335,7 +391,7 @@ class SettingsActivity : Activity() {
         private val ring = RectF()
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-        private val columns = 2
+        private var columns = 2
         private val pad = context.dp(14f)
         private val gap = context.dp(12f)
         private val labelSpace = context.dp(30f)
@@ -346,6 +402,8 @@ class SettingsActivity : Activity() {
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             val w = MeasureSpec.getSize(widthMeasureSpec)
+            // Three previews per row once there is room: an unfolded foldable, a tablet.
+            columns = if (w >= context.dp(WIDE_GALLERY_DP)) 3 else 2
             val cw = (w - 2 * pad - (columns - 1) * gap) / columns
             val rows = ceil(ids.size / columns.toFloat()).toInt()
             setMeasuredDimension(w, (pad + rows * (cw / 1.72f + labelSpace + gap) - gap + pad / 2).toInt())
@@ -416,5 +474,12 @@ class SettingsActivity : Activity() {
             super.performClick()
             return true
         }
+    }
+
+    private companion object {
+        /** The settings column stops growing here on large screens. */
+        const val MAX_CONTENT_WIDTH_DP = 640
+        /** Gallery width from which three previews fit per row. */
+        const val WIDE_GALLERY_DP = 520f
     }
 }
