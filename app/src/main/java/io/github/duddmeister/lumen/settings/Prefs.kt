@@ -47,6 +47,8 @@ class Prefs(context: Context) {
     val doubleSpacePeriod get() = bool(DOUBLE_SPACE, true)
     val glideTyping get() = bool(GLIDE, true)
     val glideTrail get() = bool(GLIDE_TRAIL, true)
+    /** Shows the microphone in the toolbar. */
+    val voiceTyping get() = bool(VOICE, true)
     val emojiSuggestions get() = bool(EMOJI_SUGGESTIONS, true)
     val haptics get() = bool(HAPTICS, true)
     val hapticStrength get() = int(HAPTIC_STRENGTH, 2).coerceIn(1, 3)
@@ -93,6 +95,7 @@ class Prefs(context: Context) {
         const val DOUBLE_SPACE = "double_space_period"
         const val GLIDE = "glide_typing"
         const val GLIDE_TRAIL = "glide_trail"
+        const val VOICE = "voice_typing"
         const val EMOJI_SUGGESTIONS = "emoji_suggestions"
         const val HAPTICS = "haptics"
         const val HAPTIC_STRENGTH = "haptic_strength"

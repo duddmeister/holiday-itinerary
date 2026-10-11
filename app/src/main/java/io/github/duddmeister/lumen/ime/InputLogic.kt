@@ -263,6 +263,42 @@ class InputLogic(private val host: Host) {
         host.onInputChanged()
     }
 
+    /**
+     * Commits dictated [text] at the cursor: after a space unless it starts the text or
+     * a line, capitalised where a sentence starts, and otherwise with its first word in
+     * lower case (speech services capitalise each stretch of speech).
+     */
+    fun onVoice(text: String) {
+        val said = text.trim()
+        if (said.isEmpty()) return
+        if (editor.isRaw) { host.sendRawText(said); return }
+        val ic = host.connection ?: return
+        ic.beginBatchEdit()
+        if (composing.isNotEmpty) finishComposing(ic)
+        phantomSpace = false
+        val before = ic.getTextBeforeCursor(64, 0) ?: ""
+        val spaced = before.isNotEmpty() && !before.last().isWhitespace()
+        val sentence = settings.autoCaps && editor.capitalisation &&
+            if (spaced) TextContext.atSentenceStart("$before ") else ic.getCursorCapsMode(editor.inputType) != 0
+        val words = if (sentence) said.replaceFirstChar { it.uppercaseChar() } else lowerFirstWord(said)
+        commitText(ic, if (spaced) " $words" else words)
+        ic.endBatchEdit()
+        autoSpaceInserted = false
+        lastCorrection = null
+        lastSpaceAt = 0
+        refreshPredictions(ic)
+        host.onInputChanged()
+    }
+
+    /** "Go home" becomes "go home"; "London" and "I'm" keep their capitals. */
+    private fun lowerFirstWord(said: String): String {
+        val first = said.takeWhile { it.isLetter() || it == '\'' }
+        if (first.isEmpty() || !first[0].isUpperCase() || first.drop(1).any { it.isUpperCase() }) return said
+        val lexicon = host.engine?.lexicon ?: return said
+        val lower = first.lowercase()
+        return if (lexicon.findExact(lower) >= 0) lower + said.substring(first.length) else said
+    }
+
     fun onSpace() {
         if (editor.isRaw) { host.sendRawText(" "); return }
         val ic = host.connection ?: return

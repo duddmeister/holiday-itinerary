@@ -7,9 +7,18 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Lets the Lumen app install its updates; Android asks before each one. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Voice typing: Android's speech service listens while you hold the microphone open. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Tells you when an update is out; the daily check survives restarts. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Finding the phone's speech service, for voice typing. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="false"
@@ -43,6 +52,13 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
+
+        <!-- Asks for the microphone on the keyboard's behalf. -->
+        <activity
+            android:name=".ime.VoicePermissionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Hands a sent GIF to the receiving app, one read-only grant at a time. -->
         <provider

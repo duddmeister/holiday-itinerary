@@ -19,6 +19,9 @@ make it feel at home on any phone.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, fixes missing apostrophes (`dont` → `don't`), and one
   tap of backspace undoes it.
+- **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
+  as you speak, then land in the text with the right spaces and capitals. It
+  listens in British or American English to match your spelling.
 - **British or American English.** Lumen spells the way your phone's region does
   (or the way you pick in settings): in British English, colour, favourite, realise
   and programme are words it suggests, not typos it fixes.
@@ -153,7 +156,8 @@ IP address. Nothing else you type is sent anywhere. The Lumen app asks GitHub
 whether a new version is out when you open it and once a day, and downloads
 updates from there.
 With GIF search and automatic update checks turned off, Lumen never connects on
-its own. Web search hands your search to your browser or search app. Learned
+its own. Voice typing hands what you say to your phone's speech service (usually
+Google's), which may send it online; Lumen keeps no recordings. Web search hands your search to your browser or search app. Learned
 words stay in the app's private storage, are left out of backups and transfers
 to a new phone, and can be cleared from the app. Clipboard history is kept in
 memory for an hour (pinned clips are saved), and clips that apps mark as

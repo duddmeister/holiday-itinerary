@@ -27,7 +27,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
     enum class Action(val icon: Icon) {
         TOGGLE(Icon.SPARKLE), SEARCH(Icon.SEARCH), CLIPBOARD(Icon.CLIPBOARD), EMOJI(Icon.EMOJI), GIF(Icon.GIF),
-        THEMES(Icon.PALETTE), SETTINGS(Icon.SETTINGS), HIDE(Icon.KEYBOARD_HIDE),
+        THEMES(Icon.PALETTE), SETTINGS(Icon.SETTINGS), VOICE(Icon.MIC), HIDE(Icon.KEYBOARD_HIDE),
     }
 
     interface Listener {
@@ -53,18 +53,33 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
     private val buttonSize = context.dp(44f)
-    private val withGifs = listOf(Action.SEARCH, Action.EMOJI, Action.GIF, Action.CLIPBOARD, Action.THEMES, Action.SETTINGS)
-    private val withoutGifs = withGifs - Action.GIF
-    private val toolbarActions get() = if (gifsEnabled) withGifs else withoutGifs
+
+    private fun actions() = listOfNotNull(
+        Action.SEARCH, Action.EMOJI, Action.GIF.takeIf { gifsEnabled }, Action.CLIPBOARD, Action.THEMES, Action.SETTINGS,
+        Action.VOICE.takeIf { voiceEnabled },
+    )
 
     /** Shows the GIF button; off when GIFs are turned off in settings. */
     var gifsEnabled = true
         set(value) {
             if (field != value) {
                 field = value
+                toolbarActions = actions()
                 invalidate()
             }
         }
+
+    /** Shows the microphone; off when voice typing is turned off in settings. */
+    var voiceEnabled = true
+        set(value) {
+            if (field != value) {
+                field = value
+                toolbarActions = actions()
+                invalidate()
+            }
+        }
+
+    private var toolbarActions = actions()
 
     private var pressedSlot = -1
     private var pressedAction: Action? = null
