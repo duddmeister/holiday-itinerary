@@ -85,6 +85,39 @@ class UserHistory {
         dirty = true
     }
 
+    /**
+     * Adds what [other] learned. A word or pair known to both keeps the higher count, so
+     * adding the same words twice changes nothing.
+     */
+    fun merge(other: UserHistory) {
+        for ((k, e) in other.words) {
+            val mine = words[k]
+            if (mine == null) {
+                words[k] = WordEntry(e.display, e.count, e.lastUsed)
+            } else {
+                mine.count = maxOf(mine.count, e.count)
+                if (e.lastUsed > mine.lastUsed) {
+                    mine.lastUsed = e.lastUsed
+                    mine.display = e.display
+                }
+            }
+        }
+        for ((k, p) in other.pairs) {
+            val mine = pairs[k]
+            if (mine == null) {
+                pairs[k] = PairEntry(p.next, p.count, p.lastUsed)
+            } else {
+                mine.count = maxOf(mine.count, p.count)
+                if (p.lastUsed > mine.lastUsed) {
+                    mine.lastUsed = p.lastUsed
+                    mine.next = p.next
+                }
+            }
+        }
+        dirty = true
+        if (words.size > MAX_WORDS || pairs.size > MAX_PAIRS) prune()
+    }
+
     private fun prune() {
         fun <T> trim(map: HashMap<String, T>, max: Int, count: (T) -> Int, last: (T) -> Long) {
             if (map.size <= max) return
@@ -99,14 +132,15 @@ class UserHistory {
         trim(pairs, MAX_PAIRS, { it.count }, { it.lastUsed })
     }
 
-    fun write(out: Writer) {
+    /** Writes everything learned; [saved] marks it as saved (a backup copy is not). */
+    fun write(out: Writer, saved: Boolean = true) {
         out.write("# lumen user history v1\n")
         for ((_, e) in words) out.write("w\t${e.display}\t${e.count}\t${e.lastUsed}\n")
         for ((k, p) in pairs) {
             val prev = k.substringBefore(SEPARATOR)
             out.write("p\t$prev\t${p.next}\t${p.count}\t${p.lastUsed}\n")
         }
-        dirty = false
+        if (saved) dirty = false
     }
 
     companion object {

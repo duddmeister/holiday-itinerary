@@ -32,6 +32,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import io.github.duddmeister.lumen.BuildConfig
 import io.github.duddmeister.lumen.R
 import io.github.duddmeister.lumen.data.GifService
@@ -48,6 +49,8 @@ import io.github.duddmeister.lumen.ui.Motion
 import io.github.duddmeister.lumen.ui.dp
 import io.github.duddmeister.lumen.update.UpdateAlerts
 import io.github.duddmeister.lumen.update.Updater
+import java.io.IOException
+import java.time.LocalDate
 import kotlin.math.ceil
 
 /** Lumen's home screen: setup, a live theme gallery and every setting. */
@@ -246,6 +249,10 @@ class SettingsActivity : Activity() {
             addView(kit.text(getString(R.string.gif_key), 16f).apply { setPadding(dp(20), dp(14), dp(20), 0) })
             addView(keyField.apply {
                 id = R.id.gif_key_field
+                // Always the saved key: if the field put back its own old text when the
+                // screen is rebuilt (after a restore picks another service, say), it would
+                // save that over the key.
+                isSaveEnabled = false
                 setHintTextColor(p.secondary)
                 setTextColor(p.text)
                 textSize = 15f
@@ -292,6 +299,25 @@ class SettingsActivity : Activity() {
             setPadding(dp(22), dp(12), dp(22), dp(4))
         })
 
+        // Backup
+        root.addView(kit.section(getString(R.string.section_backup)))
+        root.addView(kit.card().apply {
+            addView(kit.actionRow(getString(R.string.backup), getString(R.string.backup_summary), getString(R.string.backup_action)) {
+                choose(
+                    Intent(Intent.ACTION_CREATE_DOCUMENT)
+                        .addCategory(Intent.CATEGORY_OPENABLE)
+                        .setType("text/plain")
+                        .putExtra(Intent.EXTRA_TITLE, getString(R.string.backup_file_name, LocalDate.now().toString())),
+                    REQUEST_BACKUP,
+                )
+            })
+            addView(kit.divider())
+            addView(kit.actionRow(getString(R.string.restore), getString(R.string.restore_summary), getString(R.string.restore_action)) {
+                // A backup is plain text, but not every place that keeps files says so.
+                choose(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), REQUEST_RESTORE)
+            })
+        })
+
         // About
         root.addView(kit.section(getString(R.string.section_about)))
         root.addView(kit.card().apply {
@@ -300,6 +326,92 @@ class SettingsActivity : Activity() {
             })
         })
         root.addView(View(this), LinearLayout.LayoutParams(1, dp(32)))
+    }
+
+    // ------------------------------------------------------------ backup
+
+    /** Asks Android's file chooser for a place to save to or a file to open. */
+    private fun choose(intent: Intent, request: Int) {
+        try {
+            startActivityForResult(intent, request)
+        } catch (e: android.content.ActivityNotFoundException) {
+            Toast.makeText(this, R.string.backup_no_files, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data
+        if (resultCode != RESULT_OK || uri == null) return
+        when (requestCode) {
+            REQUEST_BACKUP -> backUp(uri)
+            REQUEST_RESTORE -> restore(uri)
+        }
+    }
+
+    /** Writes the settings and learned words to [uri], off the main thread. */
+    private fun backUp(uri: Uri) {
+        val settings = HashMap(prefs.store.all)
+        val app = applicationContext
+        EngineHolder.learned(this) { words ->
+            Thread({
+                val saved = try {
+                    val out = app.contentResolver.openOutputStream(uri, "w") ?: throw IOException("No file to write to")
+                    out.bufferedWriter().use { Backup.write(it, settings, words) }
+                    true
+                } catch (e: Exception) {
+                    // Can't write there (a full disk, a file manager that refused, an expired grant).
+                    false
+                }
+                val message = if (saved) {
+                    app.resources.getQuantityString(R.plurals.backup_saved, words.wordCount, words.wordCount)
+                } else {
+                    app.getString(R.string.backup_failed)
+                }
+                runOnUiThread { Toast.makeText(app, message, Toast.LENGTH_LONG).show() }
+            }, "lumen-backup").start()
+        }
+    }
+
+    /** Reads a backup from [uri] off the main thread, then restores it. */
+    private fun restore(uri: Uri) {
+        val app = applicationContext
+        Thread({
+            var problem = R.string.restore_failed
+            val backup = try {
+                app.contentResolver.openInputStream(uri)?.use { Backup.read(it) }
+            } catch (e: Backup.NotABackup) {
+                problem = R.string.restore_not_backup
+                null
+            } catch (e: Exception) {
+                null
+            }
+            runOnUiThread {
+                if (backup == null) {
+                    Toast.makeText(app, problem, Toast.LENGTH_LONG).show()
+                } else {
+                    restore(backup)
+                }
+            }
+        }, "lumen-restore").start()
+    }
+
+    private fun restore(backup: Backup.Contents) {
+        val edit = prefs.store.edit()
+        for ((key, value) in backup.settings) {
+            when (value) {
+                is Boolean -> edit.putBoolean(key, value)
+                is Int -> edit.putInt(key, value)
+                is Float -> edit.putFloat(key, value)
+                is String -> edit.putString(key, value)
+            }
+        }
+        edit.apply()
+        EngineHolder.restoreLearned(this, backup.words)
+        val count = backup.words.wordCount
+        Toast.makeText(applicationContext, resources.getQuantityString(R.plurals.restored, count, count), Toast.LENGTH_LONG).show()
+        // Show the settings as they now are.
+        if (!isFinishing && !isDestroyed) recreate()
     }
 
     private fun LinearLayout.toggle(key: String, title: Int, summary: Int?, value: Boolean, last: Boolean = false) {
@@ -669,6 +781,8 @@ class SettingsActivity : Activity() {
 
     private companion object {
         const val REQUEST_NOTIFICATIONS = 1
+        const val REQUEST_BACKUP = 2
+        const val REQUEST_RESTORE = 3
         /** The settings column stops growing here on large screens. */
         const val MAX_CONTENT_WIDTH_DP = 640
         /** Gallery width from which three previews fit per row. */

@@ -12,6 +12,7 @@
     <string name="section_layout">Layout</string>
     <string name="section_feel">Feel</string>
     <string name="section_privacy">Privacy</string>
+    <string name="section_backup">Backup</string>
     <string name="section_about">About</string>
 
     <string name="step_enable">Turn on Lumen</string>
@@ -94,7 +95,27 @@
     <string name="clear_learned_summary">Forget everything Lumen has learned</string>
     <string name="clear_learned_confirm">Lumen will forget the words and phrases it has learned from your typing.</string>
     <string name="clear">Clear</string>
-    <string name="privacy_note">Lumen only goes online for GIFs, sending just your GIF searches, language and region to the GIF service, and to check GitHub for its own updates. Voice typing hands what you say to your phone\'s speech service. Everything Lumen learns stays on this device, and it never learns from password or incognito fields.</string>
+    <string name="privacy_note">Lumen only goes online for GIFs, sending just your GIF searches, language and region to the GIF service, and to check GitHub for its own updates. Voice typing hands what you say to your phone\'s speech service. Everything Lumen learns stays on this device unless you back it up, and it never learns from password or incognito fields.</string>
+
+    <string name="backup">Back up</string>
+    <string name="backup_summary">Saves your settings and learned words to a file you choose. GIF keys and clipboard text are left out.</string>
+    <string name="backup_action">Save</string>
+    <string name="backup_file_name">Lumen backup %1$s.txt</string>
+    <plurals name="backup_saved">
+        <item quantity="one">Saved your settings and %1$d learned word</item>
+        <item quantity="other">Saved your settings and %1$d learned words</item>
+    </plurals>
+    <string name="backup_failed">Couldn\'t save the backup there. Try somewhere else.</string>
+    <string name="restore">Restore a backup</string>
+    <string name="restore_summary">Brings back the settings in a backup and adds the words it learned to these</string>
+    <string name="restore_action">Restore</string>
+    <plurals name="restored">
+        <item quantity="one">Restored your settings and %1$d learned word</item>
+        <item quantity="other">Restored your settings and %1$d learned words</item>
+    </plurals>
+    <string name="restore_not_backup">That file isn\'t a Lumen backup</string>
+    <string name="restore_failed">Couldn\'t read that file</string>
+    <string name="backup_no_files">There\'s no app on this phone for choosing files</string>
 
     <string name="section_updates">Updates</string>
     <string name="update_unchecked">Tap Check to look for a new version</string>

@@ -27,6 +27,8 @@ object EngineHolder {
     private val main = Handler(Looper.getMainLooper())
     private val waiting = ArrayList<() -> Unit>()
     private var loading = false
+    /** Words restored from a backup while the engine was loading, for it to take on. */
+    private val restored = ArrayList<UserHistory>()
 
     @Volatile var engine: SuggestionEngine? = null
         private set
@@ -62,10 +64,7 @@ object EngineHolder {
                 val shortcuts = assets.open("dict/${spelling.locale}_shortcuts.txt").bufferedReader().use { SuggestionEngine.readShortcuts(it) }
                 val predictions = assets.open("dict/${spelling.locale}_predictions.txt").bufferedReader().use { NextWordModel.read(it) }
                 val emoji = assets.open("emoji/keywords.txt").bufferedReader().use { SuggestionEngine.readEmojiKeywords(it) }
-                val file = File(app.filesDir, HISTORY_FILE)
-                val stored = if (readHistory && file.isFile) {
-                    try { file.bufferedReader().use { UserHistory.read(it) } } catch (e: Exception) { UserHistory() }
-                } else UserHistory()
+                val stored = if (readHistory) readStored(app) else UserHistory()
                 Log.i(TAG, "Dictionary ready: ${lexicon.wordCount} words (${spelling.locale}) in ${System.currentTimeMillis() - started} ms")
                 main.post { publish(app, spelling, lexicon, shortcuts, predictions, emoji, stored) }
             } catch (e: Exception) {
@@ -83,6 +82,9 @@ object EngineHolder {
         // Another spelling was chosen while this one loaded.
         if (wanted != spelling) { start(app); return }
         val history = engine?.history ?: stored
+        restored.forEach { history.merge(it) }
+        val restoring = restored.isNotEmpty()
+        restored.clear()
         val built = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
         val gestures = GestureDecoder(lexicon, history)
         // Snapshot learned words here, on the thread that owns the history.
@@ -90,6 +92,7 @@ object EngineHolder {
         engine = built
         decoder = null
         this.spelling = spelling
+        if (restoring) save(app)
         waiting.forEach { it() }
         waiting.clear()
         io.execute {
@@ -103,15 +106,69 @@ object EngineHolder {
         val history = engine?.history ?: return
         if (!history.dirty) return
         val text = StringWriter().also { history.write(it) }.toString()
-        val dir = context.applicationContext.filesDir
+        val app = context.applicationContext
+        io.execute { writeStored(app, text) }
+    }
+
+    /**
+     * A copy of everything learned, for a backup: the running engine's words, else
+     * the saved ones. [done] runs on the main thread.
+     */
+    fun learned(context: Context, done: (UserHistory) -> Unit) {
+        val running = engine
+        if (running != null) {
+            val copy = StringWriter().also { running.history.write(it, saved = false) }.toString()
+            done(UserHistory.read(copy.reader().buffered()))
+            return
+        }
+        val app = context.applicationContext
         io.execute {
-            try {
-                val tmp = File(dir, "$HISTORY_FILE.tmp")
-                tmp.writeText(text)
-                if (!tmp.renameTo(File(dir, HISTORY_FILE))) Log.w(TAG, "Could not replace learned words")
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not save learned words", e)
+            val stored = readStored(app)
+            main.post { done(stored) }
+        }
+    }
+
+    /** Adds words learned elsewhere (restored from a backup) to what has been learned here. */
+    fun restoreLearned(context: Context, words: UserHistory) {
+        val app = context.applicationContext
+        val running = engine
+        when {
+            running != null -> {
+                running.history.merge(words)
+                save(app)
+                // Built again around the same words, so glide typing knows the new ones too.
+                if (!loading) {
+                    wanted = spelling
+                    start(app)
+                }
             }
+            loading -> restored.add(words)
+            // Nothing loaded: add them to the saved words (a later load reads after this).
+            else -> io.execute {
+                val stored = readStored(app)
+                stored.merge(words)
+                writeStored(app, StringWriter().also { stored.write(it) }.toString())
+            }
+        }
+    }
+
+    private fun readStored(app: Context): UserHistory {
+        val file = File(app.filesDir, HISTORY_FILE)
+        if (!file.isFile) return UserHistory()
+        return try {
+            file.bufferedReader().use { UserHistory.read(it) }
+        } catch (e: Exception) {
+            UserHistory()
+        }
+    }
+
+    private fun writeStored(app: Context, text: String) {
+        try {
+            val tmp = File(app.filesDir, "$HISTORY_FILE.tmp")
+            tmp.writeText(text)
+            if (!tmp.renameTo(File(app.filesDir, HISTORY_FILE))) Log.w(TAG, "Could not replace learned words")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not save learned words", e)
         }
     }
 

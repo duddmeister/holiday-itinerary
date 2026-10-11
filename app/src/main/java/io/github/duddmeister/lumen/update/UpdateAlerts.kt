@@ -11,6 +11,7 @@ import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import io.github.duddmeister.lumen.BuildConfig
 import io.github.duddmeister.lumen.R
 import io.github.duddmeister.lumen.settings.Prefs
@@ -23,6 +24,7 @@ import java.io.IOException
  * in the background while automatic checks are on, and one notification per version.
  */
 object UpdateAlerts {
+    private const val TAG = "Lumen"
     private const val JOB_ID = 7001
     private const val CHANNEL = "updates"
     private const val NOTIFICATION_ID = 1
@@ -32,21 +34,30 @@ object UpdateAlerts {
     /** On the intent that opens the app: start the update as soon as it's found. */
     const val EXTRA_INSTALL = "io.github.duddmeister.lumen.extra.INSTALL_UPDATE"
 
-    /** Keeps the daily check scheduled while automatic checks are on, and cancelled while they're off. */
+    /**
+     * Keeps the daily check scheduled while automatic checks are on, and cancelled while
+     * they're off. The app and the keyboard both call this as they start, so it never
+     * throws: if Android won't schedule the check, there are no update notifications,
+     * and opening the app still finds updates.
+     */
     fun sync(context: Context) {
-        val scheduler = context.getSystemService(JobScheduler::class.java) ?: return
-        if (!Updater.enabled || !Prefs(context).autoUpdates) {
-            scheduler.cancel(JOB_ID)
-            return
+        try {
+            val scheduler = context.getSystemService(JobScheduler::class.java) ?: return
+            if (!Updater.enabled || !Prefs(context).autoUpdates) {
+                scheduler.cancel(JOB_ID)
+                return
+            }
+            if (scheduler.getPendingJob(JOB_ID) != null) return
+            scheduler.schedule(
+                JobInfo.Builder(JOB_ID, ComponentName(context, UpdateCheckJob::class.java))
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setPeriodic(DAY_MS, FLEX_MS)
+                    .setPersisted(true)
+                    .build(),
+            )
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Could not schedule the daily update check", e)
         }
-        if (scheduler.getPendingJob(JOB_ID) != null) return
-        scheduler.schedule(
-            JobInfo.Builder(JOB_ID, ComponentName(context, UpdateCheckJob::class.java))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setPeriodic(DAY_MS, FLEX_MS)
-                .setPersisted(true)
-                .build(),
-        )
     }
 
     /** Looks for a newer release and announces it, once per version. Blocks: not for the main thread. */
