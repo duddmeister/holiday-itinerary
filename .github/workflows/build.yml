@@ -10,12 +10,33 @@ jobs:
   build:
     name: Test, lint and build APKs
     runs-on: ubuntu-latest
+    permissions:
+      # Builds on main publish themselves as a release, which the app updates from.
+      contents: write
     env:
       # Optional: a GIPHY or KLIPY API key baked into the APKs so GIF search works out of the box.
       GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
       KLIPY_API_KEY: ${{ secrets.KLIPY_API_KEY }}
+      # Optional, together with LUMEN_SIGNING_KEY: Lumen's own signing key, so each build
+      # installs over the last and the app can update itself.
+      LUMEN_SIGNING_PASSWORD: ${{ secrets.LUMEN_SIGNING_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The version code is the number of commits.
+          fetch-depth: 0
+
+      - name: Version and signing key
+        env:
+          LUMEN_SIGNING_KEY: ${{ secrets.LUMEN_SIGNING_KEY }}
+        run: |
+          echo "LUMEN_VERSION_CODE=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+          if [ -n "$LUMEN_SIGNING_KEY" ] && [ -n "$LUMEN_SIGNING_PASSWORD" ]; then
+            printf '%s' "$LUMEN_SIGNING_KEY" | base64 --decode --ignore-garbage > "$RUNNER_TEMP/lumen.p12"
+            echo "LUMEN_SIGNING_KEY_FILE=$RUNNER_TEMP/lumen.p12" >> "$GITHUB_ENV"
+          else
+            echo "::notice::No LUMEN_SIGNING_KEY secrets, so these APKs use the debug key: they can't update an installed Lumen, and no release is published."
+          fi
 
       - uses: actions/setup-java@v5
         with:
@@ -44,6 +65,20 @@ jobs:
           name: lumen-apk
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
+
+      - name: Publish release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.LUMEN_SIGNING_KEY_FILE != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="1.0.$LUMEN_VERSION_CODE"
+          if gh release view "v$version" > /dev/null 2>&1; then
+            echo "Lumen $version is already released."
+            exit 0
+          fi
+          cp app/build/outputs/apk/release/app-release.apk "lumen-$version.apk"
+          gh release create "v$version" "lumen-$version.apk" --target "$GITHUB_SHA" \
+            --title "Lumen $version" --generate-notes --latest
 
       - name: Upload reports
         if: failure()

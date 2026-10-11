@@ -3,8 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Only for GIFs: GIF search and the GIFs themselves. -->
+    <!-- For GIFs, and for the Lumen app to fetch its own updates. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the Lumen app install its updates; Android asks before each one. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:allowBackup="false"
@@ -45,5 +47,10 @@
             android:authorities="${applicationId}.gifs"
             android:exported="false"
             android:grantUriPermissions="true" />
+
+        <!-- Hears from Android's package installer while an update installs. -->
+        <receiver
+            android:name=".update.UpdateReceiver"
+            android:exported="false" />
     </application>
 </manifest>

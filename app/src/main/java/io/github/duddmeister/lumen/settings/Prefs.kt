@@ -52,6 +52,8 @@ class Prefs(context: Context) {
     val deleteSwipe get() = bool(DELETE_SWIPE, true)
     val longPressDelay get() = int(LONG_PRESS, 300).coerceIn(150, 700)
     val gifs get() = bool(GIFS, true)
+    /** Look for a new version of Lumen whenever the app opens. */
+    val autoUpdates get() = bool(AUTO_UPDATES, true)
 
     var gifService: GifService
         get() = GifService.of(store.getString(GIF_SERVICE, null)) ?: GifService.default
@@ -90,6 +92,7 @@ class Prefs(context: Context) {
         const val DELETE_SWIPE = "delete_swipe"
         const val LONG_PRESS = "long_press_delay"
         const val GIFS = "gifs"
+        const val AUTO_UPDATES = "auto_updates"
         const val GIF_SERVICE = "gif_service"
         const val GIPHY_KEY = "giphy_api_key"
         const val KLIPY_KEY = "klipy_api_key"

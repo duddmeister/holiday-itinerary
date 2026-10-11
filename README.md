@@ -56,13 +56,38 @@ make it feel at home on any phone.
 
 ## Install
 
-1. Get an APK: open this repository's **Actions** tab, pick the latest **Build**
-   run and download the `lumen-apk` artifact. Or build it yourself (below).
-2. Install it and open **Lumen**.
-3. Follow the two setup steps: turn Lumen on, then switch to it.
+1. Download `lumen-<version>.apk` from the
+   [latest release](../../releases/latest) and install it.
+2. Open **Lumen** and follow the two setup steps: turn Lumen on, then switch to it.
 
-The release APK is signed with a debug key so it installs directly. Use your
-own signing key before publishing it anywhere.
+### Updates
+
+The Lumen app keeps itself current. When a new version is out, its **Updates**
+card offers it, and **Update** installs it over the old one, keeping your
+settings and learned words. Android asks once to let Lumen install apps, and
+then confirms each update. Turn off **Check automatically** to check only when
+you tap **Check**.
+
+### Releases (for the repository owner)
+
+Every merge to `main` is built, signed with Lumen's own key and published as a
+release, which is what the app updates from. The key lives in two repository
+secrets (**Settings → Secrets and variables → Actions**), never in the code:
+
+- `LUMEN_SIGNING_KEY`: a PKCS12 keystore holding a key named `lumen`, base64-encoded.
+- `LUMEN_SIGNING_PASSWORD`: its password.
+
+```sh
+keytool -genkeypair -keystore lumen.p12 -storetype PKCS12 -alias lumen \
+  -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Lumen"
+base64 -w0 lumen.p12   # paste the output into LUMEN_SIGNING_KEY
+```
+
+Keep a copy of the keystore and its password somewhere safe: with a new key,
+the next version has to be installed fresh. Whoever holds the key can ship
+updates to your keyboard, so never commit it. Without the secrets, CI signs with
+a throwaway debug key and publishes no release; those APKs (the `lumen-apk`
+artifact of each **Build** run) only install after uninstalling Lumen.
 
 ## GIFs
 
@@ -98,6 +123,7 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 | `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words, a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning, the glide decoder and emoji search. Unit-tested on the JVM. |
 | `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, cursor and delete swipes, animations) and the glide trail. |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
+| `update/` | The in-app updater: finds the latest GitHub release, downloads it and hands it to Android's package installer. |
 | `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets. |
 | `data/` | Emoji data, clipboard history, and GIFs: the GIPHY/KLIPY client, preview loading and the content provider that hands GIFs to apps. |
 | `theme/` | Theme definitions, including Material You colours from the wallpaper. |
@@ -108,12 +134,14 @@ in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Privacy
 
-Lumen only goes online for GIFs. Opening the GIF panel loads trending GIFs from
-the service you chose (GIPHY or KLIPY), and your GIF searches go there too, with
-your language and region; like any website, the service also sees your IP
-address. Nothing else you type is sent anywhere, and with GIF search turned off
-Lumen never connects at all. Web search hands your search to your browser or
-search app. Learned words stay in the app's private storage, are left out of
-backups and transfers to a new phone, and can be cleared from the app. Clipboard
-history is kept in memory for an hour (pinned clips are saved), and clips that
-apps mark as sensitive, such as passwords, are never recorded.
+The keyboard only goes online for GIFs. Opening the GIF panel loads trending
+GIFs from the service you chose (GIPHY or KLIPY), and your GIF searches go there
+too, with your language and region; like any website, the service also sees your
+IP address. Nothing else you type is sent anywhere. The Lumen app asks GitHub
+whether a new version is out when you open it, and downloads updates from there.
+With GIF search and automatic update checks turned off, Lumen never connects on
+its own. Web search hands your search to your browser or search app. Learned
+words stay in the app's private storage, are left out of backups and transfers
+to a new phone, and can be cleared from the app. Clipboard history is kept in
+memory for an hour (pinned clips are saved), and clips that apps mark as
+sensitive, such as passwords, are never recorded.
