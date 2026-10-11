@@ -543,8 +543,40 @@ class InputLogic(private val host: Host) {
             if (n in 1 until after.length && Character.isLowSurrogate(after[n])) n++
             pos + n
         }
+        moveCursor(ic, target)
+    }
+
+    /** Space-bar trackpad by words: back to the start of a word, or on to the end of one. */
+    fun onCursorWords(words: Int) {
+        val ic = host.connection ?: return
+        val pos = if (words < 0) selectionStart else selectionEnd
+        if (pos < 0 || editor.isRaw) {
+            // No text to read word boundaries from: move by characters instead.
+            onCursorSteps(words)
+            return
+        }
+        if (composing.isNotEmpty) finishComposing(ic)
+        phantomSpace = false
+        autoSpaceInserted = false
+        lastCorrection = null
+        val reach = WORD_JUMP_REACH * abs(words)
+        val delta = if (words < 0) {
+            TextContext.wordJump(ic.getTextBeforeCursor(reach, 0) ?: "", "", words)
+        } else {
+            TextContext.wordJump("", ic.getTextAfterCursor(reach, 0) ?: "", words)
+        }
+        if (delta != 0) moveCursor(ic, pos + delta)
+    }
+
+    /**
+     * Puts the cursor at [target] and counts it as there straight away: during a slide
+     * the next step comes before the editor reports this one.
+     */
+    private fun moveCursor(ic: InputConnection, target: Int) {
         ic.setSelection(target, target)
         expect(target, target)
+        selectionStart = target
+        selectionEnd = target
         handler.removeCallbacks(resume)
         handler.postDelayed(resume, RESUME_DELAY_MS)
     }
@@ -787,6 +819,8 @@ class InputLogic(private val host: Host) {
         private const val AUTOCORRECT_TRIGGERS = ".,!?;:)\"…"
         private const val DOUBLE_SPACE_MS = 1500L
         private const val RESUME_DELAY_MS = 120L
+        /** Text read per word jump: plenty for the longest words. */
+        private const val WORD_JUMP_REACH = 256
         private const val BELATED_MS = 1500L
         private const val WORD_DELETE_AFTER = 18
         private const val MAX_PENDING = 32

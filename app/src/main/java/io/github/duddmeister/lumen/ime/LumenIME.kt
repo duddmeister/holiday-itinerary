@@ -336,6 +336,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && typingIntoApp
             trailEnabled = prefs.glideTrail
             cursorControlEnabled = prefs.spaceCursor && typingIntoApp
+            cursorByWords = prefs.cursorByWords
             deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
@@ -590,9 +591,37 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     override fun onCursorSteps(steps: Int) {
         if (search != null) return
-        logic.onCursorSteps(steps)
+        if (prefs.cursorByWords) logic.onCursorWords(steps) else logic.onCursorSteps(steps)
         feedback.tick()
         updateShift()
+    }
+
+    /**
+     * A quick swipe along the space bar. Right finishes the word being typed with the
+     * suggestion; otherwise the cursor jumps a word that way.
+     */
+    override fun onSpaceSwipe(direction: Int) {
+        if (search != null) return
+        feedback.tick()
+        when {
+            direction > 0 && logic.composing.isNotEmpty -> {
+                autoCapsSuppressed = false
+                // A glided word is already the best match: just finish it.
+                if (logic.composingFromGesture) logic.onSpace() else logic.onPick(bestSuggestion(), emoji = false)
+            }
+            else -> logic.onCursorWords(direction)
+        }
+        updateShift()
+    }
+
+    /** The strip's highlighted suggestion for the word being typed: its correction, else the typed word if it's a word, else the best other suggestion. */
+    private fun bestSuggestion(): String {
+        val r = logic.result
+        val typed = logic.composing.toString()
+        return r.autoCorrection
+            ?: typed.takeIf { r.typedIsWord }
+            ?: r.candidates.firstOrNull()?.text
+            ?: typed
     }
 
     override fun onDeleteSwipe(words: Int, done: Boolean) {

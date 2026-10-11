@@ -208,6 +208,10 @@ class SettingsActivity : Activity() {
             addView(kit.slider(getString(R.string.long_press_delay), 150, 700, prefs.longPressDelay, { "$it ms" }) { prefs.set(Prefs.LONG_PRESS, it) })
             addView(kit.divider())
             toggle(Prefs.SPACE_CURSOR, R.string.space_cursor, R.string.space_cursor_summary, prefs.spaceCursor)
+            addView(kit.chips(getString(R.string.cursor_by), listOf(getString(R.string.cursor_words), getString(R.string.cursor_letters)), if (prefs.cursorByWords) 0 else 1) {
+                prefs.set(Prefs.CURSOR_BY_WORDS, it == 0)
+            })
+            addView(kit.divider())
             toggle(Prefs.DELETE_SWIPE, R.string.delete_swipe, R.string.delete_swipe_summary, prefs.deleteSwipe, last = true)
         })
 

@@ -7,6 +7,28 @@ object TextContext {
 
     fun isSentenceEnd(c: Char): Boolean = c == '.' || c == '!' || c == '?' || c == '…'
 
+    /**
+     * How far the cursor moves for [words] word jumps: back to the start of each word
+     * when negative (reading [before]), forward to the end of each word when positive
+     * (reading [after]). Stops at the end of the text it is given.
+     */
+    fun wordJump(before: CharSequence, after: CharSequence, words: Int): Int {
+        if (words < 0) {
+            var i = before.length
+            repeat(-words) {
+                while (i > 0 && !isWordChar(before[i - 1])) i--
+                while (i > 0 && isWordChar(before[i - 1])) i--
+            }
+            return i - before.length
+        }
+        var i = 0
+        repeat(words) {
+            while (i < after.length && !isWordChar(after[i])) i++
+            while (i < after.length && isWordChar(after[i])) i++
+        }
+        return i
+    }
+
     /** The word that ends exactly at the end of [before] ("" if a separator precedes the cursor). */
     fun wordBeforeCursor(before: CharSequence): String {
         var i = before.length

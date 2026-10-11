@@ -31,9 +31,12 @@ make it feel at home on any phone.
   Android 12+), Graphite, Midnight (AMOLED), Frost, Paper, Sakura, Ocean, Forest
   and Sunset. Four key shapes plus a borderless mode, all switchable from the keyboard.
 - **Everything at hand.** Emoji with skin tones and recents, clipboard history
-  with pins and a one-tap paste chip, space-bar cursor control, swipe left from
-  backspace to delete whole words, long-press for accents and symbols, an optional
-  number row, and QWERTY, QWERTZ, AZERTY, Colemak and Dvorak layouts.
+  with pins and a one-tap paste chip, swipe left from backspace to delete whole
+  words, long-press for accents and symbols, an optional number row, and QWERTY,
+  QWERTZ, AZERTY, Colemak and Dvorak layouts.
+- **A space bar that does more.** Slide along it to move the cursor a word at a
+  time (or a letter, if you prefer). A quick swipe left jumps back a word, and a
+  quick swipe right finishes the word you're typing with the suggestion.
 - **Made for foldables.** Open a foldable (or use a tablet) and the keys split
   between your thumbs, with the opening over the hinge and a space bar on each side.
   Fold or unfold mid-word and you carry on with the same word, suggestions, page
