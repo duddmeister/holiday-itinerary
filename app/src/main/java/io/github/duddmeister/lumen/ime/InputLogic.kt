@@ -62,6 +62,9 @@ class InputLogic(private val host: Host) {
     var gestureAlternatives: List<String> = emptyList()
         private set
     private var composingRestored = false
+
+    /** A word is being typed or was just glided, as opposed to one the cursor came to rest on. */
+    val typingWord: Boolean get() = composing.isNotEmpty && !composingRestored
     private var composeStart = -1
     private var composingContext: List<String> = emptyList()
 
@@ -520,7 +523,7 @@ class InputLogic(private val host: Host) {
         host.onInputChanged()
     }
 
-    /** Space-bar trackpad. */
+    /** Moves the cursor [steps] characters (back when negative). */
     fun onCursorSteps(steps: Int) {
         val ic = host.connection ?: return
         if (composing.isNotEmpty) finishComposing(ic)
@@ -546,7 +549,7 @@ class InputLogic(private val host: Host) {
         moveCursor(ic, target)
     }
 
-    /** Space-bar trackpad by words: back to the start of a word, or on to the end of one. */
+    /** Space-bar swipes: back to the start of a word, or on to the end of one. */
     fun onCursorWords(words: Int) {
         val ic = host.connection ?: return
         val pos = if (words < 0) selectionStart else selectionEnd

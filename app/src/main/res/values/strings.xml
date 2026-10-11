@@ -61,10 +61,7 @@
     <string name="sound_volume">Sound volume</string>
     <string name="long_press_delay">Long-press delay</string>
     <string name="space_cursor">Space-bar swipes</string>
-    <string name="space_cursor_summary">Slide to move the cursor. Swipe left to jump back a word, or right to finish the word you\'re typing.</string>
-    <string name="cursor_by">Sliding moves the cursor by</string>
-    <string name="cursor_words">Words</string>
-    <string name="cursor_letters">Letters</string>
+    <string name="space_cursor_summary">Swipe left to jump back a word. Swipe right to finish the word you\'re typing, or jump forward a word.</string>
     <string name="delete_swipe">Swipe to delete</string>
     <string name="delete_swipe_summary">Slide left from backspace to select and delete words</string>
 
