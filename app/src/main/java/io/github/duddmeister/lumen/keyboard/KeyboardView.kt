@@ -41,8 +41,10 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         fun onLongPress(key: Key): Boolean
         /** The long-press panel opened (for haptic feedback). */
         fun onPanelOpened()
-        /** Space-bar trackpad: move the cursor by [steps] characters. */
+        /** Space-bar trackpad: move the cursor by [steps] (words or characters, see [cursorByWords]). */
         fun onCursorSteps(steps: Int)
+        /** A quick swipe along the space bar, rather than a slide: [direction] is -1 for left, 1 for right. */
+        fun onSpaceSwipe(direction: Int)
         /** Swipe left on delete selects [words] words; [done] once the finger lifts. */
         fun onDeleteSwipe(words: Int, done: Boolean)
         fun onGestureStart()
@@ -68,6 +70,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     var gesturesEnabled = true
     var trailEnabled = true
     var cursorControlEnabled = true
+    /** Space-bar slides step by words (a longer stride) rather than characters. */
+    var cursorByWords = true
     var deleteSwipeEnabled = true
     var lightEffects = true
     var hintsVisible = true
@@ -96,6 +100,9 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         var mode = Mode.PRESS
         var panel: PopupPanel? = null
         var anchorX = 0f
+        /** When a space-bar swipe began, and whether it has turned into a slide. */
+        var swipeAt = 0L
+        var sliding = false
         var words = 0
         var repeats = 0
         var moved = false
@@ -408,6 +415,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                         removeCallbacks(p)
                         p.mode = Mode.CURSOR
                         p.anchorX = x
+                        p.swipeAt = time
+                        p.sliding = false
                         invalidate()
                     }
                     key.code == KeyCodes.DELETE && deleteSwipeEnabled && dx < -touchSlop * 2f -> {
@@ -454,12 +463,11 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 invalidate()
             }
             Mode.CURSOR -> {
-                val step = maxOf(l.keyWidth * 0.32f, touchSlop)
-                val steps = ((x - p.anchorX) / step).toInt()
-                if (steps != 0) {
-                    p.anchorX += steps * step
-                    listener?.onCursorSteps(steps)
-                }
+                // A quick flick is a single swipe, decided when the finger lifts; held a
+                // moment longer, it becomes a slide that moves the cursor with the finger.
+                if (!p.sliding && time - p.swipeAt < FLICK_MS) return
+                p.sliding = true
+                cursorSteps(l, p, x)
             }
             Mode.DELETE_SWIPE -> {
                 val words = ((p.anchorX - x) / (l.keyWidth * 0.9f)).toInt().coerceAtLeast(0)
@@ -504,12 +512,31 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 listener?.onGestureEnd(trail)
                 invalidate()
             }
-            Mode.CURSOR -> releaseVisual(key)
+            Mode.CURSOR -> {
+                releaseVisual(key)
+                val l = layout
+                when {
+                    p.sliding -> if (l != null) cursorSteps(l, p, x)
+                    time - p.swipeAt < FLICK_MS -> listener?.onSpaceSwipe(if (x >= p.downX) 1 else -1)
+                    // Slow and short: still a slide, however little it moved.
+                    l != null -> cursorSteps(l, p, x)
+                }
+            }
             Mode.DELETE_SWIPE -> {
                 releaseVisual(key)
                 listener?.onDeleteSwipe(p.words, true)
             }
             Mode.DONE -> releaseVisual(key)
+        }
+    }
+
+    /** Moves the cursor one step for each stride the finger has slid along the space bar. */
+    private fun cursorSteps(l: KeyboardLayout, p: Pointer, x: Float) {
+        val step = if (cursorByWords) l.keyWidth * WORD_STRIDE else maxOf(l.keyWidth * LETTER_STRIDE, touchSlop)
+        val steps = ((x - p.anchorX) / step).toInt()
+        if (steps != 0) {
+            p.anchorX += steps * step
+            listener?.onCursorSteps(steps)
         }
     }
 
@@ -603,6 +630,11 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         private const val REPEAT_INTERVAL_MS = 70L
         private const val REPEAT_MIN_MS = 35L
         private const val GESTURE_NOTIFY_MS = 90L
+        /** A space-bar swipe released sooner than this is a flick, not a slide. */
+        internal const val FLICK_MS = 200L
+        /** How far the finger slides, in key widths, per word or per letter the cursor moves. */
+        internal const val WORD_STRIDE = 0.8f
+        internal const val LETTER_STRIDE = 0.32f
         private const val PAD_MAX_WIDTH_DP = 520f
         /** Split key width is the view width over this, within the limits below. */
         private const val SPLIT_UNITS_ACROSS = 14.5f
