@@ -110,6 +110,45 @@ class SuggestionEngineTest {
         assertNull(corrected("bur"))
     }
 
+    /** Chat shorthand is left alone, not turned into the nearest dictionary word ("nah" was "Nash"). */
+    @Test
+    fun keepsChatShorthand() {
+        for (w in listOf("nah", "ppl", "wtf", "rly", "convo", "yea", "iirc", "lolol", "hmu", "ngl", "imma", "bruh", "lowkey", "kk", "idk", "tbh")) {
+            assertNull("$w was changed to ${corrected(tapped(w))}", corrected(tapped(w)))
+        }
+        // Recognised, but never offered.
+        assertTrue(result("wt").candidates.none { it.text == "wtf" })
+    }
+
+    @Test
+    fun addsApostrophesToContractions() {
+        val cases = mapOf(
+            "hes" to "he's", "shes" to "she's", "theyre" to "they're", "youll" to "you'll",
+            "havent" to "haven't", "wouldve" to "would've", "whos" to "who's", "ive" to "I've",
+        )
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        // A real word is only offered its contraction.
+        assertNull(corrected(tapped("were")))
+        assertEquals("we're", result("were").candidates.first().text)
+    }
+
+    /** Two-letter slips, even with the tap squarely on the key beside: "ti" for "to". */
+    @Test
+    fun correctsTwoLetterSlips() {
+        val cases = mapOf("ti" to "to", "ys" to "us", "wr" to "we", "ib" to "in", "pf" to "of", "ot" to "to")
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+    }
+
+    /** Lower-case typing is corrected to well-known names, not to abbreviations or little-known names. */
+    @Test
+    fun correctsToNamesPeopleUse() {
+        val cases = mapOf("facebok" to "Facebook", "chirstmas" to "Christmas", "englsih" to "English", "londno" to "London")
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        assertTrue(corrected(tapped("icrd")) != "ICRC")
+        // A guess far behind the best one isn't forced on the user ("gir" was "air").
+        assertNull(corrected(tapped("gir")))
+    }
+
     /** A rare word the user has typed before, or put back after a correction, is theirs. */
     @Test
     fun keepsRareWordsTheUserUses() {

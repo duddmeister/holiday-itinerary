@@ -53,7 +53,53 @@ EXTRA_WORDS = {
     "tmr": 60, "bday": 90, "gf": 80, "bff": 80, "hbd": 70, "lmk": 100, "np": 90, "ty": 100,
     "tysm": 80, "ily": 80, "wyd": 80, "hbu": 70, "wbu": 70, "idc": 80, "ikr": 80, "rn": 100,
     "ofc": 90, "vid": 90, "vids": 80,
+    "nah": 120, "yea": 110, "ppl": 110, "rly": 70, "obv": 80, "obvs": 60, "iirc": 70,
+    "convo": 90, "convos": 70, "lolol": 70, "lolz": 50, "hmu": 70, "ngl": 90, "istg": 60,
+    "idek": 50, "imma": 90, "ima": 70, "tryna": 80, "finna": 60, "bruh": 100, "fam": 80,
+    "lowkey": 90, "highkey": 60, "vibing": 70, "yeet": 50, "welp": 60, "ughh": 50,
+    "hmmm": 70, "mmm": 70, "uhh": 60, "umm": 80, "ummm": 50, "ahh": 70, "ahhh": 50,
+    "hahah": 60, "lmaoo": 70, "lmaooo": 50, "omgg": 40, "plss": 40, "thanx": 50, "nw": 60,
+    "gn": 80, "gnight": 40, "tbf": 70, "tbt": 50, "ftw": 60, "smth": 80, "sth": 50,
+    "atm": 90, "tmi": 60, "afk": 70, "gg": 80, "ez": 50, "txt": 80, "txting": 50,
+    "insta": 80, "Snapchat": 90, "fb": 70, "tldr": 50, "srsly": 50, "cya": 80, "gtg": 70,
+    "otw": 60, "wya": 70, "xoxo": 70, "xo": 60, "bae": 70, "hun": 70, "luv": 60,
+    "aight": 70, "ight": 60, "alr": 60, "bcuz": 50, "kk": 80, "k": 80, "tyvm": 50,
+    "ilysm": 50, "yh": 50, "dw": 50, "xd": 60, "mb": 60,
 }
+
+# ("ik" and "gl" stay out: each is a slip away from "ok" or "go".)
+
+# Everyday chat words that AOSP's list, built from formal writing, ranks as rare or
+# flags by mistake: raised to at least this frequency, and offered again. Rare words
+# can be taken for slips ("nope" for "hope"), so these need their real standing.
+CHAT_WORDS = {
+    "yeah": 140, "yep": 110, "yup": 100, "nope": 110, "haha": 120, "hehe": 100, "hmm": 100,
+    "hah": 70, "pls": 110, "def": 80, "prob": 70, "probs": 60, "asap": 110, "cos": 70,
+    "coz": 60, "hon": 70, "cmon": 70, "gonna": 120, "wanna": 115, "gotta": 100, "kinda": 110,
+    "sorta": 80, "dunno": 90, "lemme": 90, "gimme": 80, "oof": 70, "yikes": 80, "okie": 60,
+    "ugh": 90, "oops": 90, "whoops": 70, "yay": 100, "ooh": 80, "bro": 100, "sis": 80,
+    "babe": 80, "aw": 100, "ya": 90, "ha": 90, "ow": 70, "hi": 130, "Hi": 120,
+    # Apps everyone names, which the list predates or undersells.
+    "Instagram": 110, "WhatsApp": 110, "Spotify": 100, "Netflix": 100, "Facebook": 110,
+    "Twitter": 100, "YouTube": 120, "Google": 120, "iPhone": 110,
+}
+
+# Contractions typed without the apostrophe, beyond those in AOSP's list. Where the
+# typed form is a word too ("were"), the contraction is only offered, never forced.
+EXTRA_SHORTCUTS = {
+    "hes": "he's", "shes": "she's", "theyre": "they're", "theyll": "they'll", "theyve": "they've",
+    "theyd": "they'd", "youll": "you'll", "youve": "you've", "youre": "you're", "whos": "who's",
+    "weve": "we've", "werent": "weren't", "hasnt": "hasn't", "havent": "haven't", "hadnt": "hadn't",
+    "doesnt": "doesn't", "didnt": "didn't", "isnt": "isn't", "wasnt": "wasn't", "wouldnt": "wouldn't",
+    "couldnt": "couldn't", "shouldnt": "shouldn't", "wouldve": "would've", "couldve": "could've",
+    "shouldve": "should've", "mightve": "might've", "mustve": "must've", "itll": "it'll",
+    "thatll": "that'll", "theres": "there's", "thats": "that's", "mustnt": "mustn't",
+    "neednt": "needn't", "shant": "shan't", "ive": "I've", "dont": "don't",
+    "were": "we're", "wed": "we'd", "shell": "she'll", "hell": "he'll", "well": "we'll", "its": "it's",
+}
+
+# Recognised, so never "corrected" into something else, but never offered either.
+EXTRA_OFFENSIVE = {"wtf": 90, "stfu": 50, "ffs": 50, "fml": 50, "omfg": 40, "idgaf": 40, "tf": 50}
 OUT_DIR = os.path.join(ROOT, "app", "src", "main", "assets", "dict")
 
 # British spellings and their American forms, as rules on whole words: a word in the
@@ -148,6 +194,14 @@ def read_list(path):
                 shortcuts.append((current["word"], attrs["shortcut"], mode))
     for word, freq in EXTRA_WORDS.items():
         words.setdefault(word, (freq, False))
+    for word, freq in CHAT_WORDS.items():
+        words[word] = (max(words.get(word, (0, False))[0], freq), False)
+    for word, freq in EXTRA_OFFENSIVE.items():
+        words.setdefault(word, (freq, True))
+    have = {source for source, _, _ in shortcuts}
+    for source, replacement in EXTRA_SHORTCUTS.items():
+        if source not in have:
+            shortcuts.append((source, replacement, "s" if source in words else "a"))
     return locale, words, shortcuts
 
 

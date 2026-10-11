@@ -12801,7 +12801,7 @@ Fabrication's	1
 Fabrizio	69
 Fabry's	18
 FaceTime	100
-Facebook	93
+Facebook	110
 Facebook's	47
 Facet's	1
 Facio's	1
@@ -15416,7 +15416,7 @@ Goody's	57
 Goodyear	78
 Goodyear's	37
 Goof's	1
-Google	101
+Google	120
 Google's	72
 Googler	27
 Googler's	1
@@ -17271,7 +17271,7 @@ Hezbollah	87
 Hezbollah's	58
 Hezekiah	65
 Hezekiah's	43
-Hi	93
+Hi	120
 HiFi	55
 Hialeah	66
 Hialeah's	15
@@ -18613,7 +18613,7 @@ Insomnias	1
 Inspection's	1
 Inspectorate's	10
 Inst	49
-Instagram	25
+Instagram	110
 Instrumentality's	1
 Intel	97
 Intel's	70
@@ -27626,7 +27626,7 @@ NetWare	77
 NetWare's	32
 NetZero	52
 Netcong	41
-Netflix	69
+Netflix	100
 Netherland	71
 Netherlander	23
 Netherlanders	38
@@ -36287,7 +36287,7 @@ Spoonies	1
 Spoor's	10
 Sportsnet	63
 Sportswear's	1
-Spotify	25
+Spotify	100
 Spotlight's	1
 Spouter's	1
 Sprague	79
@@ -39326,7 +39326,7 @@ Twister's	21
 Twit's	10
 Twitch's	10
 Twitcher's	1
-Twitter	88
+Twitter	100
 Twitter's	33
 Twitty	58
 Twiztid	43
@@ -41258,7 +41258,7 @@ Wharton's	55
 Whatley	56
 Whatley's	25
 Whatnots	1
-WhatsApp	25
+WhatsApp	110
 Wheatear's	10
 Wheaties	48
 Wheatland	61
@@ -42206,7 +42206,7 @@ Yoshiko	51
 Yoshiko's	1
 Yost	71
 Yost's	47
-YouTube	109
+YouTube	120
 YouTube's	57
 Young	124
 Young's	86
@@ -44250,6 +44250,7 @@ aficionado's	1
 aficionados	80
 afield	91
 afire	76
+afk	70
 aflame	70
 afloat	94
 aflutter	21
@@ -44538,6 +44539,8 @@ aha	51
 ahas	1
 ahead	129
 ahem	34
+ahh	70
+ahhh	50
 ahimsa	61
 ahistorical	61
 ahistorically	25
@@ -44554,6 +44557,7 @@ aiders	46
 aides	93
 aiding	101
 aids	105
+aight	70
 aiglet	18
 aiglets	10
 aigrette	30
@@ -45206,6 +45210,7 @@ alpinism	51
 alpinist	55
 alpinists	52
 alps	64
+alr	60
 already	144
 alright	75
 also	144
@@ -47768,7 +47773,7 @@ arête	52
 arêtes	41
 as	196
 asafetida	30
-asap	0	o
+asap	110
 asbestos	95
 ascari	21
 ascend	95
@@ -48330,6 +48335,7 @@ atlantica	49
 atlas	89
 atlas's	15
 atlases	74
+atm	90
 atmometer	1
 atmosphere	125
 atmosphere's	52
@@ -49052,7 +49058,7 @@ avulsion	55
 avulsions	35
 avuncular	55
 avunculate	30
-aw	0
+aw	100
 await	95
 awaited	100
 awaiting	105
@@ -49198,7 +49204,7 @@ babblers	71
 babbles	45
 babbling	66
 babblings	18
-babe	68
+babe	80
 babe's	15
 babel	35
 baber	15
@@ -49510,6 +49516,7 @@ badmouthed	30
 badmouthing	43
 badmouths	30
 badness	52
+bae	70
 baffle	71
 baffled	80
 bafflement	49
@@ -50625,6 +50632,7 @@ bazooka's	10
 bazookas	54
 bbl	63
 bc	80
+bcuz	50
 bday	90
 be	173
 beach	128
@@ -54692,7 +54700,7 @@ brittler	15
 brittles	10
 brittling	15
 britzka	10
-bro	59
+bro	100
 bro's	15
 broach	66
 broached	67
@@ -54919,6 +54927,7 @@ browses	44
 browsing	90
 brr	10
 brucellosis	59
+bruh	100
 bruin	34
 bruins	25
 bruise	72
@@ -60704,7 +60713,7 @@ clutters	25
 clydesdales	10
 clyster	21	o
 cm	130
-cmon	0
+cmon	70
 cnidarian	30
 cnidarians	62
 co	0
@@ -64076,6 +64085,7 @@ convincingness	1
 convivial	61
 conviviality	51
 convivially	10
+convo	90
 convocating	10
 convocation	83
 convocation's	1
@@ -64096,6 +64106,7 @@ convolve	27
 convolved	48
 convolves	10
 convolving	48
+convos	70
 convoy	117
 convoy's	64
 convoyed	61
@@ -64746,7 +64757,7 @@ corvette	88
 corvette's	37
 corvettes	84
 corvine	28
-cos	0
+cos	70
 cosa	55
 cosec	27
 cosecant	37
@@ -65440,7 +65451,7 @@ coyotes	81
 coypu	47
 coypu's	1
 coypus	31
-coz	0	o
+coz	60
 cozen	15
 cozenage	10
 cozened	18
@@ -67066,6 +67077,7 @@ cuvette	47
 cuz	90
 cw	44
 cwm	45
+cya	80
 cyan	79
 cyanide	94
 cyaniding	10
@@ -68383,7 +68395,7 @@ deescalate	23
 deescalated	1
 deescalating	15
 deescalation	23
-def	0
+def	80
 deface	57
 defaced	80
 defacement	56
@@ -74172,7 +74184,7 @@ dunnages	1
 dunned	10
 dunner	10
 dunning	25
-dunno	64
+dunno	90
 dunnock	25
 dunnocks	18
 duns	50
@@ -74305,6 +74317,7 @@ duumvirates	1
 duumvirs	34
 duvet	52
 duvets	41
+dw	50
 dwarf	108
 dwarf's	51
 dwarfed	78
@@ -79129,6 +79142,7 @@ eyra	1
 eyrie	43
 eyries	32
 eyrir	25
+ez	50
 ezPDF	25
 ezine	53
 ezines	41
@@ -79475,6 +79489,7 @@ faltered	84
 faltering	78
 falteringly	21
 falters	58
+fam	80
 fame	125
 fame's	30
 famed	114
@@ -79939,6 +79954,7 @@ façade	104
 façade's	33
 façades	80
 faïence	41
+fb	70
 fealties	10
 fealty	81
 fear	126
@@ -80421,6 +80437,7 @@ fez	0	o
 fezes	28
 fezzed	10
 fezzes	46
+ffs	50	o
 fiacre	25
 fiacres	10
 fiance	85
@@ -80890,6 +80907,7 @@ fink	35
 finking	1
 finks	1
 finless	51
+finna	60
 finnan	1
 finned	88
 finning	53
@@ -82107,6 +82125,7 @@ flyweights	28
 flywheel	82
 flywheel's	10
 flywheels	56
+fml	50	o
 fo'c's'le	21
 fo'c'sle	45
 foal	83
@@ -83747,6 +83766,7 @@ frypans	10
 ft	127
 ftp	70
 ftps	10
+ftw	60
 fubbed	1
 fubs	1
 fuchsia	62
@@ -85377,6 +85397,7 @@ geyser's	28
 geysering	18
 geysers	74
 gf	80
+gg	80
 gharial	57
 gharries	10
 gharry	1
@@ -85550,7 +85571,7 @@ gimel	45
 gimlet	51
 gimlets	10
 gimmal	15
-gimme	44
+gimme	80
 gimmer	21
 gimmick	96
 gimmick's	10
@@ -86050,6 +86071,7 @@ glyptodons	1
 glyptodont	31
 gm	62
 gmail	120
+gn	80
 gnarl	1
 gnarled	62
 gnarlier	1
@@ -86075,6 +86097,7 @@ gnawingly	1
 gnawings	10
 gnaws	44
 gneiss	72
+gnight	40
 gnocchi	50
 gnome	78
 gnome's	27
@@ -86328,7 +86351,7 @@ gonif	18
 goniometric	23
 gonk	1
 gonks	24
-gonna	96
+gonna	120
 gonorrhea	65	o
 gonorrheal	28	o
 gonzo	65
@@ -86491,7 +86514,7 @@ gothicized	15
 gothicizing	1
 goths	60
 goto	64
-gotta	79
+gotta	100
 gotten	103
 gouache	67
 gouaches	49
@@ -87548,6 +87571,7 @@ gryphon	52
 gryphon's	10
 grysbok	18
 gt	48
+gtg	70
 gu's	45
 guacamole	57
 guacamoles	1
@@ -88022,7 +88046,7 @@ gyrostats	1
 gyrus	81
 gyve	18
 gyves	10
-ha	0
+ha	90
 habanera	60
 habaneras	30
 habanero	51
@@ -88155,8 +88179,9 @@ hagiography's	1
 hagiolatry	1
 hagiology	32
 hagridden	1
-hah	0	o
-haha	45
+hah	70
+haha	120
+hahah	60
 hahaha	110
 hahnium	16
 haiduk	27
@@ -90113,7 +90138,7 @@ hey	135
 heyday	100
 heydays	37
 hgt	1
-hi	97
+hi	130
 hiatus	112
 hiatuses	52
 hibachi	46
@@ -90226,6 +90251,7 @@ highjack	10
 highjacked	25
 highjackers	1
 highjacking	30
+highkey	60
 highland	93
 highlander	50
 highlander's	10
@@ -90491,7 +90517,9 @@ hived	51
 hives	81
 hiving	30
 hm	90
-hmm	0	o
+hmm	100
+hmmm	70
+hmu	70
 ho	0	o
 ho's	50
 hoagie	46
@@ -90920,7 +90948,7 @@ homozygous	45
 homunculi	58
 homunculus	70
 homunculus's	10
-hon	0	o
+hon	70
 hon's	10
 honcho	42
 honchos	35
@@ -91735,6 +91763,7 @@ humps	67
 humpy	30
 hums	59
 humus	74
+hun	70
 hunch	68
 hunchback	68
 hunchback's	21
@@ -92279,7 +92308,7 @@ iPAQ	50
 iPad	86
 iPad's	31
 iPads	55
-iPhone	100
+iPhone	110
 iPhoto	56
 iPlayer	72
 iPod	97
@@ -92415,6 +92444,7 @@ ideates	15
 ideation	65
 ideational	51
 ideations	28
+idek	50
 idem	58
 idempotent	69
 idems	1
@@ -92463,6 +92493,7 @@ ideomotor	50
 ideophone	33
 ideophones	49
 ides	46
+idgaf	40	o
 idioblast	1
 idiocies	31
 idiocy	64
@@ -92532,6 +92563,7 @@ iffier	1
 iffy	36
 ifs	52
 iftar	0
+ight	60
 igloo	69
 igloo's	1
 igloos	53
@@ -92573,6 +92605,7 @@ iguana's	33
 iguanas	76
 iguanodon	23
 ihram	35
+iirc	70
 ikan	50
 ikara	1
 ikebana	55
@@ -92687,6 +92720,8 @@ illuvium	1
 illy	39
 illyricum	27
 ily	80
+ilysm	50
+ima	70
 image	138
 image's	59
 imaged	82
@@ -92780,6 +92815,7 @@ imitatively	35
 imitativeness	10
 imitator	68
 imitators	80
+imma	90
 immaculate	75
 immaculately	62
 immanence	66
@@ -95298,6 +95334,7 @@ inspirits	1
 inspissated	18
 inspissation	23
 inst	48
+insta	80
 instabilities	74
 instability	106
 instable	35
@@ -97048,6 +97085,7 @@ issues	144
 issuing	110
 issus	18
 istana	27
+istg	60
 isthmi	21
 isthmian	41
 isthmian's	10
@@ -98114,6 +98152,7 @@ juxtaposes	67
 juxtaposing	66
 juxtaposition	83
 juxtapositions	61
+k	80
 kDa	83
 kHz	109
 kV	95
@@ -98602,7 +98641,7 @@ kinaesthesia	10
 kinas	10
 kind	136
 kind's	35
-kinda	102
+kinda	110
 kinder	73
 kindergarten	110
 kindergarten's	21
@@ -98794,6 +98833,7 @@ kiwi's	10
 kiwifruit	60
 kiwifruits	10
 kiwis	50
+kk	80
 klans	10
 klansmen	27	o
 klatsch	1
@@ -100485,7 +100525,7 @@ leman	34
 lemma	91
 lemma's	18
 lemmas	55
-lemme	15
+lemme	90
 lemming	59
 lemming's	10
 lemmings	66
@@ -101604,6 +101644,8 @@ llano	41
 llano's	19
 llanos	54
 lmao	110
+lmaoo	70
+lmaooo	50
 lmfao	70
 lmk	100
 lo	0	o
@@ -101934,6 +101976,8 @@ lollops	1
 lolls	27
 lollygagging	10
 lollypop	18
+lolol	70
+lolz	50
 loma	42
 loment	10
 loments	10
@@ -102256,6 +102300,7 @@ lowers	92
 lowest	125
 lowing	41
 lowish	10
+lowkey	90
 lowland	113
 lowlander	25
 lowlanders	49
@@ -102578,6 +102623,7 @@ luting	28
 lutings	1
 lutist	27
 lutists	1
+luv	60
 lux	70
 luxated	10
 luxation	54
@@ -104460,6 +104506,7 @@ mazurkas	55
 mazy	44
 mazzards	1
 maître	73
+mb	60
 mbar	82
 me	173
 mead	74
@@ -107031,6 +107078,7 @@ ml	92
 mle	47
 mm	135
 mmHg	74
+mmm	70
 mneme	28
 mnemic	27
 mnemonic	86
@@ -109105,6 +109153,7 @@ naggers	1
 nagging	77
 naggingly	32
 nags	48
+nah	120
 naiad	54
 naiad's	1
 naiads	51
@@ -110073,6 +110122,7 @@ nexus	84
 nexuses	27
 ney	62
 ng	98
+ngl	90
 niacin	73
 niacin's	15
 nib	0	o
@@ -111052,7 +111102,7 @@ noosed	10
 nooses	55
 noosing	1
 nopal	54
-nope	33
+nope	110
 nor	132
 nor'wester	15
 noradrenalin	17
@@ -111565,6 +111615,7 @@ nuzzle	28
 nuzzles	30
 nuzzling	40
 nvm	80
+nw	60
 nyala	32
 nyanja	10
 nyanza	10
@@ -111913,6 +111964,7 @@ obturating	25
 obtuse	76
 obtusely	50
 obtuseness	34
+obv	80
 obverse	95
 obverses	51
 obvert	10
@@ -111926,6 +111978,7 @@ obviation	40
 obvious	121
 obviously	111
 obviousness	58
+obvs	60
 ocarina	55
 ocarina's	15
 ocarinas	42
@@ -112343,7 +112396,7 @@ okay	132
 okayed	39
 okays	21
 okey	30
-okie	10
+okie	60
 okra	69
 okras	18
 old	156
@@ -112427,7 +112480,9 @@ omen	83
 omen's	10
 omens	74
 omer	41
+omfg	40	o
 omg	130
+omgg	40
 omicron	46
 omicrons	1
 ominated	1
@@ -112564,8 +112619,8 @@ onwards	120
 onyx	69
 ooVoo	25
 oodles	28
-oof	10
-ooh	54
+oof	70
+ooh	80
 oohs	32
 oolitic	35
 oolong	59
@@ -112573,7 +112628,7 @@ oomiak	1
 oompah	33
 oomph	45
 ooms	1
-oops	49
+oops	90
 oopses	15
 ooze	73
 ooze's	1
@@ -113274,6 +113329,7 @@ otters	88
 ottoman	53
 ottoman's	1
 ottomans	34
+otw	60
 oubliette	38
 oubliettes	18
 ouch	41
@@ -114502,7 +114558,7 @@ ovule	66
 ovules	67
 ovum	73
 ovums	10
-ow	0	o
+ow	70
 owe	95
 owed	108
 owes	101
@@ -119465,7 +119521,8 @@ plowshares	48
 ploy	88
 ployed	1
 ploys	60
-pls	0
+pls	110
+plss	40
 pluck	76
 plucked	87
 plucker	23
@@ -120906,6 +120963,7 @@ poxes	15
 pozzolan's	1
 ppb	69
 ppg	85
+ppl	110
 ppm	90
 ppr	18
 ppt	63
@@ -122243,7 +122301,7 @@ pro	130
 pro's	37
 pro-war	15
 proactive	86
-prob	0	o
+prob	70
 probabilist	41
 probabilist's	1
 probabilistic	87
@@ -122282,7 +122340,7 @@ problematics	34
 problems	143
 proboscis	77
 proboscises	33
-probs	0
+probs	60
 probusiness	18
 procaine	51
 procathedral	15
@@ -131008,6 +131066,7 @@ rivulet	63
 rivulets	64
 riyal	53
 riyals	37
+rly	70
 rn	100
 roach	72
 roach's	25
@@ -137126,7 +137185,7 @@ sirrah	10
 sirree	15
 sirs	36
 sirup	18
-sis	55
+sis	80
 sisal	67
 siskin	36
 siskins	34
@@ -138297,6 +138356,7 @@ smother	66
 smothered	74
 smothering	68
 smothers	55
+smth	80
 smudge	60
 smudged	53
 smudges	50
@@ -139317,7 +139377,7 @@ sorrows	77
 sorry	150
 sort	125
 sort's	36
-sorta	48
+sorta	80
 sortability	1
 sortable	69
 sorted	101
@@ -140886,6 +140946,7 @@ squishing	35
 squishy	50
 squoosh	10
 squooshing	1
+srsly	50
 ssh	55
 st	83
 stab	92
@@ -141743,6 +141804,8 @@ stewed	74
 stewers	1
 stewing	58
 stews	76
+stfu	50	o
+sth	50
 sthenic	1
 stick	117
 stick's	39
@@ -146374,8 +146437,10 @@ taxpayers	97
 taxpaying	48
 tay	55
 tazze	1
+tbf	70
 tbh	100
 tbsp	33
+tbt	50
 tea	121
 tea's	45
 tea-maker	10
@@ -147275,6 +147340,7 @@ textured	87
 textureless	21
 textures	96
 texturing	64
+tf	50	o
 thalami	23
 thalamus	62
 thalassemic	15
@@ -147300,6 +147366,7 @@ thanklessly	21
 thanks	122
 thanksgiving	83
 thanksgivings	36
+thanx	50
 thapsus	40
 that	192
 that'd	108
@@ -148440,6 +148507,8 @@ titulary	54
 tiu	46
 tizzy	28
 tizzy's	1
+tldr	50
+tmi	60
 tmr	60
 tmrw	80
 to	215
@@ -150862,6 +150931,7 @@ truthiness	57
 truths	96
 try	133
 trying	134
+tryna	80
 tryout	86
 tryouts	77
 tryptic	35
@@ -151458,6 +151528,8 @@ twos	70
 twosome	50
 twosome's	10
 twosomes	18
+txt	80
+txting	50
 ty	100
 tyche	28
 tychism	18
@@ -151582,6 +151654,7 @@ tyros	25
 tyrosine	50
 tyrrhene	1
 tysm	80
+tyvm	50
 tzar's	21
 tzitzit	57
 tzu	56
@@ -151604,7 +151677,8 @@ ufologist	50
 ufologists	52
 ufology	55
 ufology's	10
-ugh	41
+ugh	90
+ughh	50
 uglier	56
 uglies	35
 ugliest	69
@@ -151614,6 +151688,7 @@ ugliness	73
 ugly	100
 ugrian	1
 uh	76
+uhh	60
 uhlan	36
 uhlans	47
 ui	0
@@ -151732,6 +151807,8 @@ umlaut	76
 umlauted	47
 umlauting	1
 umlauts	57
+umm	80
+ummm	50
 ump	0	o
 ump's	1
 umped	1
@@ -156306,6 +156383,7 @@ viand	18
 viands	39
 vibe	83
 vibes	70
+vibing	70
 vibist	39
 vibists	10
 vibraharp	33
@@ -157488,7 +157566,7 @@ wankers	39	o
 wanking	34	o
 wanks	0	o
 wanly	10
-wanna	100
+wanna	115
 wannabe	71
 wannabes	55
 wanness	1
@@ -158322,6 +158400,7 @@ wellsite	30
 wellspring	56
 wellspring's	1
 wellsprings	40
+welp	60
 welsh	48
 welshed	1
 welshing	1
@@ -158837,7 +158916,7 @@ whoopee	41
 whooper	40
 whoopers	10
 whooping	69
-whoops	53
+whoops	70
 whoosh	43
 whooshes	21
 whooshing	47
@@ -160103,6 +160182,7 @@ wryly	67
 wryneck	23
 wrynecks	40
 wryness	27
+wtf	90	o
 wunderkind	54
 wunderkinds	1
 wurst	23
@@ -160114,11 +160194,13 @@ wusses	2
 wussies	0	o
 wussy	57
 www	71
+wya	70
 wyandotte	25
 wyd	80
 wyvern	60
 wyvern's	18
 wyverns	49
+xd	60
 xebecs	43
 xenobiological	18
 xenobiologists	1
@@ -160159,7 +160241,9 @@ xeroxed	43
 xeroxes	10
 xeroxing	1
 xing	50
+xo	60
 xor	62
+xoxo	70
 xplorer	23
 xpress	23
 xterm	28
@@ -160176,7 +160260,7 @@ xylophone's	1
 xylophones	59
 xylophonist	23
 y'all	62
-ya	0	o
+ya	90
 yabby	45
 yacht	106
 yacht's	51
@@ -160262,11 +160346,12 @@ yawns	46
 yawp	10
 yawps	1
 yaws	49
-yay	50
+yay	100
 yayed	1
 yays	1
 yds	73
-yeah	135
+yea	110
+yeah	140
 yeaned	1
 year	169
 year's	117
@@ -160294,6 +160379,7 @@ yeast's	23
 yeasted	36
 yeasts	75
 yeasty	39
+yeet	50
 yegg	10
 yell	86
 yell's	1
@@ -160337,7 +160423,7 @@ yeomanry	66
 yeomanry's	10
 yeomen	66
 yeomen's	15
-yep	31
+yep	110
 yerba	65
 yes	160
 yeses	18
@@ -160359,6 +160445,7 @@ yeti's	10
 yetis	32
 yew's	15
 yews	55
+yh	50
 yield	117
 yielded	108
 yielder	15
@@ -160366,7 +160453,7 @@ yielders	1
 yielding	101
 yieldingly	1
 yields	110
-yikes	18
+yikes	80
 yin	82
 ying	64
 ying's	18
@@ -160485,7 +160572,7 @@ yuletide	44
 yum	63
 yummies	15
 yummy	46
-yup	41
+yup	100
 yuppie	64
 yuppies	57
 yuppy	27
