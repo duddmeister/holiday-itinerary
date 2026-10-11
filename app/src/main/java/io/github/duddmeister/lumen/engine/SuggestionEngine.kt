@@ -121,11 +121,9 @@ class SuggestionEngine(
         }
 
         // Context: favour words that often follow the previous word.
-        if (context.isNotEmpty()) {
-            val predicted = nextWords.predict(context, history, 24)
-            predicted.forEachIndexed { rank, (w, _) ->
-                candidates[w]?.let { it.score += (CONTEXT_BONUS - rank).coerceAtLeast(4).toFloat() }
-            }
+        val predicted = if (context.isEmpty()) emptyList() else nextWords.predict(context, history, 24)
+        predicted.forEachIndexed { rank, (w, _) ->
+            candidates[w]?.let { it.score += (CONTEXT_BONUS - rank).coerceAtLeast(4).toFloat() }
         }
 
         val ranked = candidates.values.sortedByDescending { it.score }
@@ -135,7 +133,9 @@ class SuggestionEngine(
             shortcut != null && shortcut.autoCorrect && lexicon.findExact(typed) < 0 ->
                 applyCase(shortcut.replacement, word)
             !typedIsWord && !hasDigits -> ranked.firstOrNull { isAutoCorrectable(it, n) }?.let { applyCase(it.text, word) }
-            node >= 0 -> caseFix(typed, node, word)
+            // A slip first, so "tue" (meant "the") isn't taken for "Tue".
+            node >= 0 -> slipFix(node, word, learnedCount, ranked, predicted)?.let { applyCase(it.text, word) }
+                ?: caseFix(typed, node, word)
             else -> null
         }?.takeIf { it != typed }
 
@@ -167,6 +167,58 @@ class SuggestionEngine(
             if (!(typedLength >= 4 && extra <= 1) && !(typedLength >= 6 && extra <= 2)) return false
         }
         return c.freq >= MIN_AUTOCORRECT_FREQ || c.kind == Suggestion.Kind.LEARNED
+    }
+
+    /**
+     * A slip that lands on a rare word, like "bur" for "but" or "nit" for "not" (or on a
+     * rare name, like "tue" for "the"): corrected when a far more common word is one slip
+     * away. A slip is two letters swapped, or a tap on a neighbouring key: one that landed
+     * near the key meant takes a rare word and a big difference in frequency; one squarely
+     * on the key beside it, a very rare word and a huge difference. Without the tap to go
+     * on (a word picked up again at the cursor), only a swap counts. A rare word typed on
+     * purpose is otherwise kept, as is one the user has typed before or that what came
+     * before points to. Common words are never turned into other words ("form", "lime").
+     */
+    private fun slipFix(node: Int, word: TypedWord, typedBefore: Int, ranked: List<Candidate>, predicted: List<Pair<String, Float>>): Candidate? {
+        if (word.length < 3 || typedBefore > 0) return null
+        val folded = CharFolding.fold(lexicon.wordAt(node))
+        if (predicted.any { CharFolding.fold(it.first) == folded }) return null
+        val best = ranked.firstOrNull() ?: return null
+        if (best.kind != Suggestion.Kind.CORRECTION) return null
+        val slip = slipAt(folded, CharFolding.fold(best.text)) ?: return null
+        val tapped = slip == SWAPPED || (folded.length == word.length && !word.tapX(slip).isNaN())
+        val (rarest, gap) = when {
+            !tapped -> return null
+            best.cost <= SLIP_NEAR_COST -> SLIP_RARE_FREQ to SLIP_FREQ_GAP
+            best.cost <= SLIP_SQUARE_COST -> SLIP_VERY_RARE_FREQ to SLIP_HUGE_FREQ_GAP
+            else -> return null
+        }
+        val typedFreq = lexicon.frequency(node)
+        return best.takeIf { typedFreq <= rarest && it.freq - typedFreq >= gap }
+    }
+
+    /**
+     * Where [b] differs from [a] by one slip: the index of the one letter that differs,
+     * [SWAPPED] for two side by side swapped, or null for anything else.
+     */
+    private fun slipAt(a: String, b: String): Int? {
+        if (a.length != b.length) return null
+        var first = -1
+        var second = -1
+        for (i in a.indices) {
+            if (a[i] == b[i]) continue
+            when {
+                first < 0 -> first = i
+                second < 0 -> second = i
+                else -> return null
+            }
+        }
+        return when {
+            first < 0 -> null
+            second < 0 -> first
+            second == first + 1 && a[first] == b[second] && a[second] == b[first] -> SWAPPED
+            else -> null
+        }
     }
 
     /**
@@ -253,6 +305,22 @@ class SuggestionEngine(
         const val LEARNED_BASE_FREQ = 110
         const val LEARNED_THRESHOLD = 2
         const val MIN_AUTOCORRECT_FREQ = 40
+        /**
+         * A slip costing this much at most: two letters swapped (0.6), or a tap on a
+         * neighbouring key that leaned towards the key meant...
+         */
+        const val SLIP_NEAR_COST = 0.6f
+        /** ...turns a word this rare or rarer into one this much more frequent (0 to 255 scale). */
+        const val SLIP_RARE_FREQ = 90
+        const val SLIP_FREQ_GAP = 85
+        /**
+         * A tap squarely on the key beside the one meant costs 0.75 (diagonal neighbours a
+         * little more, so they never count), and needs a very rare word and a huge gap.
+         */
+        const val SLIP_SQUARE_COST = 0.8f
+        const val SLIP_VERY_RARE_FREQ = 70
+        const val SLIP_HUGE_FREQ_GAP = 115
+        private const val SWAPPED = -2
 
         fun applyCase(candidate: String, typed: TypedWord): String = when {
             typed.isAllCaps -> candidate.uppercase()
