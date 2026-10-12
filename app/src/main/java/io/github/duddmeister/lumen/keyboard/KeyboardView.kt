@@ -182,6 +182,9 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         overlay?.invalidate()
     }
 
+    /** Empty room below the bottom row's keys: its half of the gap between rows, and the padding. */
+    val bottomMargin: Int get() = (bottomPadding + gapY / 2f).toInt()
+
     /** Height the keyboard needs for [l] (used to size panels consistently). */
     fun heightFor(l: KeyboardLayout): Int = l.totalHeight(rowHeightPx(), topPadding, bottomPadding)
 

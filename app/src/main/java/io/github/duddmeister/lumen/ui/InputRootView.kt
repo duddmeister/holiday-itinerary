@@ -166,6 +166,14 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
     /** Height above the keys: the strip, or the (possibly taller) search bar. */
     private fun topHeight() = if (searching) searchBar.measuredHeight else stripHeight
 
+    /**
+     * How far the empty margin below the keys reaches down over the bar beneath them
+     * (Android's hide-keyboard and switch-keyboard buttons, or the navigation bar). That bar
+     * keeps its own room above its buttons, so with the margin as well the keys sat far
+     * from them. The keys themselves stay clear of it; panels end where they did.
+     */
+    private fun barOverlap() = if (floating || insetBottom <= 0) 0 else minOf(insetBottom, keyboard.bottomMargin)
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val inner = width - insetLeft - insetRight
@@ -179,7 +187,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
         strip.measure(exact(content), exact(stripHeight))
         searchBar.measure(exact(content), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
         val contentHeight = topHeight() + keyboard.measuredHeight
-        panel?.measure(exact(content), exact(contentHeight))
+        panel?.measure(exact(content), exact(contentHeight - barOverlap()))
         overlay.measure(exact(content), exact(contentHeight))
         val height = if (floating) {
             // As tall as the window may be, so the card can go anywhere.
@@ -187,7 +195,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
             else MeasureSpec.getSize(heightMeasureSpec)
             maxOf(room, contentHeight + handleHeight + insetBottom + 2 * cardMargin)
         } else {
-            contentHeight + insetBottom
+            contentHeight + insetBottom - barOverlap()
         }
         setMeasuredDimension(width, height)
     }
