@@ -132,6 +132,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     override fun onCreate() {
         super.onCreate()
+        // Touches that start on the keys reach them before Android's buttons below (see KeysFirst).
+        window?.window?.let { w -> w.callback?.let { w.callback = KeysFirst(it) { root } } }
         prefs = Prefs(this)
         feedback = Feedback(this)
         clipboard = ClipboardHistory(this, prefs.store)
