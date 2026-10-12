@@ -78,6 +78,8 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
     private var insetLeft = 0
     private var insetRight = 0
     private var insetBottom = 0
+    /** Android's hide-keyboard and switch-keyboard buttons, drawn in this window. */
+    private var buttonsBottom = 0
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val shadow = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -167,12 +169,26 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
     private fun topHeight() = if (searching) searchBar.measuredHeight else stripHeight
 
     /**
-     * How far the empty margin below the keys reaches down over the bar beneath them
-     * (Android's hide-keyboard and switch-keyboard buttons, or the navigation bar). That bar
-     * keeps its own room above its buttons, so with the margin as well the keys sat far
-     * from them. The keys themselves stay clear of it; panels end where they did.
+     * How far the keyboard comes down over the bar beneath it. The bar keeps its own room
+     * above its buttons, so the empty margin below the keys always reaches over it. Where
+     * the bar is Android's hide-keyboard and switch-keyboard buttons, drawn in this window,
+     * the keys reach a fifth of the way into it as well: those buttons sit in its middle,
+     * and the keys keep the touches that land on them there (see [ownsTouch]). Panels end
+     * where the bar begins.
      */
-    private fun barOverlap() = if (floating || insetBottom <= 0) 0 else minOf(insetBottom, keyboard.bottomMargin)
+    private fun barOverlap() = if (floating || insetBottom <= 0) 0 else minOf(insetBottom, keyboard.bottomMargin + keysIntoBar())
+
+    private fun keysIntoBar() = if (floating || buttonsBottom <= 0) 0 else (buttonsBottom * KEYS_INTO_BAR).toInt()
+
+    /**
+     * Whether a touch starting at ([x], [y]) belongs to the keys before anything else in the
+     * window: once they reach over Android's buttons, those would otherwise take a tap on the
+     * bottom of ?123 or enter. The whole touch goes to the keys, so a second finger landing
+     * there is theirs too.
+     */
+    fun ownsTouch(x: Float, y: Float): Boolean =
+        keysIntoBar() > 0 && keyboard.isShown &&
+            x >= keyboard.left && x < keyboard.right && y >= keyboard.top && y < keyboard.bottom
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
@@ -376,15 +392,17 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
      * Keeps keys clear of the navigation bar and display cutouts while the background
      * fills behind them. With gesture navigation, Android draws its own back and
      * keyboard-switcher buttons inside the keyboard window and reports them as a
-     * caption bar, so the keys stay above that too.
+     * caption bar: the keys reach only a little way into that (see [barOverlap]).
      */
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
         val left: Int
         val right: Int
         val bottom: Int
+        var buttons = 0
         if (Build.VERSION.SDK_INT >= 30) {
             val bars = insets.getInsets(WindowInsets.Type.navigationBars() or WindowInsets.Type.captionBar() or WindowInsets.Type.displayCutout())
             left = bars.left; right = bars.right; bottom = bars.bottom
+            buttons = insets.getInsets(WindowInsets.Type.captionBar()).bottom
         } else {
             @Suppress("DEPRECATION")
             left = insets.systemWindowInsetLeft
@@ -393,8 +411,8 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
             @Suppress("DEPRECATION")
             bottom = insets.systemWindowInsetBottom
         }
-        if (left != insetLeft || right != insetRight || bottom != insetBottom) {
-            insetLeft = left; insetRight = right; insetBottom = bottom
+        if (left != insetLeft || right != insetRight || bottom != insetBottom || buttons != buttonsBottom) {
+            insetLeft = left; insetRight = right; insetBottom = bottom; buttonsBottom = buttons
             requestLayout()
         }
         return insets
@@ -422,5 +440,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
         const val FLOAT_SHARE = 0.55f
         const val FLOAT_MIN_DP = 320
         const val FLOAT_MAX_DP = 520
+        /** How far into Android's bar of buttons the keys reach: its buttons sit in its middle. */
+        const val KEYS_INTO_BAR = 0.2f
     }
 }
