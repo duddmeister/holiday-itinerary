@@ -392,7 +392,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
      * Keeps keys clear of the navigation bar and display cutouts while the background
      * fills behind them. With gesture navigation, Android draws its own back and
      * keyboard-switcher buttons inside the keyboard window and reports them as a
-     * caption bar, so the keys stay above that too.
+     * caption bar: the keys reach only a little way into that (see [barOverlap]).
      */
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
         val left: Int
