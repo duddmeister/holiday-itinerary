@@ -28,16 +28,30 @@ class EditorContext(info: EditorInfo?) {
     /** Private (incognito) fields ask keyboards not to learn from what is typed. */
     val incognito: Boolean = imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0
 
+    /** A search box: its enter key searches. */
+    val isSearch: Boolean = isText && imeOptions and EditorInfo.IME_MASK_ACTION == EditorInfo.IME_ACTION_SEARCH
+    /** Somewhere a web address may be typed among words: the browser's address bar, or a search box. */
+    val takesAddresses: Boolean = isUrl || isSearch
+
+    private val askedNoSuggestions = flags and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS != 0
+    /**
+     * Whether the field asking for no suggestions means it. Chrome passes on a web page's
+     * autocomplete="off", which is about its own form filling, as that request: it left
+     * Google's search box, and most sites', without autocorrect. A search box, or a web field
+     * that still allows correction, gets suggestions anyway.
+     */
+    private val noSuggestions = askedNoSuggestions && !isSearch &&
+        !(variation == InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT && flags and InputType.TYPE_TEXT_FLAG_AUTO_CORRECT != 0)
+
     /**
      * Address fields get suggestions too: Chrome's address bar is one, and it's where most
      * searches are typed. Autocorrect there only touches words on their own (see InputLogic).
      */
     val suggestionsAllowed: Boolean = isText && !isPassword && !isEmail &&
-        variation != InputType.TYPE_TEXT_VARIATION_FILTER &&
-        flags and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS == 0
+        variation != InputType.TYPE_TEXT_VARIATION_FILTER && !noSuggestions
     val autoCorrectAllowed: Boolean = suggestionsAllowed && variation != InputType.TYPE_TEXT_VARIATION_PERSON_NAME
-    /** Nothing is learned from address fields, where much of what's typed is addresses. */
-    val learningAllowed: Boolean = suggestionsAllowed && !incognito && !isUrl
+    /** Nothing is learned from address fields, where much of what's typed is addresses, or from fields asking for no suggestions. */
+    val learningAllowed: Boolean = suggestionsAllowed && !incognito && !isUrl && !askedNoSuggestions
     val gesturesAllowed: Boolean = isText && !isPassword && !isEmail
     val capitalisation: Boolean = isText && flags and CAPS_FLAGS != 0
 

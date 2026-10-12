@@ -202,7 +202,11 @@ class InputLogic(private val host: Host) {
         if (composingFromGesture) finishComposing(ic)
         consumePhantomSpace(ic)
         autoSpaceInserted = false
-        if (composing.isEmpty) composingContext = readContext(ic)
+        if (composing.isEmpty) {
+            val before = ic.getTextBeforeCursor(64, 0) ?: ""
+            composingContext = TextContext.contextWords(before)
+            continueWord(ic, before)
+        }
         composingRestored = false
         for (ch in text) composing.add(ch, x, y)
         setComposing(ic, composing.toString())
@@ -798,10 +802,10 @@ class InputLogic(private val host: Host) {
 
     private fun commitComposing(ic: InputConnection, separator: String, autocorrect: Boolean) {
         val typed = composing.toString()
-        // In an address field only a space corrects: enter goes to what was typed.
-        val correction = if (autocorrect && settings.autoCorrect && editor.autoCorrectAllowed && !composingRestored &&
-            (!editor.isUrl || separator == " ")
-        ) {
+        // Where addresses are typed, "." and "/" carry one on: a word is corrected by a space,
+        // or by searching (the address bar's enter goes to what was typed).
+        val trigger = !editor.takesAddresses || separator == " " || (separator.isEmpty() && !editor.isUrl)
+        val correction = if (autocorrect && trigger && settings.autoCorrect && editor.autoCorrectAllowed && !composingRestored) {
             result.autoCorrection
         } else null
         val word = correction ?: typed
@@ -812,14 +816,35 @@ class InputLogic(private val host: Host) {
     }
 
     /**
-     * Whether the word being typed may be corrected where it is. In an address field, only
-     * a word on its own, as in a search typed into the browser's address bar: not one that
-     * is part of an address ("bbc" in "news.bbc").
+     * Whether the word being typed may be corrected where it is. Where addresses are typed,
+     * only a word on its own, as in a search: not one that is part of an address ("bbc" in
+     * "news.bbc").
      */
     private fun standsAlone(): Boolean {
-        if (!editor.isUrl) return true
+        if (!editor.takesAddresses) return true
         val before = host.connection?.getTextBeforeCursor(composing.length + 1, 0) ?: return false
         return before.length <= composing.length || before[0].isWhitespace()
+    }
+
+    /**
+     * Takes up the word the cursor is at the end of, so that a letter typed there extends it:
+     * after the editor ended the word being typed (some web pages do, at every letter), or
+     * after backspacing into one. Autocorrect then sees the whole word, not the new letters.
+     */
+    private fun continueWord(ic: InputConnection, before: CharSequence) {
+        if (selectionStart != selectionEnd) return
+        val word = TextContext.wordBeforeCursor(before)
+        if (word.isEmpty() || word.length > 32 || word.any { it.isDigit() }) return
+        val after = ic.getTextAfterCursor(1, 0)
+        if (!after.isNullOrEmpty() && TextContext.isWordChar(after[0])) return
+        val cursor = expectedEnd.takeIf { it >= 0 } ?: selectionEnd
+        val start = cursor - word.length
+        if (start < 0) return
+        ic.setComposingRegion(start, cursor)
+        expect(cursor, cursor) // the region change is reported even though the cursor stays put
+        composeStart = start
+        for (c in word) composing.add(c, Float.NaN, Float.NaN)
+        composingContext = TextContext.contextWords(before.subSequence(0, before.length - word.length))
     }
 
     /** Ends composition, keeping the word as it stands. Only finished (glided) words are learned. */
