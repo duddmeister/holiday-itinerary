@@ -246,6 +246,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         searchQuery.setLength(0)
         root?.showSearch(null, animate = false)
         root?.showPanel(null, animate = false)
+        root?.strip?.closeMore()
         applyTheme()
         applySettings()
         rebuildLayout()
@@ -817,7 +818,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onAction(action: SuggestionStripView.Action) {
         feedback.tick()
         when (action) {
-            SuggestionStripView.Action.TOGGLE -> Unit
+            SuggestionStripView.Action.TOGGLE, SuggestionStripView.Action.MORE -> Unit
             SuggestionStripView.Action.SEARCH -> startSearch(SearchBarView.Kind.WEB, selectedText())
             SuggestionStripView.Action.CLIPBOARD -> openClipboard()
             SuggestionStripView.Action.EMOJI -> openEmoji()

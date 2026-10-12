@@ -18,7 +18,7 @@ import io.github.duddmeister.lumen.keyboard.KeyPainter
  * The bar above the keys. Shows three suggestions (the one a space will commit
  * in the middle, emphasised), a paste chip for freshly copied text, a live
  * preview while glide typing, or — when there is nothing to suggest — a
- * toolbar with Lumen's panels.
+ * toolbar with Lumen's panels, the less used ones behind its ⋯ button.
  */
 @SuppressLint("ViewConstructor")
 class SuggestionStripView(context: Context, private val painter: KeyPainter) : View(context) {
@@ -30,6 +30,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         THEMES(Icon.PALETTE), SETTINGS(Icon.SETTINGS), VOICE(Icon.MIC), HIDE(Icon.KEYBOARD_HIDE),
         /** One-handed or floating, whichever the screen offers; drawn with [modeIcon]. */
         MODE(Icon.ONE_HANDED),
+        /** Swaps the toolbar's everyday buttons for the rest, and back. */
+        MORE(Icon.MORE),
     }
 
     interface Listener {
@@ -50,23 +52,30 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     var toolbarRequested = false
         private set
     private var changedAt = 0L
+    /** When MORE last swapped the toolbar's buttons. */
+    private var swappedAt = 0L
 
     private val text = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
     private val buttonSize = context.dp(44f)
 
-    private fun actions() = listOfNotNull(
-        Action.SEARCH, Action.EMOJI, Action.GIF.takeIf { gifsEnabled }, Action.CLIPBOARD, Action.THEMES,
-        Action.MODE.takeIf { modeIcon != null }, Action.SETTINGS, Action.VOICE.takeIf { voiceEnabled },
+    /** The toolbar's buttons between the sparkle and the hide button, MORE last. */
+    private fun everyday() = listOfNotNull(
+        Action.SEARCH, Action.EMOJI, Action.GIF.takeIf { gifsEnabled }, Action.CLIPBOARD,
+        Action.VOICE.takeIf { voiceEnabled }, Action.MORE,
     )
+
+    /** The buttons MORE shows in place of the everyday ones. */
+    private fun extras() = listOfNotNull(Action.THEMES, Action.MODE.takeIf { modeIcon != null }, Action.SETTINGS)
 
     /** Shows the GIF button; off when GIFs are turned off in settings. */
     var gifsEnabled = true
         set(value) {
             if (field != value) {
                 field = value
-                toolbarActions = actions()
+                everyday = everyday()
+                extras = extras()
                 invalidate()
             }
         }
@@ -76,7 +85,8 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         set(value) {
             if (field != value) {
                 field = value
-                toolbarActions = actions()
+                everyday = everyday()
+                extras = extras()
                 invalidate()
             }
         }
@@ -86,12 +96,18 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         set(value) {
             if (field != value) {
                 field = value
-                toolbarActions = actions()
+                everyday = everyday()
+                extras = extras()
                 invalidate()
             }
         }
 
-    private var toolbarActions = actions()
+    private var everyday = everyday()
+    private var extras = extras()
+
+    /** The toolbar shows the [extras] in place of the everyday buttons. */
+    var moreOpen = false
+        private set
 
     private var pressedSlot = -1
     private var pressedAction: Action? = null
@@ -112,6 +128,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         slots = arrayOf(left, middle, right)
         if (changed) changedAt = SystemClock.uptimeMillis()
         if (left != null || middle != null || right != null) toolbarRequested = false
+        settle()
         invalidate()
     }
 
@@ -121,6 +138,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         if (clipText != text) {
             clipText = text
             changedAt = SystemClock.uptimeMillis()
+            settle()
             invalidate()
         }
     }
@@ -128,6 +146,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     fun setGesturePreview(word: String?) {
         if (gesturePreview != word) {
             gesturePreview = word
+            settle()
             invalidate()
         }
     }
@@ -142,8 +161,28 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
     fun toggleToolbar() {
         toolbarRequested = !toolbarRequested
+        moreOpen = false
         changedAt = SystemClock.uptimeMillis()
         invalidate()
+    }
+
+    fun toggleMore() {
+        moreOpen = !moreOpen
+        swappedAt = SystemClock.uptimeMillis()
+        invalidate()
+    }
+
+    /** Back to the everyday buttons, at once. */
+    fun closeMore() {
+        if (moreOpen) {
+            moreOpen = false
+            invalidate()
+        }
+    }
+
+    /** The toolbar opens on its everyday buttons each time it comes back. */
+    private fun settle() {
+        if (!showingToolbar) moreOpen = false
     }
 
     private val hasSuggestions get() = slots.any { it != null }
@@ -215,15 +254,29 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         }
     }
 
+    private val toolbarLeft get() = buttonSize + context.dp(12f)
+    private val toolbarRight get() = width - buttonSize - context.dp(12f)
+
+    /** Room for each everyday button. MORE keeps the last place, open or not. */
+    private val toolbarStep get() = (toolbarRight - toolbarLeft) / everyday.size
+
+    /** Room for each of the [extras], spread over the everyday buttons' places but MORE's. */
+    private val extrasStep get() = (toolbarRight - toolbarStep - toolbarLeft) / extras.size
+
     private fun drawToolbar(canvas: Canvas, color: Int, alpha: Float) {
-        val left = buttonSize + context.dp(12f)
-        val right = width - buttonSize - context.dp(12f)
-        val step = (right - left) / toolbarActions.size
         val cy = height / 2f
-        for ((i, action) in toolbarActions.withIndex()) {
-            drawButton(canvas, action, left + step * (i + 0.5f), cy, Colors.fade(color, alpha), false)
+        val faded = Colors.fade(color, alpha)
+        // The buttons MORE swaps fade in afresh; MORE, lit up while open, and hide stay put.
+        val swap = Motion.easeOutCubic(Motion.progress(swappedAt, 160))
+        if (swap < 1f) postInvalidateOnAnimation()
+        val swapped = Colors.fade(faded, 0.35f + 0.65f * swap)
+        val shown = if (moreOpen) extras else everyday
+        val step = if (moreOpen) extrasStep else toolbarStep
+        for ((i, action) in shown.withIndex()) {
+            if (action != Action.MORE) drawButton(canvas, action, toolbarLeft + step * (i + 0.5f), cy, swapped, false)
         }
-        drawButton(canvas, Action.HIDE, width - buttonSize / 2f - context.dp(4f), cy, Colors.fade(color, alpha), false)
+        drawButton(canvas, Action.MORE, toolbarRight - toolbarStep / 2f, cy, faded, moreOpen)
+        drawButton(canvas, Action.HIDE, width - buttonSize / 2f - context.dp(4f), cy, faded, false)
     }
 
     private fun drawButton(canvas: Canvas, action: Action, cx: Float, cy: Float, color: Int, active: Boolean) {
@@ -295,7 +348,12 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
                 cancelPress()
                 when {
                     action != null -> {
-                        if (action == Action.TOGGLE) toggleToolbar()
+                        when (action) {
+                            Action.TOGGLE -> toggleToolbar()
+                            Action.MORE -> toggleMore()
+                            // Any other button takes you elsewhere; the everyday buttons are back after.
+                            else -> if (moreOpen) toggleMore()
+                        }
                         listener?.onAction(action)
                     }
                     chip -> clipText?.let { listener?.onPasteChip(it) }
@@ -322,12 +380,11 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         if (x < buttonSize + context.dp(4f)) { pressedAction = Action.TOGGLE; return }
         when {
             gesturePreview != null -> Unit
-            showingToolbar -> {
-                if (x > width - buttonSize - context.dp(4f)) { pressedAction = Action.HIDE; return }
-                val left = buttonSize + context.dp(12f)
-                val right = width - buttonSize - context.dp(12f)
-                val i = ((x - left) / ((right - left) / toolbarActions.size)).toInt()
-                pressedAction = toolbarActions.getOrNull(i)
+            showingToolbar -> pressedAction = when {
+                x > width - buttonSize - context.dp(4f) -> Action.HIDE
+                !moreOpen -> everyday.getOrNull(((x - toolbarLeft) / toolbarStep).toInt())
+                x >= toolbarRight - toolbarStep -> Action.MORE
+                else -> extras.getOrNull(((x - toolbarLeft) / extrasStep).toInt())
             }
             hasSuggestions -> {
                 for (i in 0..2) {

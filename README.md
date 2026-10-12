@@ -43,10 +43,11 @@ make it feel at home on any phone.
 - **Eleven themes.** Aurora, Material You, Glass (real background blur on
   Android 12+), Graphite, Midnight (AMOLED), Frost, Paper, Sakura, Ocean, Forest
   and Sunset. Four key shapes plus a borderless mode, all switchable from the keyboard.
-- **Everything at hand.** Emoji with skin tones and recents, clipboard history
-  with pins and a one-tap paste chip, swipe left from backspace to delete whole
-  words, long-press for accents and symbols, an optional number row, and QWERTY,
-  QWERTZ, AZERTY, Colemak and Dvorak layouts.
+- **Everything at hand.** A toolbar with search, emoji, GIFs, clipboard and voice
+  up front, and themes, one-handed and settings behind its ⋯. Emoji with skin
+  tones and recents, clipboard history with pins and a one-tap paste chip, swipe
+  left from backspace to delete whole words, long-press for accents and symbols,
+  an optional number row, and QWERTY, QWERTZ, AZERTY, Colemak and Dvorak layouts.
 - **Symbols with a flick.** Flick down on a key for the number or symbol in its
   corner (1 on Q, @ on A), no long press or symbols page needed.
 - **A space bar that does more.** Swipe left on it to jump back a word. Swipe
@@ -58,10 +59,11 @@ make it feel at home on any phone.
   Fold or unfold mid-word and you carry on with the same word, suggestions, page
   and panel. Number pads stay compact on wide screens, and the app becomes a
   centred column that keeps its place.
-- **One-handed or floating.** On a phone, the toolbar's one-handed button moves the
-  keys over to your thumb, with buttons beside them to swap sides or go back to the
-  full width. On a tablet or an open foldable, the keyboard can float instead: a
-  card you drag anywhere by its handle, while the app keeps the whole screen.
+- **One-handed or floating.** On a phone, the one-handed button (behind the
+  toolbar's ⋯) moves the keys over to your thumb, with buttons beside them to swap
+  sides or go back to the full width. On a tablet or an open foldable, the keyboard
+  can float instead: a card you drag anywhere by its handle, while the app keeps
+  the whole screen.
 - **Built to be light.** No third-party libraries; the keyboard is a handful of
   custom views drawn on the canvas.
 

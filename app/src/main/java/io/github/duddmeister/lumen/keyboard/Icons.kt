@@ -213,6 +213,12 @@ object Icons {
                 canvas.drawLine(7.5f, 16.3f, 16.5f, 16.3f, paint)
                 canvas.drawPath(path("dockArrow") { poly(8.5f, 4.5f, 12f, 8f, 15.5f, 4.5f) }, paint)
             }
+            Icon.MORE -> {
+                paint.style = Paint.Style.FILL
+                canvas.drawCircle(6f, 12f, 2f, paint)
+                canvas.drawCircle(12f, 12f, 2f, paint)
+                canvas.drawCircle(18f, 12f, 2f, paint)
+            }
             Icon.TRASH -> {
                 canvas.drawLine(5.5f, 7f, 18.5f, 7f, paint)
                 canvas.drawPath(path("trashLid") { poly(9.8f, 7f, 9.8f, 4.8f, 14.2f, 4.8f, 14.2f, 7f) }, paint)
