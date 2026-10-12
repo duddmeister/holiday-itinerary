@@ -72,13 +72,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="1.0.$LUMEN_VERSION_CODE"
-          if gh release view "v$version" > /dev/null 2>&1; then
+          is_draft() { gh release view "v$version" --json isDraft --jq .isDraft 2>/dev/null || true; }
+          if [ "$(is_draft)" = "false" ]; then
             echo "Lumen $version is already released."
             exit 0
           fi
           cp app/build/outputs/apk/release/app-release.apk "lumen-$version.apk"
-          gh release create "v$version" "lumen-$version.apk" --target "$GITHUB_SHA" \
-            --title "Lumen $version" --generate-notes --latest
+          # GitHub sometimes fails part way through publishing (an HTTP 500 left 1.0.73 as
+          # a draft nobody could update to). Drafts of Lumen versions are only ever left
+          # by that, so they're cleared away and the publish is tried again.
+          for attempt in 1 2 3; do
+            gh release list --limit 100 --json tagName,isDraft \
+              --jq '.[] | select(.isDraft and (.tagName | test("^v1\\.0\\.[0-9]+$"))) | .tagName' |
+              while read -r draft; do gh release delete "$draft" --yes || true; done
+            if gh release create "v$version" "lumen-$version.apk" --target "$GITHUB_SHA" \
+              --title "Lumen $version" --generate-notes --latest; then
+              exit 0
+            fi
+            sleep $((attempt * 20))
+            if [ "$(is_draft)" = "false" ]; then
+              echo "Lumen $version was released after all."
+              exit 0
+            fi
+            echo "::warning::Publishing Lumen $version failed (attempt $attempt of 3)."
+          done
+          exit 1
 
       - name: Upload reports
         if: failure()
