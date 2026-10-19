@@ -75,16 +75,16 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     var hintsVisible = true
     var longPressDelay = 300L
     /** Row height in dp before the user's height preference. */
-    var rowHeightDp = 56f
+    var rowHeightDp = 54f
         set(value) { if (field != value) { field = value; requestLayout() } }
     var heightScale = 1f
         set(value) { if (field != value) { field = value; requestLayout() } }
 
-    private val sidePadding = context.dp(4f)
+    private val sidePadding = context.dp(2f)
     private val topPadding = context.dp(2f)
     private val bottomPadding = context.dp(6f)
-    private val gapX = context.dp(4.5f)
-    private val gapY = context.dp(7f)
+    private val gapX = context.dp(3f)
+    private val gapY = context.dp(9f)
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     /** When a character or space was last tapped. */
     private var typedAt = 0L
