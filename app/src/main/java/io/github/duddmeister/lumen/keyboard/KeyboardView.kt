@@ -81,7 +81,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         set(value) { if (field != value) { field = value; requestLayout() } }
 
     private val sidePadding = context.dp(2f)
-    private val topPadding = context.dp(2f)
+    private val topPadding = 0f
     private val bottomPadding = context.dp(6f)
     private val gapX = context.dp(3f)
     private val gapY = context.dp(6f)
