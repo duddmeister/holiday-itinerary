@@ -84,7 +84,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     private val topPadding = context.dp(2f)
     private val bottomPadding = context.dp(6f)
     private val gapX = context.dp(3f)
-    private val gapY = context.dp(9f)
+    private val gapY = context.dp(6f)
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     /** When a character or space was last tapped. */
     private var typedAt = 0L
