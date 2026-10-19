@@ -26,8 +26,11 @@
     <string name="try_hint">Type here to try Lumen…</string>
 
     <string name="key_shape">Key shape</string>
-    <string name="key_backgrounds">Key backgrounds</string>
-    <string name="key_backgrounds_summary">Turn off for a borderless look</string>
+    <string name="key_finish">Key finish</string>
+    <string name="accent_colour">Accent colour</string>
+    <string name="accent_theme">Theme\'s own</string>
+    <string name="label_font">Font</string>
+    <string name="letter_size">Letter size</string>
 
     <string name="autocorrect">Auto-correct</string>
     <string name="autocorrect_summary">Fixes typos when you press space. Backspace to undo.</string>

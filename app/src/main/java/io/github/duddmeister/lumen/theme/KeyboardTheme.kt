@@ -50,6 +50,50 @@ class KeyboardTheme(
         label, functionalLabel, hint, highlight, shadow, stripText, stripSecondary, divider, popup, popupLabel,
         glow, trailStart, trailEnd, translucent = false,
     )
+
+    /**
+     * This theme in [choice]'s colours instead of its own: the enter key, highlights, the
+     * light that blooms from a pressed key and the glide trail. [Accent.THEME] keeps its own.
+     */
+    fun withAccent(choice: Accent): KeyboardTheme {
+        if (choice == Accent.THEME) return this
+        val start = choice.start(dark)
+        val end = choice.end(dark)
+        return KeyboardTheme(
+            id, name, dark, background, glows, key, keyTop, keyPressed, functional, functionalPressed,
+            accent = start, accentEnd = end,
+            accentPressed = Colors.lerp(start, if (dark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt(), 0.16f),
+            onAccent = choice.on(dark),
+            label = label, functionalLabel = functionalLabel, hint = hint, highlight = highlight, shadow = shadow,
+            stripText = stripText, stripSecondary = stripSecondary, divider = divider, popup = popup, popupLabel = popupLabel,
+            glow = start, trailStart = start, trailEnd = end, translucent = translucent,
+        )
+    }
+}
+
+/**
+ * Accent colours that can stand in for a theme's own, each a gradient [from] one colour
+ * [to] another with [ink] for the icon on the enter key. Mono is ink on light themes and
+ * white on dark ones.
+ */
+enum class Accent(val id: String, val title: String, private val from: Long, private val to: Long, private val ink: Long) {
+    THEME("theme", "Theme", 0, 0, 0),
+    VIOLET("violet", "Violet", 0xFF7C5CFF, 0xFFC084FC, 0xFFFFFFFF),
+    BLUE("blue", "Blue", 0xFF2563EB, 0xFF38BDF8, 0xFFFFFFFF),
+    TEAL("teal", "Teal", 0xFF14B8A6, 0xFF5EEAD4, 0xFF042F2E),
+    GREEN("green", "Green", 0xFF22C55E, 0xFFA3E635, 0xFF052E16),
+    AMBER("amber", "Amber", 0xFFF59E0B, 0xFFFDE047, 0xFF2B1600),
+    CORAL("coral", "Coral", 0xFFFF5A5F, 0xFFFF9A62, 0xFFFFFFFF),
+    PINK("pink", "Pink", 0xFFEC4899, 0xFFA855F7, 0xFFFFFFFF),
+    MONO("mono", "Mono", 0, 0, 0);
+
+    fun start(dark: Boolean): Int = if (this == MONO) (if (dark) 0xFFFAFAFA else 0xFF18181B).toInt() else from.toInt()
+    fun end(dark: Boolean): Int = if (this == MONO) (if (dark) 0xFFD4D4D8 else 0xFF3F3F46).toInt() else to.toInt()
+    fun on(dark: Boolean): Int = if (this == MONO) (if (dark) 0xFF0B0B0C else 0xFFFFFFFF).toInt() else ink.toInt()
+
+    companion object {
+        fun of(id: String?) = entries.firstOrNull { it.id == id } ?: THEME
+    }
 }
 
 /** The built-in theme catalogue. */
@@ -199,12 +243,70 @@ object Themes {
         glow = c(0xFFFFB86B), trailStart = c(0xFFFFB86B), trailEnd = c(0xFFFF7EB3),
     )
 
-    /** Display order in pickers; the dynamic theme is resolved per device. */
-    val catalogue: List<String> = listOf(
-        "aurora", DYNAMIC, GLASS, "graphite", "midnight", "frost", "paper", "sakura", "ocean", "forest", "sunset",
+    /** Monochrome and crisp: near-black, with white for the accent. */
+    val carbon = KeyboardTheme(
+        id = "carbon", name = "Carbon", dark = true,
+        background = intArrayOf(c(0xFF141416), c(0xFF0B0B0C)),
+        key = c(0xFF26262A), keyTop = c(0xFF2C2C31), keyPressed = c(0xFF3F3F46),
+        functional = c(0xFF1A1A1D), functionalPressed = c(0xFF2E2E33),
+        accent = c(0xFFFAFAFA), accentEnd = c(0xFFD4D4D8), accentPressed = c(0xFFFFFFFF), onAccent = c(0xFF0B0B0C),
+        label = c(0xFFFAFAFA), functionalLabel = c(0xFFD4D4D8), hint = c(0xFF71717A),
+        highlight = c(0x17FFFFFF), shadow = c(0x99000000),
+        stripText = c(0xFFF4F4F5), stripSecondary = c(0xFFA1A1AA), divider = c(0x1AFFFFFF),
+        popup = c(0xFF2C2C31), popupLabel = c(0xFFFFFFFF),
+        glow = c(0xFFE4E4E7), trailStart = c(0xFFFFFFFF), trailEnd = c(0xFF71717A),
     )
 
-    private val fixed = listOf(aurora, glass, graphite, midnight, frost, paper, sakura, ocean, forest, sunset)
+    /** Cool blue-greys with a frosty accent. */
+    val slate = KeyboardTheme(
+        id = "slate", name = "Slate", dark = true,
+        background = intArrayOf(c(0xFF2E3440), c(0xFF262B35)),
+        key = c(0xFF3B4252), keyTop = c(0xFF434C5E), keyPressed = c(0xFF4C566A),
+        functional = c(0xFF333A47), functionalPressed = c(0xFF434C5E),
+        accent = c(0xFF88C0D0), accentEnd = c(0xFF81A1C1), accentPressed = c(0xFF8FBCBB), onAccent = c(0xFF1F2430),
+        label = c(0xFFECEFF4), functionalLabel = c(0xFFD8DEE9), hint = c(0xFF7B88A1),
+        highlight = c(0x14FFFFFF), shadow = c(0x66000000),
+        stripText = c(0xFFECEFF4), stripSecondary = c(0xFF9AA5BA), divider = c(0x1FFFFFFF),
+        popup = c(0xFF434C5E), popupLabel = c(0xFFECEFF4),
+        glow = c(0xFF88C0D0), trailStart = c(0xFF88C0D0), trailEnd = c(0xFFB48EAD),
+    )
+
+    /** Night-city colour: magenta and cyan light over near-black glass. */
+    val neon = KeyboardTheme(
+        id = "neon", name = "Neon", dark = true,
+        background = intArrayOf(c(0xFF0A0617), c(0xFF07040F)),
+        glows = listOf(Glow(0.05f, 0.0f, 0.75f, c(0x4DFF2BD6)), Glow(0.95f, 1.0f, 0.85f, c(0x4000E5FF))),
+        key = c(0x14FFFFFF), keyTop = c(0x1FFFFFFF), keyPressed = c(0x40FFFFFF),
+        functional = c(0x0AFFFFFF), functionalPressed = c(0x2EFFFFFF),
+        accent = c(0xFFFF2BD6), accentEnd = c(0xFF00E5FF), accentPressed = c(0xFFFF6BE4), onAccent = c(0xFFFFFFFF),
+        label = c(0xFFF5F3FF), functionalLabel = c(0xFFE0D7FF), hint = c(0x99C4B5FD),
+        highlight = c(0x2EFFFFFF), shadow = c(0x59000000),
+        stripText = c(0xFFF5F3FF), stripSecondary = c(0xFFB4A7E6), divider = c(0x1FFFFFFF),
+        popup = c(0xFF1E1236), popupLabel = c(0xFFFFFFFF),
+        glow = c(0xFFFF2BD6), trailStart = c(0xFFFF2BD6), trailEnd = c(0xFF00E5FF),
+    )
+
+    /** Soft lavender and white, with a violet accent. */
+    val lilac = KeyboardTheme(
+        id = "lilac", name = "Lilac", dark = false,
+        background = intArrayOf(c(0xFFF6F3FF), c(0xFFEDE7FE)),
+        key = c(0xFFFFFFFF), keyPressed = c(0xFFEDE9FE),
+        functional = c(0xFFE4DCFB), functionalPressed = c(0xFFD6CAF8),
+        accent = c(0xFF7C3AED), accentEnd = c(0xFFA855F7), accentPressed = c(0xFF8B5CF6), onAccent = c(0xFFFFFFFF),
+        label = c(0xFF2E1065), functionalLabel = c(0xFF3B1782), hint = c(0xFF9A88C4),
+        shadow = c(0x59B9A6E8),
+        stripText = c(0xFF2E1065), stripSecondary = c(0xFF7C6BA8), divider = c(0x1F2E1065),
+        popup = c(0xFFFFFFFF), popupLabel = c(0xFF2E1065),
+        glow = c(0xFFA78BFA), trailStart = c(0xFF7C3AED), trailEnd = c(0xFFEC4899),
+    )
+
+    /** Display order in pickers; the dynamic theme is resolved per device. */
+    val catalogue: List<String> = listOf(
+        "aurora", DYNAMIC, GLASS, "graphite", "midnight", "carbon", "slate", "frost", "paper", "sakura", "lilac",
+        "ocean", "forest", "sunset", "neon",
+    )
+
+    private val fixed = listOf(aurora, glass, graphite, midnight, carbon, slate, frost, paper, sakura, lilac, ocean, forest, sunset, neon)
         .associateBy { it.id }
 
     /** Resolves a theme id for this device. [blurAvailable] decides whether Glass may stay translucent. */

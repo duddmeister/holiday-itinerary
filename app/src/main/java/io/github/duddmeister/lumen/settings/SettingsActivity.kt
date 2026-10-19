@@ -40,9 +40,15 @@ import io.github.duddmeister.lumen.engine.Spelling
 import io.github.duddmeister.lumen.ime.EngineHolder
 import io.github.duddmeister.lumen.keyboard.Icon
 import io.github.duddmeister.lumen.keyboard.Icons
+import io.github.duddmeister.lumen.keyboard.KeyFinish
+import io.github.duddmeister.lumen.keyboard.KeyPainter
 import io.github.duddmeister.lumen.keyboard.KeyShape
 import io.github.duddmeister.lumen.keyboard.KeyboardPreview
+import io.github.duddmeister.lumen.keyboard.LabelFont
 import io.github.duddmeister.lumen.keyboard.LetterLayout
+import io.github.duddmeister.lumen.keyboard.LetterSize
+import io.github.duddmeister.lumen.theme.Accent
+import io.github.duddmeister.lumen.theme.KeyboardTheme
 import io.github.duddmeister.lumen.theme.Themes
 import io.github.duddmeister.lumen.ui.Colors
 import io.github.duddmeister.lumen.ui.Motion
@@ -64,6 +70,7 @@ class SettingsActivity : Activity() {
     private var installWhenFound = false
     private val onUpdate: (Updater.State) -> Unit = { refreshUpdate() }
     private lateinit var hero: HeroPreview
+    private lateinit var accents: SwatchPicker
     private lateinit var gallery: ThemeGallery
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,16 +176,45 @@ class SettingsActivity : Activity() {
         // Themes
         root.addView(kit.section(getString(R.string.section_themes)))
         gallery = ThemeGallery(this)
+        accents = kit.swatches(
+            getString(R.string.accent_colour), Accent.entries.size,
+            colors = { i ->
+                val own = ownTheme()
+                val accent = Accent.entries[i]
+                if (accent == Accent.THEME) intArrayOf(own.accent, own.accentEnd, own.onAccent)
+                else intArrayOf(accent.start(own.dark), accent.end(own.dark), accent.on(own.dark))
+            },
+            names = { i -> if (i == 0) getString(R.string.accent_theme) else Accent.entries[i].title },
+            selected = prefs.accent.ordinal,
+        ) {
+            prefs.accent = Accent.entries[it]
+            refreshPreviews()
+        }
         root.addView(kit.card().apply {
             addView(gallery, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(kit.divider())
+            addView(accents)
+            addView(kit.divider())
+            addView(kit.chips(getString(R.string.key_finish), KeyFinish.entries.map { it.title }, prefs.keyFinish.ordinal) {
+                prefs.keyFinish = KeyFinish.entries[it]
+                refreshPreviews()
+            })
             addView(kit.divider())
             addView(kit.chips(getString(R.string.key_shape), KeyShape.entries.map { it.title }, prefs.keyShape.ordinal) {
                 prefs.keyShape = KeyShape.entries[it]
                 refreshPreviews()
             })
             addView(kit.divider())
-            addView(kit.switchRow(getString(R.string.key_backgrounds), getString(R.string.key_backgrounds_summary), prefs.keyBackgrounds) {
-                prefs.set(Prefs.KEY_BACKGROUNDS, it)
+            // Each font's chip is set in that font.
+            val fonts = KeyPainter(this@SettingsActivity)
+            val faces = LabelFont.entries.map { fonts.font = it; fonts.mediumTypeface }
+            addView(kit.chips(getString(R.string.label_font), LabelFont.entries.map { it.title }, prefs.labelFont.ordinal, faces) {
+                prefs.labelFont = LabelFont.entries[it]
+                refreshPreviews()
+            })
+            addView(kit.divider())
+            addView(kit.chips(getString(R.string.letter_size), LetterSize.entries.map { it.title }, prefs.letterSize.ordinal) {
+                prefs.letterSize = LetterSize.entries[it]
                 refreshPreviews()
             })
         })
@@ -406,6 +442,8 @@ class SettingsActivity : Activity() {
                 is String -> edit.putString(key, value)
             }
         }
+        // A backup from before key finishes holds only the switch for key backgrounds: let it decide.
+        if (Prefs.KEY_BACKGROUNDS in backup.settings && Prefs.KEY_FINISH !in backup.settings) edit.remove(Prefs.KEY_FINISH)
         edit.apply()
         EngineHolder.restoreLearned(this, backup.words)
         val count = backup.words.wordCount
@@ -588,7 +626,11 @@ class SettingsActivity : Activity() {
     private fun refreshPreviews() {
         if (::hero.isInitialized) hero.invalidate()
         if (::gallery.isInitialized) gallery.invalidate()
+        if (::accents.isInitialized) accents.refresh()
     }
+
+    /** The chosen theme in its own colours, as the settings app's light or dark mode shows it. */
+    private fun ownTheme(): KeyboardTheme = Themes.resolve(this, prefs.theme, kit.palette.dark, blurAvailable = false)
 
     private fun isEnabled(): Boolean = getSystemService(InputMethodManager::class.java)
         ?.enabledInputMethodList?.any { it.packageName == packageName } == true
@@ -667,7 +709,7 @@ class SettingsActivity : Activity() {
 
         override fun onDraw(canvas: Canvas) {
             val night = kit.palette.dark
-            val theme = Themes.resolve(context, prefs.theme, night, blurAvailable = false)
+            val theme = Themes.resolve(context, prefs.theme, night, blurAvailable = false).withAccent(prefs.accent)
             rect.set(0f, 0f, width.toFloat(), height - context.dp(8f))
             shadow.color = Colors.withAlpha(0xFF000000.toInt(), if (night) 0.35f else 0.12f)
             val corner = context.dp(22f)
@@ -681,7 +723,7 @@ class SettingsActivity : Activity() {
             val within = (t % 380) / 380f
             val press = if (index < word.length) Motion.easeOutCubic(1f - within) else 0f
             val label = word.getOrNull(index)?.toString()
-            preview.draw(canvas, rect, theme, prefs.keyShape, corner, prefs.keyBackgrounds, label, press)
+            preview.draw(canvas, rect, theme, prefs.keyLook, corner, label, press)
             if (isShown) postInvalidateDelayed(16)
         }
     }
@@ -722,13 +764,15 @@ class SettingsActivity : Activity() {
         override fun onDraw(canvas: Canvas) {
             val night = kit.palette.dark
             val selected = prefs.theme
+            val accent = prefs.accent
+            val look = prefs.keyLook
             for ((i, id) in ids.withIndex()) {
                 bounds(i, rect)
-                val theme = Themes.resolve(context, id, night, blurAvailable = false)
+                val theme = Themes.resolve(context, id, night, blurAvailable = false).withAccent(accent)
                 val corner = context.dp(16f)
                 canvas.save()
                 if (i == pressed) canvas.scale(0.97f, 0.97f, rect.centerX(), rect.centerY())
-                previews.getValue(id).draw(canvas, rect, theme, prefs.keyShape, corner, prefs.keyBackgrounds)
+                previews.getValue(id).draw(canvas, rect, theme, look, corner)
                 if (id == selected) {
                     paint.style = Paint.Style.STROKE
                     paint.strokeWidth = context.dp(3f)
@@ -763,7 +807,7 @@ class SettingsActivity : Activity() {
                     if (i >= 0 && i == pressed) {
                         prefs.theme = ids[i]
                         performClick()
-                        hero.invalidate()
+                        refreshPreviews()
                     }
                     pressed = -1
                     invalidate()

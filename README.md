@@ -7,7 +7,7 @@
 Lumen is a fast, private, beautifully drawn keyboard. Every key, icon and effect
 is painted in code: keys squash and spring back under your fingers, a soft bloom
 of light spreads from each press, glide typing leaves a glowing comet trail, and
-eleven hand-tuned themes (including Material You and a real frosted-glass theme)
+fifteen hand-tuned themes (including Material You and a real frosted-glass theme)
 make it feel at home on any phone.
 
 ## Highlights
@@ -40,9 +40,13 @@ make it feel at home on any phone.
 - **Comes with you.** Back up your settings and the words Lumen has learned to a
   file you choose, then restore them on a new phone. The restored words join any
   it has learned there already.
-- **Eleven themes.** Aurora, Material You, Glass (real background blur on
-  Android 12+), Graphite, Midnight (AMOLED), Frost, Paper, Sakura, Ocean, Forest
-  and Sunset. Four key shapes plus a borderless mode, all switchable from the keyboard.
+- **Fifteen themes.** Aurora, Material You, Glass (real background blur on
+  Android 12+), Graphite, Midnight (AMOLED), Carbon, Slate, Frost, Paper, Sakura,
+  Lilac, Ocean, Forest, Sunset and Neon, all switchable from the keyboard.
+- **Make it yours.** Give any theme one of eight accent colours for the enter key,
+  highlights and glide trail. Keys come raised, flat, outlined or borderless, in
+  four shapes, with five fonts (regular, light, bold, condensed and mono) and three
+  letter sizes.
 - **Everything at hand.** A toolbar with search, emoji, GIFs, clipboard and voice
   up front, and themes, one-handed and settings behind its ⋯. Emoji with skin
   tones and recents, clipboard history with pins and a one-tap paste chip, swipe

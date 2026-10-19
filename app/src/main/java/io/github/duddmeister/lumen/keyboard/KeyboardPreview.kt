@@ -18,24 +18,23 @@ class KeyboardPreview(private val context: Context) {
     private var laidOut = RectF()
 
     /**
-     * Draws [theme] filling [bounds], clipped to rounded corners of [corner] px.
-     * [pressed] names a key label to show pressed by [press] (0..1), with its light bloom.
+     * Draws [theme] with keys that [look] as they will, filling [bounds], clipped to rounded
+     * corners of [corner] px. [pressed] names a key label to show pressed by [press] (0..1),
+     * with its light bloom.
      */
     fun draw(
         canvas: Canvas,
         bounds: RectF,
         theme: KeyboardTheme,
-        shape: KeyShape,
+        look: KeyLook,
         corner: Float,
-        keyBackgrounds: Boolean = true,
         pressed: String? = null,
         press: Float = 0f,
     ) {
         val scale = bounds.width() / context.dp(393f)
         painter.theme = theme
-        painter.shape = shape
+        painter.look = look
         painter.scale = scale
-        painter.keyBackgrounds = keyBackgrounds
         if (laidOut.width() != bounds.width() || laidOut.height() != bounds.height()) {
             laidOut.set(0f, 0f, bounds.width(), bounds.height())
             val top = 0f
