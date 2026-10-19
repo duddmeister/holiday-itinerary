@@ -41,7 +41,7 @@ class KeyboardPreview(private val context: Context) {
             val top = context.dp(5f) * scale
             val bottom = context.dp(6f) * scale
             val rowHeight = (bounds.height() - top - bottom) / layout.rows.size
-            layout.layout(bounds.width().toInt(), rowHeight, context.dp(4f) * scale, top, context.dp(5.5f) * scale, rowHeight / 6f)
+            layout.layout(bounds.width().toInt(), rowHeight, context.dp(4f) * scale, top, context.dp(4.5f) * scale, rowHeight / 8f)
         }
         canvas.save()
         clip.reset()
