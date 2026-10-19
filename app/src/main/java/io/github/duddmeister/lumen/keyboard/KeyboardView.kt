@@ -81,7 +81,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         set(value) { if (field != value) { field = value; requestLayout() } }
 
     private val sidePadding = context.dp(4f)
-    private val topPadding = context.dp(5f)
+    private val topPadding = context.dp(2f)
     private val bottomPadding = context.dp(6f)
     private val gapX = context.dp(4.5f)
     private val gapY = context.dp(7f)
@@ -309,8 +309,10 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     private fun drawPreview(canvas: Canvas, t: KeyboardTheme, l: KeyboardLayout, p: Preview, show: Float, alpha: Float, minTop: Float) {
         val b = p.key.bounds
         val w = maxOf(b.width() + context.dp(12f), l.keyWidth * 1.3f)
-        val h = b.height() * 1.28f
-        var top = b.top + b.height() * 0.1f - h
+        val bottom = b.top + b.height() * 0.1f
+        // Over the top row there's less room above the key: a shorter bubble, rather than covering more of it.
+        val h = minOf(b.height() * 1.28f, maxOf(b.height(), bottom - minTop - context.dp(2f)))
+        var top = bottom - h
         if (top < minTop + context.dp(2f)) top = minTop + context.dp(2f)
         val left = (b.centerX() - w / 2f).coerceIn(context.dp(2f), width - w - context.dp(2f))
         val scale = 0.86f + 0.14f * show

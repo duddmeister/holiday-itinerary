@@ -46,7 +46,7 @@ class SearchBarView(context: Context, private val painter: KeyPainter) : View(co
     private var resultsScroll = 0f
     private var typedAt = 0L
 
-    private val rowHeight = context.dp(46f)
+    private val rowHeight = context.dp(SuggestionStripView.HEIGHT_DP.toFloat())
     private val resultsHeight = context.dp(52f)
     private val buttonSize = context.dp(44f)
     private val cell = context.dp(48f)
@@ -99,12 +99,12 @@ class SearchBarView(context: Context, private val painter: KeyPainter) : View(co
         // Back
         if (pressed == Target.BACK) {
             paint.color = Colors.withAlpha(t.stripText, 0.09f)
-            canvas.drawCircle(buttonSize / 2f + context.dp(4f), cy, context.dp(18f), paint)
+            canvas.drawCircle(buttonSize / 2f + context.dp(4f), cy, context.dp(16f), paint)
         }
         Icons.draw(canvas, Icon.ARROW_LEFT, buttonSize / 2f + context.dp(4f), cy, context.dp(22f), t.stripSecondary, paint)
 
         // Field
-        field.set(buttonSize + context.dp(6f), cy - context.dp(17f), width - context.dp(10f), cy + context.dp(17f))
+        field.set(buttonSize + context.dp(6f), cy - context.dp(15f), width - context.dp(10f), cy + context.dp(15f))
         paint.color = Colors.withAlpha(t.stripText, 0.08f)
         canvas.drawRoundRect(field, field.height() / 2f, field.height() / 2f, paint)
         Icons.draw(canvas, kind.icon, field.left + context.dp(19f), cy, context.dp(18f), t.accent, paint)
@@ -142,7 +142,7 @@ class SearchBarView(context: Context, private val painter: KeyPainter) : View(co
         val since = SystemClock.uptimeMillis() - typedAt
         if (since < 500 || (since / 530) % 2 == 0L) {
             paint.color = color
-            canvas.drawRoundRect(x, cy - context.dp(10f), x + context.dp(2f), cy + context.dp(10f), context.dp(1f), context.dp(1f), paint)
+            canvas.drawRoundRect(x, cy - context.dp(9f), x + context.dp(2f), cy + context.dp(9f), context.dp(1f), context.dp(1f), paint)
         }
         if (isShown) postInvalidateDelayed(530 - since % 530)
     }

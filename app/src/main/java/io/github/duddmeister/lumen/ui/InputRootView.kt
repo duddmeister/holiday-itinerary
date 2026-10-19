@@ -71,7 +71,7 @@ class InputRootView(context: Context, val painter: KeyPainter) : ViewGroup(conte
         private set
     val searching: Boolean get() = searchBar.visibility == VISIBLE
 
-    val stripHeight = context.dp(46)
+    val stripHeight = context.dp(SuggestionStripView.HEIGHT_DP)
     private val handleHeight = context.dp(30)
     /** Room kept between the floating card and the edges of the screen. */
     private val cardMargin = context.dp(10)

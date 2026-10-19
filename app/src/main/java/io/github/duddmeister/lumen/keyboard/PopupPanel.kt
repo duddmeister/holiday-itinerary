@@ -24,28 +24,29 @@ class PopupPanel(val key: Key, val options: List<String>) {
 
     fun layout(viewWidth: Float, cellWidth: Float, cellHeight: Float, padding: Float, minTop: Float, maxPerRow: Int) {
         this.cellWidth = cellWidth
-        this.cellHeight = cellHeight
         this.padding = padding
         val fit = max(1, min(options.size, min(maxPerRow, ((viewWidth - 2 * padding) / cellWidth).toInt())))
         rows = ceil(options.size / fit.toFloat()).toInt()
         // Balance wrapped rows (6 + 6 rather than 10 + 2).
         perRow = ceil(options.size / rows.toFloat()).toInt()
+        val bottom = key.bounds.top + key.bounds.height() * 0.12f
+        // Over the top row there's less room above the key: shorter cells, rather than covering more of it.
+        this.cellHeight = min(cellHeight, max(cellHeight * 0.8f, (bottom - minTop - 2 * padding) / rows))
         val width = perRow * cellWidth + 2 * padding
-        val height = rows * cellHeight + 2 * padding
+        val height = rows * this.cellHeight + 2 * padding
         val anchor = key.bounds.centerX()
         var left = anchor - padding - cellWidth / 2f
         val mirrored = left + width > viewWidth - padding
         if (mirrored) left = anchor + padding + cellWidth / 2f - width
         left = left.coerceIn(padding / 2f, max(padding / 2f, viewWidth - width - padding / 2f))
-        val bottom = key.bounds.top + key.bounds.height() * 0.12f
         val top = max(minTop, bottom - height)
         bounds.set(left, top, left + width, top + height)
         for (i in options.indices) {
             val row = i / perRow
             val col = i % perRow
             val x = if (mirrored) bounds.right - padding - (col + 1) * cellWidth else bounds.left + padding + col * cellWidth
-            val y = bounds.bottom - padding - (row + 1) * cellHeight
-            cells[i].set(x, y, x + cellWidth, y + cellHeight)
+            val y = bounds.bottom - padding - (row + 1) * this.cellHeight
+            cells[i].set(x, y, x + cellWidth, y + this.cellHeight)
         }
     }
 
