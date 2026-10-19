@@ -36,7 +36,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
     companion object {
         /** The strip's height, which the search bar in its place shares. */
-        const val HEIGHT_DP = 38
+        const val HEIGHT_DP = 32
     }
 
     interface Listener {
@@ -288,7 +288,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         val t = painter.theme ?: return
         if (active || pressedAction == action) {
             paint.color = Colors.withAlpha(t.stripText, if (active) 0.12f else 0.09f)
-            canvas.drawCircle(cx, cy, context.dp(16f), paint)
+            canvas.drawCircle(cx, cy, context.dp(14f), paint)
         }
         val tint = if (action == Action.TOGGLE) Colors.lerp(color, t.accent, if (active) 0.9f else 0.55f) else color
         val icon = if (action == Action.MODE) modeIcon ?: action.icon else action.icon
@@ -301,7 +301,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         val textWidth = minOf(text.measureText(t), width * 0.55f)
         val w = textWidth + context.dp(52f)
         val left = buttonSize + context.dp(8f)
-        out.set(left, height / 2f - context.dp(15f), left + w, height / 2f + context.dp(15f))
+        out.set(left, height / 2f - context.dp(13f), left + w, height / 2f + context.dp(13f))
     }
 
     private fun drawChip(canvas: Canvas, alpha: Float) {

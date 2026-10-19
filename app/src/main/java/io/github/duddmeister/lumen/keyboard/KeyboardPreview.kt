@@ -38,7 +38,7 @@ class KeyboardPreview(private val context: Context) {
         painter.keyBackgrounds = keyBackgrounds
         if (laidOut.width() != bounds.width() || laidOut.height() != bounds.height()) {
             laidOut.set(0f, 0f, bounds.width(), bounds.height())
-            val top = context.dp(2f) * scale
+            val top = 0f
             val bottom = context.dp(6f) * scale
             val rowHeight = (bounds.height() - top - bottom) / layout.rows.size
             layout.layout(bounds.width().toInt(), rowHeight, context.dp(2f) * scale, top, context.dp(3f) * scale, rowHeight / 9f)
