@@ -376,7 +376,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             lightEffects = prefs.lightEffects
             longPressDelay = prefs.longPressDelay.toLong()
             heightScale = prefs.heightPercent / 100f
-            rowHeightDp = if (short) 40f else 56f
+            rowHeightDp = if (short) 40f else 54f
         }
         applyKeyboardMode()
     }
