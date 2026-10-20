@@ -37,7 +37,7 @@
     <string name="suggestions">Suggestion strip</string>
     <string name="suggestions_summary">Completions and next-word predictions</string>
     <string name="glide">Glide typing</string>
-    <string name="glide_summary">Slide across the letters to type a word</string>
+    <string name="glide_summary">Slide across the letters to type a word. While it\'s on, cursor swipes work along the space bar only.</string>
     <string name="glide_trail">Show glide trail</string>
     <string name="emoji_suggestions">Emoji suggestions</string>
     <string name="emoji_suggestions_summary">Offers 🍕 when you type “pizza”</string>
@@ -85,8 +85,8 @@
     <string name="sound">Sound on key press</string>
     <string name="sound_volume">Sound volume</string>
     <string name="long_press_delay">Long-press delay</string>
-    <string name="space_cursor">Space-bar swipes</string>
-    <string name="space_cursor_summary">Swipe left to jump back a word. Swipe right to finish the word you\'re typing, or jump forward a word.</string>
+    <string name="space_cursor">Cursor swipes</string>
+    <string name="space_cursor_summary">Swipe left anywhere on the keys to jump back a word. Swipe right to finish the word you\'re typing, jump forward a word or, with no words ahead, add the middle suggestion.</string>
     <string name="delete_swipe">Swipe to delete</string>
     <string name="delete_swipe_summary">Slide left from backspace to select and delete words</string>
 

@@ -14,8 +14,13 @@ make it feel at home on any phone.
 
 - **Light you can feel.** Spring-loaded keys, light blooms, floating key pop-ups,
   a gradient enter key and crisp icons drawn on a single 24-unit grid.
-- **Glide typing.** Slide across the letters and Lumen matches the shape and
-  position of your path against 60,000 words, with a live preview as you glide.
+- **Swipe the cursor.** Swipe left anywhere on the keys to jump back a word.
+  Swipe right to finish the word you're typing with the middle suggestion, jump
+  forward a word or, with no words ahead, add the next word Lumen suggests.
+- **Glide typing.** Turn it on and slide across the letters: Lumen matches the
+  shape and position of your path against 60,000 words, with a live preview as
+  you glide. The letters then glide rather than swipe, so cursor swipes move to
+  the space bar.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, so a slip is fixed even when it spells another word
   (`bur` → `but`), as is a letter that never registered (`wich` → `which`). It adds
@@ -54,9 +59,6 @@ make it feel at home on any phone.
   an optional number row, and QWERTY, QWERTZ, AZERTY, Colemak and Dvorak layouts.
 - **Symbols with a flick.** Flick down on a key for the number or symbol in its
   corner (1 on Q, @ on A), no long press or symbols page needed.
-- **A space bar that does more.** Swipe left on it to jump back a word. Swipe
-  right to finish the word you're typing with the suggestion, or to jump forward
-  a word.
 - **Made for foldables.** Open a foldable (or use a tablet) and the keys split
   between your thumbs: five columns a side with the opening over the hinge, G and V
   on both halves, and one long space bar across the middle.

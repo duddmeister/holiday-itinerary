@@ -94,6 +94,9 @@ class InputLogic(private val host: Host) {
         private set
     var selectionEnd = -1
         private set
+    /** Where the cursor is, counting our own edits the editor hasn't reported back yet. */
+    private val cursorStart get() = if (expectedStart >= 0 && expectedEnd >= 0) minOf(expectedStart, expectedEnd) else selectionStart
+    private val cursorEnd get() = if (expectedStart >= 0 && expectedEnd >= 0) maxOf(expectedStart, expectedEnd) else selectionEnd
 
     private var swipeAnchor = -1
     /** The word being typed when the field restarted; it carries on as the same word. */
@@ -477,7 +480,8 @@ class InputLogic(private val host: Host) {
             phantomSpace = false
             autoSpaceInserted = false
             lastCorrection = null
-            swipeAnchor = selectionEnd.takeIf { it >= 0 && selectionStart == selectionEnd } ?: return
+            // A swipe right after typing comes before the editor reports the last keys.
+            swipeAnchor = cursorEnd.takeIf { it >= 0 && cursorStart == cursorEnd } ?: return
             swipeText = ic.getTextBeforeCursor(512, 0) ?: ""
         }
         var i = swipeText.length
@@ -590,7 +594,7 @@ class InputLogic(private val host: Host) {
         phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
-        val pos = if (steps < 0) selectionStart else selectionEnd
+        val pos = if (steps < 0) cursorStart else cursorEnd
         if (pos < 0 || editor.isRaw) {
             repeat(abs(steps)) { host.sendKey(if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT) }
             return
@@ -609,10 +613,10 @@ class InputLogic(private val host: Host) {
         moveCursor(ic, target)
     }
 
-    /** Space-bar swipes: back to the start of a word, or on to the end of one. */
+    /** Cursor swipes: back to the start of a word, or on to the end of one. */
     fun onCursorWords(words: Int) {
         val ic = host.connection ?: return
-        val pos = if (words < 0) selectionStart else selectionEnd
+        val pos = if (words < 0) cursorStart else cursorEnd
         if (pos < 0 || editor.isRaw) {
             // No text to read word boundaries from: move by characters instead.
             onCursorSteps(words)
@@ -629,6 +633,14 @@ class InputLogic(private val host: Host) {
             TextContext.wordJump("", ic.getTextAfterCursor(reach, 0) ?: "", words)
         }
         if (delta != 0) moveCursor(ic, pos + delta)
+    }
+
+    /** Whether there's a word after the cursor for a swipe right to jump to (when it can't tell, it says so). */
+    fun wordAhead(): Boolean {
+        val ic = host.connection ?: return false
+        if (editor.isRaw) return true
+        val after = ic.getTextAfterCursor(WORD_JUMP_REACH, 0) ?: return true
+        return after.any { TextContext.isWordChar(it) }
     }
 
     /**

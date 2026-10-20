@@ -228,6 +228,7 @@ class SettingsActivity : Activity() {
             addView(kit.divider())
             toggle(Prefs.AUTO_CORRECT, R.string.autocorrect, R.string.autocorrect_summary, prefs.autoCorrect)
             toggle(Prefs.SUGGESTIONS, R.string.suggestions, R.string.suggestions_summary, prefs.suggestions)
+            toggle(Prefs.SPACE_CURSOR, R.string.space_cursor, R.string.space_cursor_summary, prefs.spaceCursor)
             toggle(Prefs.GLIDE, R.string.glide, R.string.glide_summary, prefs.glideTyping)
             toggle(Prefs.GLIDE_TRAIL, R.string.glide_trail, null, prefs.glideTrail)
             toggle(Prefs.VOICE, R.string.voice_typing, R.string.voice_typing_summary, prefs.voiceTyping)
@@ -269,7 +270,6 @@ class SettingsActivity : Activity() {
             addView(kit.divider())
             addView(kit.slider(getString(R.string.long_press_delay), 150, 700, prefs.longPressDelay, { "$it ms" }) { prefs.set(Prefs.LONG_PRESS, it) })
             addView(kit.divider())
-            toggle(Prefs.SPACE_CURSOR, R.string.space_cursor, R.string.space_cursor_summary, prefs.spaceCursor)
             toggle(Prefs.DELETE_SWIPE, R.string.delete_swipe, R.string.delete_swipe_summary, prefs.deleteSwipe, last = true)
         })
 
