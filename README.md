@@ -18,10 +18,13 @@ Material You and a real frosted-glass theme) make it feel at home on any phone.
   forward a word or, with no words ahead, add the next word Lumen suggests.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, so a slip is fixed even when it spells another word
-  (`bur` → `but`), as is a letter that never registered (`wich` → `which`). It adds
-  missing apostrophes (`theyre` → `they're`) and spaces (`abit` → `a bit`), leaves
-  chat shorthand alone (`ngl`, `ppl`, `nah`), corrects searches typed in the
-  browser's address bar but never web addresses, and one tap of backspace undoes it.
+  (`bur` → `but`), as is a letter that never registered (`wich` → `which`, `th` →
+  `the`). It reads the word before (`thank tou` → `thank you`, `I jeep` → `I keep`)
+  and pulls apart words run together, whether the space was missed (`thelink`) or
+  landed on a letter just above it (`sincebthe` → `since the`). It adds missing
+  apostrophes (`theyre` → `they're`), leaves chat shorthand alone (`ngl`, `ppl`,
+  `nah`), corrects searches typed in the browser's address bar but never web
+  addresses, and one tap of backspace undoes it.
 - **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
   as you speak, then land in the text with the right spaces and capitals. It
   listens in British or American English to match your spelling.
@@ -151,7 +154,7 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 
 | Package | What lives there |
 | --- | --- |
-| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words (in American or British spelling), a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning and emoji search. Unit-tested on the JVM. |
+| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words (in American or British spelling), a weighted Damerau–Levenshtein search driven by a tap spatial model, a word-pair model for context, next-word prediction, on-device learning and emoji search. Unit-tested on the JVM. |
 | `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, flicks, cursor and delete swipes, animations). |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
 | `update/` | The in-app updater: finds the latest GitHub release, downloads it and hands it to Android's package installer. |
@@ -160,8 +163,8 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 | `theme/` | Theme definitions, including Material You colours from the wallpaper. |
 | `settings/` | The companion app: setup, live theme gallery, preferences, and backups. |
 
-The dictionary and emoji assets are generated from upstream data by the scripts
-in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The dictionary, word-pair and emoji assets are generated from upstream data by the
+scripts in `tools/`; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Privacy
 

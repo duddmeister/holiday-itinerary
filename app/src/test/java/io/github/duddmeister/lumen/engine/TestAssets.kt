@@ -18,6 +18,10 @@ object TestAssets {
 
     val lexicon: Lexicon by lazy { reader("dict/en_US.txt").use { Lexicon.read(it) } }
     private val britishLexicon: Lexicon by lazy { reader("dict/en_GB.txt").use { Lexicon.read(it) } }
+    private val pairs = HashMap<Spelling, WordPairs>()
+
+    fun pairs(spelling: Spelling): WordPairs =
+        pairs.getOrPut(spelling) { reader("dict/${spelling.locale}_bigrams.txt").use { WordPairs.read(it) } }
 
     fun engine(history: UserHistory = UserHistory(), spelling: Spelling = Spelling.AMERICAN): SuggestionEngine = SuggestionEngine(
         if (spelling == Spelling.BRITISH) britishLexicon else lexicon,
@@ -25,5 +29,6 @@ object TestAssets {
         reader("dict/${spelling.locale}_predictions.txt").use { NextWordModel.read(it) },
         history,
         reader("emoji/keywords.txt").use { SuggestionEngine.readEmojiKeywords(it) },
+        pairs(spelling),
     )
 }

@@ -33,6 +33,17 @@ class SuggestionEngineTest {
 
     private fun corrected(word: TypedWord, engine: SuggestionEngine = shared) = engine.suggest(word, emptyList(), geometry).autoCorrection
 
+    /** What [word] becomes after the words in [before]. */
+    private fun corrected(word: TypedWord, before: String) = shared.suggest(word, before.split(' '), geometry).autoCorrection
+
+    /** [text] typed squarely on each key, except the letter at [spaceAt], tapped low on its key, just above the space bar. */
+    private fun tappedLow(text: String, spaceAt: Int) = TypedWord().apply {
+        for ((i, c) in text.withIndex()) {
+            val p = geometry.center(c)!!
+            add(c, p[0], if (i == spaceAt) p[1] + 0.45f * geometry.keyHeight else p[1])
+        }
+    }
+
     @Test
     fun correctsCommonTypos() {
         val cases = mapOf(
@@ -189,7 +200,56 @@ class SuggestionEngineTest {
         assertTrue(words.toString(), "beautiful" in words)
         val th = result("th").candidates.map { it.text }
         assertTrue(th.toString(), "the" in th)
-        assertNull(result("th").autoCorrection)
+    }
+
+    /** Two letters with one missing from a very common word: "th" is "the", "yu" is "you". */
+    @Test
+    fun finishesTwoLetterWordsMissingALetter() {
+        val cases = mapOf("th" to "the", "wa" to "was", "yu" to "you", "ll" to "all")
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        // Real two-letter words stay.
+        for (w in listOf("he", "an", "or", "us")) assertNull(w, corrected(tapped(w)))
+    }
+
+    /** Missed spaces: two words read apart, and one side put right too. */
+    @Test
+    fun readsWordsRunTogether() {
+        val cases = mapOf("thelink" to "the link", "canyou" to "can you", "seeyou" to "see you", "thinkso" to "think so")
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        // A slip is a likelier reading than a word and a letter: "drinka" isn't "drink a".
+        assertTrue(corrected(tapped("drinka")) != "drink a")
+        // Typed in lower case, a side is never an abbreviation.
+        assertTrue(corrected(tapped("cheee")) != "CH see")
+    }
+
+    /** A tap low on C, V, B or N that meant the space bar below. */
+    @Test
+    fun readsATapAboveTheSpaceBarAsASpace() {
+        assertEquals("since the", corrected(tappedLow("sincebthe", 5)))
+        assertEquals("what you", corrected(tappedLow("whatvyou", 4)))
+        // Where the break is that plain, a side as short as two letters is put right too.
+        assertEquals("the evenings", corrected(tappedLow("thbevenings", 2)))
+        // Squarely on the key, B is a B.
+        assertNull(corrected(tapped("bread")))
+    }
+
+    /** The word before tells a slip from what was meant. */
+    @Test
+    fun usesTheWordBefore() {
+        // Not a word: "tou" after "thank" is "you".
+        assertEquals("you", corrected(tapped("tou"), "thank"))
+        // A real word that doesn't fit, one slip from one that does.
+        assertEquals("keep", corrected(tapped("jeep"), "I"))
+        // A word that fits stays.
+        assertNull(corrected(tapped("jeep"), "the"))
+        assertNull(corrected(tapped("met"), "we"))
+    }
+
+    /** A tap read as a key well away from it is a long shot, however common the word it makes. */
+    @Test
+    fun weighsFarTapsAsLongShots() {
+        assertEquals("lock", corrected(tapped("lovk")))
+        assertEquals("link", corrected(tapped("lonk")))
     }
 
     @Test

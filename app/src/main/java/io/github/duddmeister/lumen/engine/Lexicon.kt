@@ -330,9 +330,9 @@ abstract class FuzzyQuery(
     open fun insertCost(c: Char, previous: Char): Float = when {
         CharFolding.isConnector(c) -> 0.15f
         c == previous -> 0.5f
-        // A tap that never registered is commoner than a stray one ("wich" is "which"), so a
-        // letter left out costs less than one too many. Two letters are too few to tell.
-        input.length >= 3 -> Lexicon.DROPPED_COST
+        // A tap that never registered is commoner than a stray one ("wich" is "which", "yu" is
+        // "you"), so a letter left out costs less than one too many.
+        input.length >= 2 -> Lexicon.DROPPED_COST
         else -> 1f
     }
 

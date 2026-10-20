@@ -45,6 +45,7 @@ class SuggestionEngine(
     private val nextWords: NextWordModel,
     val history: UserHistory,
     private val emojiKeywords: Map<String, List<String>>,
+    private val pairs: WordPairs = WordPairs.EMPTY,
 ) {
     /** Typed words whose autocorrection the user undid; respected for the rest of the session. */
     private val rejected = HashSet<String>()
@@ -67,10 +68,11 @@ class SuggestionEngine(
         val typedIsWord = node >= 0 || learnedCount >= LEARNED_THRESHOLD || folded in rejected
         val hasDigits = typed.any { it.isDigit() }
 
+        val previous = context.lastOrNull()
         val candidates = HashMap<String, Candidate>()
         fun consider(text: String, freq: Int, cost: Float, kind: Suggestion.Kind, penalty: Float = 0f) {
             if (text == typed) return
-            val score = freq - COST_WEIGHT * cost - penalty
+            val score = freq - COST_WEIGHT * cost - penalty + pairBonus(previous, text)
             val old = candidates[text]
             if (old == null) {
                 candidates[text] = Candidate(text, score, cost, kind, freq)
@@ -127,25 +129,30 @@ class SuggestionEngine(
             candidates[w]?.let { it.score += (CONTEXT_BONUS - rank).coerceAtLeast(4).toFloat() }
         }
 
-        val ranked = candidates.values.sortedByDescending { it.score }
+        val singles = candidates.values.sortedByDescending { it.score }
+        val lowercase = typed.none { it.isUpperCase() }
+        // Two words run together, read apart: "thelink", "sincebthe".
+        val split = if (!typedIsWord && !hasDigits && n >= 3) splitReading(word, folded, geometry, lowercase, previous) else null
+        val ranked = if (split == null) singles else (singles + split).sortedByDescending { it.score }
         val shortcut = shortcuts[folded]
         val autoCorrection = when {
             !options.autoCorrect || folded in rejected -> null
             shortcut != null && shortcut.autoCorrect && lexicon.findExact(typed) < 0 ->
                 applyCase(shortcut.replacement, word)
             !typedIsWord && !hasDigits -> {
-                val lowercase = typed.none { it.isUpperCase() }
                 // Only a close second to the best guess, or the best way to finish what was
                 // typed: a guess far behind is usually wrong ("gir" isn't "air" or "girt").
-                val best = ranked.firstOrNull()?.score ?: 0f
-                val bestFinish = ranked.firstOrNull { CharFolding.fold(it.text).startsWith(folded) }
-                ranked.firstOrNull {
+                val best = singles.firstOrNull()?.score ?: 0f
+                val bestFinish = singles.firstOrNull { CharFolding.fold(it.text).startsWith(folded) }
+                val single = singles.firstOrNull {
                     isAutoCorrectable(it, n, lowercase) && (it === bestFinish || best - it.score <= AUTOCORRECT_MARGIN)
-                }?.let { applyCase(it.text, word) }
+                }
+                val pick = if (split != null && (single == null || split.score > single.score)) split else single
+                pick?.let { applyCase(it.text, word) }
             }
             // A slip first, so "tue" (meant "the") isn't taken for "Tue".
-            node >= 0 -> slipFix(node, word, learnedCount, ranked, predicted)?.let { applyCase(it.text, word) }
-                ?: caseFix(typed, node, word)
+            node >= 0 -> (slipFix(node, word, learnedCount, ranked, predicted) ?: contextFix(node, word, learnedCount, ranked, previous))
+                ?.let { applyCase(it.text, word) } ?: caseFix(typed, node, word)
             else -> null
         }?.takeIf { it != typed }
 
@@ -159,6 +166,93 @@ class SuggestionEngine(
         }
         val emoji = if (options.emojiSuggestions) emojiFor(folded, autoCorrection) else emptyList()
         return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji)
+    }
+
+    /** One side of a split: the word read there, how common it is, and what reading it cost. */
+    private class Part(val text: String, val freq: Int, val cost: Float)
+
+    /**
+     * What was typed read as two words: a space never typed ("thelink"), or one that landed
+     * on a letter above the space bar ("sincebthe"). Each side is a word as typed, or one side
+     * takes a small correction of its own ("lastbniggt"). Null when no reading works.
+     */
+    private fun splitReading(word: TypedWord, folded: String, geometry: KeyGeometry?, lowercase: Boolean, previous: String?): Candidate? {
+        val n = folded.length
+        var best: Candidate? = null
+        fun offer(left: Part, right: Part, between: Float) {
+            val cost = left.cost + right.cost + between
+            val score = left.freq + right.freq - SPLIT_WORD_OFFSET - COST_WEIGHT * cost - shortPenalty(left) - shortPenalty(right) +
+                pairBonus(previous, left.text) + pairBonus(left.text, right.text)
+            if (best.let { it == null || score > it.score }) {
+                best = Candidate("${left.text} ${right.text}", score, cost, Suggestion.Kind.CORRECTION, minOf(left.freq, right.freq))
+            }
+        }
+        // Splits where one side is a word and the other needs correcting, most promising first.
+        class Pending(val known: Part, val knownLeft: Boolean, val from: Int, val to: Int, val between: Float)
+        val pending = ArrayList<Pending>()
+        fun consider(leftEnd: Int, rightStart: Int, between: Float) {
+            val left = exactPart(folded, 0, leftEnd, lowercase)
+            val right = exactPart(folded, rightStart, n, lowercase)
+            // A side is corrected only when long enough to tell, or as short as two letters
+            // where a tap above the space bar marks the break ("thbevenings" is "the evenings").
+            val shortest = if (rightStart > leftEnd) 2 else 3
+            when {
+                left != null && right != null -> offer(left, right, between)
+                left != null && n - rightStart >= shortest -> pending.add(Pending(left, true, rightStart, n, between))
+                right != null && leftEnd >= shortest -> pending.add(Pending(right, false, 0, leftEnd, between))
+            }
+        }
+        for (i in 1 until n) {
+            consider(i, i, MISSED_SPACE_COST)
+            if (i + 1 < n) geometry?.spaceCost(folded[i], word.tapX(i), word.tapY(i))?.let { consider(i, i + 1, it) }
+        }
+        pending.sortByDescending { it.known.freq }
+        for (p in pending.take(MAX_SPLIT_CORRECTIONS)) {
+            correctedParts(word, folded, p.from, p.to, geometry, lowercase) { other ->
+                if (p.knownLeft) offer(p.known, other, p.between) else offer(other, p.known, p.between)
+            }
+        }
+        return best
+    }
+
+    /** What the word before says about [text] coming next, on the frequency scale; 0 when it says nothing. */
+    private fun pairBonus(previous: String?, text: String): Float {
+        val bits = previous?.let { pairs.score(it, text) } ?: return 0f
+        return PAIR_WEIGHT * bits.coerceIn(PAIR_MIN_BITS, PAIR_MAX_BITS)
+    }
+
+    /** Single letters stand alone only as "a" and "I", and even those are a stretch. */
+    private fun shortPenalty(p: Part) = if (p.text.length == 1) SPLIT_LETTER_PENALTY else 0f
+
+    /** Letters [from] until [to] as a word just as typed, if a common one. */
+    private fun exactPart(folded: String, from: Int, to: Int, lowercase: Boolean): Part? {
+        val part = folded.substring(from, to)
+        if (part.length == 1 && part != "a" && part != "i") return null
+        val node = lexicon.lookup(part)
+        if (node < 0 || !lexicon.isSuggestable(node)) return null
+        return part(lexicon.wordAt(node), lexicon.frequency(node), 0f, lowercase)
+    }
+
+    /** Each word a small slip away from letters [from] until [to] that can be a side of a split. */
+    private fun correctedParts(word: TypedWord, folded: String, from: Int, to: Int, geometry: KeyGeometry?, lowercase: Boolean, block: (Part) -> Unit) {
+        val query = SpatialQuery(word.slice(from, to), geometry, folded.substring(from, to), SPLIT_CORRECTION_COST, -1f, 0)
+        lexicon.fuzzySearch(query) { found, cost, isCompletion ->
+            if (!isCompletion && lexicon.isSuggestable(found)) part(lexicon.wordAt(found), lexicon.frequency(found), cost, lowercase)?.let(block)
+        }
+    }
+
+    /**
+     * A side of a split, if common enough. Typed in lower case, a name only if a well-known one
+     * ("kaylee" isn't "Kay Lee"), and never an abbreviation ("cheee" isn't "CH see").
+     */
+    private fun part(text: String, dictFreq: Int, cost: Float, lowercase: Boolean): Part? {
+        val freq = dictFreq + history.boost(text)
+        if (freq < SPLIT_MIN_FREQ) return null
+        if (lowercase && text != "I" && text.any { it.isUpperCase() }) {
+            if (text.length > 1 && text.all { !it.isLetter() || it.isUpperCase() }) return null
+            if (freq < NAME_MIN_FREQ) return null
+        }
+        return Part(text, freq, cost)
     }
 
     private fun isAutoCorrectable(c: Candidate, typedLength: Int, lowercase: Boolean): Boolean {
@@ -181,9 +275,10 @@ class SuggestionEngine(
         if (c.kind == Suggestion.Kind.COMPLETION) {
             if (c.cost > 0f) return false
             val extra = c.text.length - typedLength
-            // Three letters are finished only as an everyday word one longer: "ful" is "full"
-            // (but "nav" isn't "Navy").
-            val dropped = typedLength == 3 && extra == 1 && c.freq >= SHORT_FINISH_FREQ && c.text.none { it.isUpperCase() }
+            // Two or three letters are finished only as an everyday word one longer: "th" is
+            // "the" and "ful" is "full" (but "nav" isn't "Navy").
+            val dropped = extra == 1 && c.text.none { it.isUpperCase() } &&
+                (typedLength == 2 && c.freq >= TWO_LETTER_FINISH_FREQ || typedLength == 3 && c.freq >= SHORT_FINISH_FREQ)
             if (!dropped && !(typedLength >= 4 && extra <= 1) && !(typedLength >= 6 && extra <= 2)) return false
         }
         return c.freq >= MIN_AUTOCORRECT_FREQ || c.kind == Suggestion.Kind.LEARNED
@@ -215,6 +310,40 @@ class SuggestionEngine(
         }
         val typedFreq = lexicon.frequency(node)
         return best.takeIf { typedFreq <= rarest && it.freq - typedFreq >= gap }
+    }
+
+    /**
+     * A slip onto a real word that doesn't fit after the word before, when a word one slip
+     * away fits far better: "I jeep" is "I keep". The typed word must be unexpected there and
+     * the other far likelier, by more the commoner the typed word is. A word the user has
+     * typed before is theirs.
+     */
+    private fun contextFix(node: Int, word: TypedWord, typedBefore: Int, ranked: List<Candidate>, previous: String?): Candidate? {
+        if (previous == null || typedBefore > 0 || word.length < 2) return null
+        val typed = lexicon.wordAt(node)
+        val typedFits = pairs.score(previous, typed) ?: return null
+        if (typedFits > CONTEXT_TYPED_MAX_BITS) return null
+        // In lower case, a word the dictionary only knows as a name ("kidd") is as good as rare.
+        val asName = word.chars.none { it.isUpperCase() } && typed.any { it.isUpperCase() }
+        val typedFreq = lexicon.frequency(node) - if (asName) CONTEXT_NAME_DISCOUNT else 0f
+        for (c in ranked.take(CONTEXT_CANDIDATES)) {
+            val slip = when (c.kind) {
+                Suggestion.Kind.CORRECTION -> c.cost.takeIf { it <= CONTEXT_SLIP_COST }
+                // One letter short: a tap that never registered.
+                Suggestion.Kind.COMPLETION -> Lexicon.DROPPED_COST.takeIf { c.cost == 0f && c.text.length == typed.length + 1 }
+                else -> null
+            } ?: continue
+            val fits = pairs.score(previous, c.text) ?: continue
+            val gain = fits - typedFits
+            if (gain < CONTEXT_MIN_GAIN_BITS) continue
+            val margin = when {
+                typedFreq <= CONTEXT_RARE_FREQ -> CONTEXT_MARGIN_RARE
+                typedFreq <= CONTEXT_MID_FREQ -> CONTEXT_MARGIN_MID
+                else -> CONTEXT_MARGIN_COMMON
+            }
+            if (c.freq - COST_WEIGHT * slip - typedFreq + PAIR_WEIGHT * gain >= margin) return c
+        }
+        return null
     }
 
     /**
@@ -280,9 +409,17 @@ class SuggestionEngine(
 
     /** Records a committed word so that frequent words and phrases rise to the top. */
     fun learn(word: String, previous: String?, now: Long) {
-        val clean = word.trim('\'', '-', '.')
-        if (clean.isEmpty() || clean.any { it.isDigit() } || clean.length > 32) return
-        history.record(clean, previous, now)
+        // A correction can be two words ("a bit", "the station"): each follows the one before.
+        var before = previous
+        for (part in word.split(' ')) {
+            val clean = part.trim('\'', '-', '.')
+            if (clean.isEmpty() || clean.any { it.isDigit() } || clean.length > 32) {
+                before = null
+                continue
+            }
+            history.record(clean, before, now)
+            before = clean
+        }
     }
 
     fun forget(word: String) = history.forget(word)
@@ -325,12 +462,51 @@ class SuggestionEngine(
         const val LEARNED_BASE_FREQ = 110
         const val LEARNED_THRESHOLD = 2
         const val MIN_AUTOCORRECT_FREQ = 40
+        /**
+         * Frequency points for each bit (doubling) of how much likelier a word is after the one
+         * before than in general: about what a doubling is worth on the dictionary's scale.
+         */
+        const val PAIR_WEIGHT = 6f
+        /** The word before nudges, but never decides alone: what it says is kept within these bits. */
+        const val PAIR_MIN_BITS = -3f
+        const val PAIR_MAX_BITS = 5f
+        /** Words read apart pay for the second word: the likelier one word is, the less two can win. */
+        const val SPLIT_WORD_OFFSET = 230f
+        /** A space never typed between two words ("thelink"). */
+        const val MISSED_SPACE_COST = 0.8f
+        /** Each side of a split must be at least this common a word... */
+        const val SPLIT_MIN_FREQ = 80
+        /** ...and a lone "a" or "I" pays this much more. */
+        const val SPLIT_LETTER_PENALTY = 25f
+        /** One side of a split may be corrected this much ("lastbniggt"), trying this many sides at most. */
+        const val SPLIT_CORRECTION_COST = 1f
+        const val MAX_SPLIT_CORRECTIONS = 3
+        /**
+         * A real word is weighed against the [CONTEXT_CANDIDATES] best alternatives after the word
+         * before only when it fits there this badly (in bits), against one a slip away: a tap
+         * near the key beside, two letters swapped or a letter dropped...
+         */
+        const val CONTEXT_TYPED_MAX_BITS = -1f
+        const val CONTEXT_CANDIDATES = 5
+        const val CONTEXT_SLIP_COST = 0.85f
+        /** ...that fits at least this much better... */
+        const val CONTEXT_MIN_GAIN_BITS = 3f
+        /** ...by a margin that grows with how common the typed word is (rare, middling, common). */
+        const val CONTEXT_RARE_FREQ = 90
+        const val CONTEXT_MID_FREQ = 130
+        const val CONTEXT_MARGIN_RARE = 20f
+        const val CONTEXT_MARGIN_MID = 40f
+        const val CONTEXT_MARGIN_COMMON = 60f
+        /** Typed in lower case, a word the dictionary only knows as a name counts as this much rarer. */
+        const val CONTEXT_NAME_DISCOUNT = 30f
         /** How far behind the best guess a correction may score (measured on simulated typing). */
         const val AUTOCORRECT_MARGIN = 20f
         /** Lower-case typing is corrected to a name only this common ("London", not "Rollo"). */
         const val NAME_MIN_FREQ = 100
-        /** Three letters short of an everyday word by one ("wil", "hav") are finished as it. */
+        /** Three letters short of an everyday word by one ("wil", "hav") are finished as it... */
         const val SHORT_FINISH_FREQ = 120
+        /** ...and two letters only as a very common one ("th", "wa"). */
+        const val TWO_LETTER_FINISH_FREQ = 160
         /**
          * A slip costing this much at most: two letters swapped (0.6), or a tap on a
          * neighbouring key that leaned towards the key meant...
