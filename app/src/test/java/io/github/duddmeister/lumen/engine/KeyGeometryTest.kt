@@ -83,8 +83,9 @@ class KeyGeometryTest {
         val qwerty = KeyGeometry.qwerty()
         val b = qwerty.center('b')!!
         val height = qwerty.keyHeight
-        // Dead centre on B it is a stretch; at the bottom edge, nearly a space.
-        assertEquals(KeyGeometry.SPACE_CENTRE_COST, qwerty.spaceCost('b', b[0], b[1])!!, 1e-3f)
+        // Dead centre on B it is a B; lower down, maybe a space; at the bottom edge, nearly one.
+        assertNull(qwerty.spaceCost('b', b[0], b[1]))
+        assertNull(qwerty.spaceCost('b', b[0], b[1] + 0.1f * height))
         assertEquals(KeyGeometry.SPACE_EDGE_COST, qwerty.spaceCost('b', b[0], b[1] + 0.49f * height)!!, 1e-3f)
         val lower = qwerty.spaceCost('b', b[0], b[1] + 0.25f * height)!!
         assertTrue(lower < KeyGeometry.SPACE_CENTRE_COST && lower > KeyGeometry.SPACE_EDGE_COST)
@@ -94,6 +95,6 @@ class KeyGeometryTest {
         val h = qwerty.center('h')!!
         assertNull(qwerty.spaceCost('h', h[0], h[1] + 0.4f * height))
         assertNull(qwerty.spaceCost('b', Float.NaN, Float.NaN))
-        assertNull(SplitQwerty.geometry().spaceCost('b', b[0], b[1]))
+        assertNull(SplitQwerty.geometry().spaceCost('b', b[0], b[1] + 0.4f * height))
     }
 }

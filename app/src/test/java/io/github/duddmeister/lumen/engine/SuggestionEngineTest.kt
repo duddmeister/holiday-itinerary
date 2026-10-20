@@ -36,11 +36,11 @@ class SuggestionEngineTest {
     /** What [word] becomes after the words in [before]. */
     private fun corrected(word: TypedWord, before: String) = shared.suggest(word, before.split(' '), geometry).autoCorrection
 
-    /** [text] typed squarely on each key, except the letter at [spaceAt], tapped low on its key, just above the space bar. */
-    private fun tappedLow(text: String, spaceAt: Int) = TypedWord().apply {
+    /** [text] typed squarely on each key, except the letters at [spacesAt], tapped low on their keys, just above the space bar. */
+    private fun tappedLow(text: String, vararg spacesAt: Int) = TypedWord().apply {
         for ((i, c) in text.withIndex()) {
             val p = geometry.center(c)!!
-            add(c, p[0], if (i == spaceAt) p[1] + 0.45f * geometry.keyHeight else p[1])
+            add(c, p[0], if (i in spacesAt) p[1] + 0.45f * geometry.keyHeight else p[1])
         }
     }
 
@@ -211,11 +211,24 @@ class SuggestionEngineTest {
         for (w in listOf("he", "an", "or", "us")) assertNull(w, corrected(tapped(w)))
     }
 
-    /** Missed spaces: two words read apart, and one side put right too. */
+    /** Missed spaces: two or three words read apart, and one of them put right too. */
     @Test
     fun readsWordsRunTogether() {
-        val cases = mapOf("thelink" to "the link", "canyou" to "can you", "seeyou" to "see you", "thinkso" to "think so")
+        val cases = mapOf(
+            "thelink" to "the link", "canyou" to "can you", "seeyou" to "see you", "thinkso" to "think so",
+            "letmeknow" to "let me know",
+        )
         for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        assertEquals("I love you", corrected(tapped("iloveyou"), NextWordModel.SENTENCE_START))
+        // Words typed right stay as typed: "istoo" isn't "is to", "hasbeen" isn't "had been".
+        assertEquals("is too", corrected(tapped("istoo")))
+        assertEquals("has been", corrected(tapped("hasbeen")))
+        // Each extra word must be worth it: "somebtead" is "some bread", not "so me bread".
+        assertEquals("some bread", corrected(tapped("somebtead"), "grab"))
+        // A contraction only opens a split: "dunihed" isn't "dunk he'd".
+        assertTrue(corrected(tapped("dunihed")) != "dunk he'd")
+        // Typed with a capital mid-sentence, it's a name: "Isla" isn't "Is a".
+        assertTrue(corrected(tapped("Isla"), "with")?.contains(' ') != true)
         // A slip is a likelier reading than a word and a letter: "drinka" isn't "drink a".
         assertTrue(corrected(tapped("drinka")) != "drink a")
         // Typed in lower case, a side is never an abbreviation.
@@ -229,6 +242,12 @@ class SuggestionEngineTest {
         assertEquals("what you", corrected(tappedLow("whatvyou", 4)))
         // Where the break is that plain, a side as short as two letters is put right too.
         assertEquals("the evenings", corrected(tappedLow("thbevenings", 2)))
+        // Contractions without their apostrophes, and a tap on the way to the space bar at the end.
+        assertEquals("I'm not", corrected(tappedLow("imnnotn", 2, 6)))
+        assertEquals("I'm going", corrected(tappedLow("imngoing", 2)))
+        assertEquals("don't know", corrected(tappedLow("dontnknow", 4)))
+        // Squarely on the key, N is an N: "innit" isn't "in it".
+        assertTrue(corrected(tapped("innit"), "with")?.contains(' ') != true)
         // Squarely on the key, B is a B.
         assertNull(corrected(tapped("bread")))
     }
@@ -270,7 +289,10 @@ class SuggestionEngineTest {
     fun learnsNewWordsAndStopsCorrectingThem() {
         val engine = TestAssets.engine()
         val now = System.currentTimeMillis()
+        // Twice isn't enough: a slip that autocorrect missed twice isn't a word.
         engine.learn("Duddmeister", null, now)
+        engine.learn("Duddmeister", null, now)
+        assertTrue(!result("duddmeister", engine = engine).typedIsWord)
         engine.learn("Duddmeister", null, now)
         assertNull(result("duddmeister", engine = engine).autoCorrection)
         val completions = result("dudd", engine = engine).candidates.map { it.text }
@@ -284,6 +306,30 @@ class SuggestionEngineTest {
         assertEquals("the", result(typo, engine = engine).autoCorrection)
         engine.rejectAutoCorrection(typo, System.currentTimeMillis())
         assertNull(result(typo, engine = engine).autoCorrection)
+        assertTrue("insisting on a word learns it at once", result(typo, engine = engine).typedIsWord)
+    }
+
+    /** Undone, a correction waits: kept, the word is the user's; changed, the correction comes back and nothing is learned. */
+    @Test
+    fun anUndoneCorrectionWaitsForWhatTheUserDoes() {
+        val engine = TestAssets.engine()
+        engine.holdAutoCorrection("teh")
+        assertNull(result("teh", engine = engine).autoCorrection)
+        engine.releaseAutoCorrection("teh")
+        assertEquals("the", result("teh", engine = engine).autoCorrection)
+        assertEquals(0, engine.history.count("teh"))
+    }
+
+    /** When nothing is sure, the strip's best guess still beats keeping a slip. */
+    @Test
+    fun aSpaceTakesTheBestGuessForAWordThatIsNone() {
+        // Two slips in four letters ("j" for "h", a "y" too many) are past what's sure.
+        val r = shared.suggest(tapped("wjyy"), emptyList(), geometry)
+        assertEquals("why", r.candidates.first().text)
+        assertEquals("why", r.autoCorrection)
+        // Not for a single letter, nor a name typed mid-sentence.
+        assertNull(result("o").autoCorrection)
+        assertNull(shared.suggest(tapped("Saoirse"), listOf("with"), geometry).autoCorrection)
     }
 
     @Test

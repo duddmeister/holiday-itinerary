@@ -76,6 +76,9 @@ class InputLogic(private val host: Host) {
     private var lastSpaceAt = 0L
 
     private class Correction(val typed: String, val committed: String, val separator: String, val cursor: Int)
+
+    /** A word put back by undoing its correction: kept as it is, it is the user's; changed, the correction may come back. */
+    private var undone: String? = null
     private var lastCorrection: Correction? = null
 
     private var expectedStart = -1
@@ -162,6 +165,8 @@ class InputLogic(private val host: Host) {
     }
 
     private fun resetComposing() {
+        undone?.let { host.engine?.releaseAutoCorrection(it) }
+        undone = null
         composing.clear()
         composingRestored = false
         composeStart = -1
@@ -374,7 +379,8 @@ class InputLogic(private val host: Host) {
             composingRestored = true
             setComposing(ic, undo.typed)
             ic.endBatchEdit()
-            host.engine?.rejectAutoCorrection(undo.typed, System.currentTimeMillis())
+            host.engine?.holdAutoCorrection(undo.typed)
+            undone = undo.typed
             autoSpaceInserted = false
             updateSuggestions()
             return
@@ -472,7 +478,6 @@ class InputLogic(private val host: Host) {
     /** A suggestion from the strip was tapped. */
     fun onPick(text: String, emoji: Boolean) {
         val ic = host.connection ?: return
-        val now = System.currentTimeMillis()
         ic.beginBatchEdit()
         if (emoji) {
             if (composing.isNotEmpty) commitComposing(ic, " ", autocorrect = true)
@@ -486,7 +491,7 @@ class InputLogic(private val host: Host) {
             if (text != typed) {
                 lastCorrection = Correction(typed, text, space, expectedEnd)
             } else {
-                host.engine?.rejectAutoCorrection(typed, now) // they insisted on their spelling: learn it
+                insist(typed)
             }
             learn(text)
             resetComposing()
@@ -580,7 +585,11 @@ class InputLogic(private val host: Host) {
                     autoCorrect = settings.autoCorrect && editor.autoCorrectAllowed && standsAlone(),
                     emojiSuggestions = settings.emojiSuggestions,
                 ),
-            )
+            ).let { r ->
+                // A word brought back to edit is put right only if it isn't a word: one that is
+                // stays as it was typed, and the strip says so.
+                if (composingRestored && r.typedIsWord) r.keepingTyped() else r
+            }
         } else {
             SuggestionResult.EMPTY
         }
@@ -726,12 +735,13 @@ class InputLogic(private val host: Host) {
         // Where addresses are typed, "." and "/" carry one on: a word is corrected by a space,
         // or by searching (the address bar's enter goes to what was typed).
         val trigger = !editor.takesAddresses || separator == " " || (separator.isEmpty() && !editor.isUrl)
-        val correction = if (autocorrect && trigger && settings.autoCorrect && editor.autoCorrectAllowed && !composingRestored) {
+        val correction = if (autocorrect && trigger && settings.autoCorrect && editor.autoCorrectAllowed) {
             result.autoCorrection
         } else null
         val word = correction ?: typed
         commitText(ic, word + separator)
         if (correction != null && correction != typed) lastCorrection = Correction(typed, correction, separator, expectedEnd)
+        if (word == undone) insist(word)
         learn(word)
         resetComposing()
     }
@@ -774,6 +784,12 @@ class InputLogic(private val host: Host) {
         if (composeStart >= 0 && expectedEnd >= 0) expect(expectedStart, expectedEnd)
         composeStart = -1
         resetComposing()
+    }
+
+    /** The user insisted on [word] over its correction: it is theirs (learned where learning is allowed). */
+    private fun insist(word: String) {
+        undone = null
+        host.engine?.rejectAutoCorrection(word, System.currentTimeMillis(), learn = settings.learn && editor.learningAllowed)
     }
 
     private fun learn(word: String) {

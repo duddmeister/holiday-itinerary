@@ -240,11 +240,18 @@ def adjust_to_corpora(words, other, taskmaster, books):
         if not word.islower():
             capital[word.lower()] = max(capital[word.lower()], freq)
     # Counts can't tell "will" from "Will", so words whose capitalised form is commoner sit
-    # out, as do the chat words above, whose standing is set by hand.
-    freqs = {
-        word: freq for word, (freq, _) in words.items()
-        if word.islower() and freq > capital[word] and word not in CHAT_WORDS and word not in EXTRA_WORDS
-    }
+    # out, as do the chat words above, whose standing is set by hand. "I'm" and the like
+    # have their capital only for "I", so they count. Words are counted in lower case.
+    listed = {}
+    for word, (freq, _) in words.items():
+        key = word.lower()
+        if freq <= 0 or word in CHAT_WORDS or word in EXTRA_WORDS:
+            continue
+        if word.islower() and freq > capital[key]:
+            listed[key] = word
+        elif word.startswith("I'") and word[2:].islower() and key not in words:
+            listed[key] = word
+    freqs = {key: words[word][0] for key, word in listed.items()}
     vocab = {word.lower(): word.lower() for word in words}
     counts = source_counts(taskmaster, books, vocab, respellings(vocab, {word.lower(): word.lower() for word in other}))
     talk = Counter()
@@ -254,16 +261,17 @@ def adjust_to_corpora(words, other, taskmaster, books):
     by_talk = corpus_ranks(talk, freqs)
     by_books = corpus_ranks(counts["books"], freqs)
     moved = 0
-    for word, freq in freqs.items():
-        if word not in by_talk or word not in by_books:
+    for key, freq in freqs.items():
+        if key not in by_talk or key not in by_books:
             continue
-        a, b = by_talk[word] - freq, by_books[word] - freq
+        a, b = by_talk[key] - freq, by_books[key] - freq
         if a > 0 and b > 0:
             shift = min(a, b, CORPUS_SHIFT)
         elif a < 0 and b < 0:
             shift = max(a, b, -CORPUS_SHIFT)
         else:
             continue
+        word = listed[key]
         words[word] = (max(1, min(255, freq + shift)), words[word][1])
         moved += 1
     return moved

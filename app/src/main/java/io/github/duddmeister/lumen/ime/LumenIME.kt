@@ -671,7 +671,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         updateShift()
     }
 
-    /** The strip's highlighted suggestion for the word being typed: its correction, else the typed word if it's a word, else the best other suggestion. */
+    /** What a swipe right finishes the word being typed with: its correction, else the typed word if it's a word, else the best other suggestion. */
     private fun bestSuggestion(): String {
         val r = logic.result
         val typed = logic.composing.toString()
@@ -707,16 +707,19 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
                 val emoji = r.emoji.firstOrNull()?.let { SuggestionStripView.Item(it, emoji = true) }
                 // The best guess goes in the middle, as on Gboard: the correction a space will
                 // make, else the typed word if it's one, else the likeliest word it could become.
-                // When that isn't what was typed, what was typed sits to its left, to keep.
+                // When that isn't what was typed, what was typed sits to its left, to keep. With
+                // autocorrect on, the middle is what a space makes: a word a space keeps as typed
+                // sits there itself (but a single letter, most likely a word being started, doesn't).
+                val kept = r.corrects && auto == null && typed.length > 1
                 when {
                     auto != null -> strip.setSuggestions(
                         SuggestionStripView.Item(typed, quoted = true),
                         SuggestionStripView.Item(auto, primary = true),
                         emoji ?: others.getOrNull(0)?.let { SuggestionStripView.Item(it.text) },
                     )
-                    r.typedIsWord || others.isEmpty() -> strip.setSuggestions(
+                    r.typedIsWord || others.isEmpty() || kept -> strip.setSuggestions(
                         others.getOrNull(0)?.let { SuggestionStripView.Item(it.text) },
-                        SuggestionStripView.Item(typed, primary = r.typedIsWord),
+                        SuggestionStripView.Item(typed, primary = r.typedIsWord, quoted = !r.typedIsWord && others.isNotEmpty()),
                         emoji ?: others.getOrNull(1)?.let { SuggestionStripView.Item(it.text) },
                     )
                     else -> strip.setSuggestions(
