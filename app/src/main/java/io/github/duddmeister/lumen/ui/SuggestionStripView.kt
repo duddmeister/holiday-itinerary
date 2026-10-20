@@ -15,10 +15,11 @@ import io.github.duddmeister.lumen.keyboard.Icons
 import io.github.duddmeister.lumen.keyboard.KeyPainter
 
 /**
- * The bar above the keys. Shows three suggestions (the one a space will commit
- * in the middle, emphasised), a paste chip for freshly copied text, a live
- * preview while glide typing, or — when there is nothing to suggest — a
- * toolbar with Lumen's panels, the less used ones behind its ⋯ button.
+ * The bar above the keys. Shows three suggestions (the best guess in the
+ * middle, emphasised when a space will commit it), a paste chip for freshly
+ * copied text, a live preview while glide typing, or — when there is nothing
+ * to suggest — a toolbar with Lumen's panels, the less used ones behind its
+ * ⋯ button.
  */
 @SuppressLint("ViewConstructor")
 class SuggestionStripView(context: Context, private val painter: KeyPainter) : View(context) {

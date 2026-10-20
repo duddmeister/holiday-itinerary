@@ -772,16 +772,23 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
                 val auto = r.autoCorrection
                 val others = r.candidates.filter { it.text != auto && it.text != typed }
                 val emoji = r.emoji.firstOrNull()?.let { SuggestionStripView.Item(it, emoji = true) }
-                if (auto != null) {
-                    strip.setSuggestions(
+                // The best guess goes in the middle, as on Gboard: the correction a space will
+                // make, else the typed word if it's one, else the likeliest word it could become.
+                // When that isn't what was typed, what was typed sits to its left, to keep.
+                when {
+                    auto != null -> strip.setSuggestions(
                         SuggestionStripView.Item(typed, quoted = true),
                         SuggestionStripView.Item(auto, primary = true),
                         emoji ?: others.getOrNull(0)?.let { SuggestionStripView.Item(it.text) },
                     )
-                } else {
-                    strip.setSuggestions(
+                    r.typedIsWord || others.isEmpty() -> strip.setSuggestions(
                         others.getOrNull(0)?.let { SuggestionStripView.Item(it.text) },
                         SuggestionStripView.Item(typed, primary = r.typedIsWord),
+                        emoji ?: others.getOrNull(1)?.let { SuggestionStripView.Item(it.text) },
+                    )
+                    else -> strip.setSuggestions(
+                        SuggestionStripView.Item(typed, quoted = true),
+                        SuggestionStripView.Item(others[0].text),
                         emoji ?: others.getOrNull(1)?.let { SuggestionStripView.Item(it.text) },
                     )
                 }
