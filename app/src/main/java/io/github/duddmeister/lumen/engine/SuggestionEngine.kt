@@ -20,7 +20,12 @@ class SuggestionResult(
     val autoCorrection: String?,
     /** Emoji matching the typed word, best first. */
     val emoji: List<String>,
+    /** Whether a space may correct this word: then it makes [autoCorrection], or keeps the typed word if that's null. */
+    val corrects: Boolean = false,
 ) {
+    /** The same, but a space keeps the typed word (a word put back to edit, typed on purpose). */
+    fun keepingTyped() = SuggestionResult(typed, typedIsWord, candidates, null, emoji, corrects = false)
+
     companion object {
         val EMPTY = SuggestionResult("", false, emptyList(), null, emptyList())
     }
@@ -131,8 +136,11 @@ class SuggestionEngine(
 
         val singles = candidates.values.sortedByDescending { it.score }
         val lowercase = typed.none { it.isUpperCase() }
-        // Two words run together, read apart: "thelink", "sincebthe".
-        val split = if (!typedIsWord && !hasDigits && n >= 3) splitReading(word, folded, geometry, lowercase, previous) else null
+        // A capital typed mid-sentence marks a name: it isn't read apart ("Isla" isn't "Is a"),
+        // nor taken for a guess.
+        val named = word.isCapitalized && previous != null && previous != NextWordModel.SENTENCE_START
+        // Words run together, read apart: "thelink", "sincebthe".
+        val split = if (!typedIsWord && !hasDigits && n >= 3 && !named) splitReading(word, folded, geometry, lowercase, previous) else null
         val ranked = if (split == null) singles else (singles + split).sortedByDescending { it.score }
         val shortcut = shortcuts[folded]
         val autoCorrection = when {
@@ -141,14 +149,19 @@ class SuggestionEngine(
                 applyCase(shortcut.replacement, word)
             !typedIsWord && !hasDigits -> {
                 // Only a close second to the best guess, or the best way to finish what was
-                // typed: a guess far behind is usually wrong ("gir" isn't "air" or "girt").
-                val best = singles.firstOrNull()?.score ?: 0f
+                // typed: a guess far behind is usually wrong ("gir" isn't "air" or "girt", and
+                // "tomor" isn't "to more").
+                val best = ranked.firstOrNull()?.score ?: 0f
                 val bestFinish = singles.firstOrNull { CharFolding.fold(it.text).startsWith(folded) }
                 val single = singles.firstOrNull {
                     isAutoCorrectable(it, n, lowercase) && (it === bestFinish || best - it.score <= AUTOCORRECT_MARGIN)
                 }
-                val pick = if (split != null && (single == null || split.score > single.score)) split else single
-                pick?.let { applyCase(it.text, word) }
+                val close = split?.takeIf { best - it.score <= AUTOCORRECT_MARGIN }
+                val pick = if (close != null && (single == null || close.score > single.score)) close else single
+                // Nothing that sure: the best guess, shown in the middle of the strip, still beats
+                // keeping a slip, if it is a word put right or one typed most of the way.
+                (pick ?: ranked.firstOrNull()?.takeIf { n >= 2 && !named && isBestGuessTaken(it, n, lowercase) })
+                    ?.let { applyCase(it.text, word) }
             }
             // A slip first, so "tue" (meant "the") isn't taken for "Tue".
             node >= 0 -> (slipFix(node, word, learnedCount, ranked, predicted) ?: contextFix(node, word, learnedCount, ranked, previous))
@@ -165,51 +178,121 @@ class SuggestionEngine(
             if (out.size == options.maxResults) break
         }
         val emoji = if (options.emojiSuggestions) emojiFor(folded, autoCorrection) else emptyList()
-        return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji)
+        return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji, corrects = options.autoCorrect)
     }
 
-    /** One side of a split: the word read there, how common it is, and what reading it cost. */
+    /** One word of a split: the word read there, how common it is, and what reading it cost. */
     private class Part(val text: String, val freq: Int, val cost: Float)
 
     /**
-     * What was typed read as two words: a space never typed ("thelink"), or one that landed
-     * on a letter above the space bar ("sincebthe"). Each side is a word as typed, or one side
-     * takes a small correction of its own ("lastbniggt"). Null when no reading works.
+     * Words read one after another in a split: what they are worth together, each paying for
+     * being a word of its own, the spaces read between them, and whether the last of those was
+     * a tap above the space bar.
+     */
+    private class Run(val parts: List<Part>, val score: Float, val between: Float, val tapped: Boolean)
+
+    /**
+     * What was typed read as two or more words: spaces never typed ("thelink"), or taps on
+     * letters just above the space bar ("sincebthe"), even one tapped on the way to the space
+     * bar itself ("imnnotn" is "I'm not"). The words are as typed, contractions too ("im"),
+     * or one of them takes a small correction of its own ("lastbniggt"). Null when no reading
+     * works.
      */
     private fun splitReading(word: TypedWord, folded: String, geometry: KeyGeometry?, lowercase: Boolean, previous: String?): Candidate? {
         val n = folded.length
+        // What reading each letter as a space costs: NaN where it can't be one.
+        val space = FloatArray(n) { geometry?.spaceCost(folded[it], word.tapX(it), word.tapY(it)) ?: Float.NaN }
+        val exact = Array(n) { s -> arrayOfNulls<Part>(n + 1).also { row -> for (e in s + 1..n) row[e] = exactPart(folded, s, e, lowercase, s == 0) } }
+        fun worth(p: Part, lead: Boolean = false) = p.freq - COST_WEIGHT * p.cost - shortPenalty(p, lead)
+        // Compared word by word, each pays for being a word of its own: one more word must
+        // be worth it ("somebtead" is "some bread", not "so me bread").
+        fun alone(p: Part, lead: Boolean = false) = worth(p, lead) - SPLIT_WORD_OFFSET
         var best: Candidate? = null
-        fun offer(left: Part, right: Part, between: Float) {
-            val cost = left.cost + right.cost + between
-            val score = left.freq + right.freq - SPLIT_WORD_OFFSET - COST_WEIGHT * cost - shortPenalty(left) - shortPenalty(right) +
-                pairBonus(previous, left.text) + pairBonus(left.text, right.text)
+        fun offer(parts: List<Part>, between: Float) {
+            var score = -SPLIT_WORD_OFFSET * (parts.size - 1) - COST_WEIGHT * between
+            var cost = between
+            var before = previous
+            for ((i, p) in parts.withIndex()) {
+                score += worth(p, i == 0) + pairBonus(before, p.text)
+                cost += p.cost
+                before = p.text
+            }
             if (best.let { it == null || score > it.score }) {
-                best = Candidate("${left.text} ${right.text}", score, cost, Suggestion.Kind.CORRECTION, minOf(left.freq, right.freq))
+                best = Candidate(parts.joinToString(" ") { it.text }, score, cost, Suggestion.Kind.CORRECTION, parts.minOf { it.freq })
             }
         }
-        // Splits where one side is a word and the other needs correcting, most promising first.
-        class Pending(val known: Part, val knownLeft: Boolean, val from: Int, val to: Int, val between: Float)
-        val pending = ArrayList<Pending>()
-        fun consider(leftEnd: Int, rightStart: Int, between: Float) {
-            val left = exactPart(folded, 0, leftEnd, lowercase)
-            val right = exactPart(folded, rightStart, n, lowercase)
-            // A side is corrected only when long enough to tell, or as short as two letters
-            // where a tap above the space bar marks the break ("thbevenings" is "the evenings").
-            val shortest = if (rightStart > leftEnd) 2 else 3
-            when {
-                left != null && right != null -> offer(left, right, between)
-                left != null && n - rightStart >= shortest -> pending.add(Pending(left, true, rightStart, n, between))
-                right != null && leftEnd >= shortest -> pending.add(Pending(right, false, 0, leftEnd, between))
+        fun keep(table: Array<Run?>, at: Int, run: Run) {
+            if (table[at].let { it == null || run.score > it.score }) table[at] = run
+        }
+        // A last letter above the space bar may be a tap on the way to it, before the real one.
+        val ends = if (n > 3 && !space[n - 1].isNaN()) intArrayOf(n, n - 1) else intArrayOf(n)
+        for (end in ends) {
+            val trailing = if (end < n) space[n - 1] else 0f
+            // Where a word can start after one ending at [e]: there (a space never typed) or a
+            // letter on (a tap above the space bar), and what that space costs.
+            fun nextStarts(e: Int, block: (start: Int, cost: Float, tapped: Boolean) -> Unit) {
+                if (e >= end) return
+                block(e, MISSED_SPACE_COST, false)
+                if (!space[e].isNaN() && e + 1 < end) block(e + 1, space[e], true)
             }
-        }
-        for (i in 1 until n) {
-            consider(i, i, MISSED_SPACE_COST)
-            if (i + 1 < n) geometry?.spaceCost(folded[i], word.tapX(i), word.tapY(i))?.let { consider(i, i + 1, it) }
-        }
-        pending.sortByDescending { it.known.freq }
-        for (p in pending.take(MAX_SPLIT_CORRECTIONS)) {
-            correctedParts(word, folded, p.from, p.to, geometry, lowercase) { other ->
-                if (p.knownLeft) offer(p.known, other, p.between) else offer(other, p.known, p.between)
+            // The best words as typed from the start up to where each next word starts...
+            val ahead = arrayOfNulls<Run>(end + 1)
+            ahead[0] = Run(emptyList(), 0f, 0f, false)
+            for (s in 0 until end) {
+                val run = ahead[s] ?: continue
+                if (run.parts.size == MAX_SPLIT_WORDS) continue
+                for (e in s + 1..end) {
+                    val p = exact[s][e] ?: continue
+                    val score = run.score + alone(p, s == 0) + pairBonus(run.parts.lastOrNull()?.text ?: previous, p.text)
+                    if (e == end && (run.parts.isNotEmpty() || end < n)) offer(run.parts + p, run.between + trailing)
+                    nextStarts(e) { start, cost, tapped ->
+                        keep(ahead, start, Run(run.parts + p, score - COST_WEIGHT * cost, run.between + cost, tapped))
+                    }
+                }
+            }
+            // ...and from each start to the end.
+            val behind = arrayOfNulls<Run>(end + 1)
+            behind[end] = Run(emptyList(), 0f, 0f, false)
+            for (s in end - 1 downTo 1) {
+                for (e in s + 1..end) {
+                    val p = exact[s][e] ?: continue
+                    if (e == end) keep(behind, s, Run(listOf(p), alone(p), 0f, false))
+                    nextStarts(e) { start, cost, _ ->
+                        val rest = behind[start]
+                        if (rest != null && rest.parts.isNotEmpty() && rest.parts.size < MAX_SPLIT_WORDS - 1) {
+                            val score = alone(p) + rest.score - COST_WEIGHT * cost + pairBonus(p.text, rest.parts[0].text)
+                            keep(behind, s, Run(listOf(p) + rest.parts, score, rest.between + cost, false))
+                        }
+                    }
+                }
+            }
+            // One word that needs correcting among words as typed, most promising first. It is
+            // as short as two letters only beside a tap above the space bar ("thbevenings").
+            class Gap(val from: Int, val to: Int, val head: Run, val tail: Run, val between: Float, val promise: Float)
+            val gaps = HashMap<Int, Gap>()
+            for (a in 0 until end) {
+                val head = ahead[a] ?: continue
+                for (b in a + 2..end) {
+                    // A word typed right stays as it is ("istoo" is "is too", not "is to").
+                    if (exact[a][b] != null) continue
+                    fun consider(tail: Run, cost: Float, tapped: Boolean) {
+                        val words = head.parts.size + 1 + tail.parts.size
+                        if (words < 2 || words > MAX_SPLIT_WORDS) return
+                        if (b - a < 3 && !head.tapped && !tapped) return
+                        val promise = head.score + tail.score - COST_WEIGHT * cost
+                        val key = a * (end + 1) + b
+                        if (gaps[key].let { it == null || promise > it.promise }) {
+                            gaps[key] = Gap(a, b, head, tail, head.between + cost + tail.between + trailing, promise)
+                        }
+                    }
+                    if (b == end) consider(behind[end]!!, 0f, false)
+                    nextStarts(b) { start, cost, tapped -> behind[start]?.let { if (it.parts.isNotEmpty()) consider(it, cost, tapped) } }
+                }
+            }
+            for (g in gaps.values.sortedByDescending { it.promise }.take(MAX_SPLIT_CORRECTIONS)) {
+                correctedParts(word, folded, g.from, g.to, geometry, lowercase) { fixed ->
+                    offer(g.head.parts + fixed + g.tail.parts, g.between)
+                }
             }
         }
         return best
@@ -221,16 +304,23 @@ class SuggestionEngine(
         return PAIR_WEIGHT * bits.coerceIn(PAIR_MIN_BITS, PAIR_MAX_BITS)
     }
 
-    /** Single letters stand alone only as "a" and "I", and even those are a stretch. */
-    private fun shortPenalty(p: Part) = if (p.text.length == 1) SPLIT_LETTER_PENALTY else 0f
+    /** Single letters stand alone only as "a" and "I", and even those are a stretch, but for "I" first ("iloveyou"). */
+    private fun shortPenalty(p: Part, lead: Boolean) = if (p.text.length == 1 && !(lead && p.text == "I")) SPLIT_LETTER_PENALTY else 0f
 
-    /** Letters [from] until [to] as a word just as typed, if a common one. */
-    private fun exactPart(folded: String, from: Int, to: Int, lowercase: Boolean): Part? {
+    /**
+     * Letters [from] until [to] as a word just as typed, if a common one. The [first] word may
+     * be a contraction typed without its apostrophe ("imnnot" is "I'm not"; "dunihed" isn't
+     * "dunk he'd", and "abit" isn't one word).
+     */
+    private fun exactPart(folded: String, from: Int, to: Int, lowercase: Boolean, first: Boolean): Part? {
         val part = folded.substring(from, to)
         if (part.length == 1 && part != "a" && part != "i") return null
         val node = lexicon.lookup(part)
-        if (node < 0 || !lexicon.isSuggestable(node)) return null
-        return part(lexicon.wordAt(node), lexicon.frequency(node), 0f, lowercase)
+        if (node >= 0 && lexicon.isSuggestable(node)) return part(lexicon.wordAt(node), lexicon.frequency(node), 0f, lowercase)
+        if (!first) return null
+        val contraction = shortcuts[part]?.takeIf { it.autoCorrect && ' ' !in it.replacement } ?: return null
+        val full = lexicon.lookup(contraction.replacement).takeIf { it >= 0 } ?: return null
+        return part(contraction.replacement, lexicon.frequency(full), 0f, lowercase)
     }
 
     /** Each word a small slip away from letters [from] until [to] that can be a side of a split. */
@@ -255,15 +345,34 @@ class SuggestionEngine(
         return Part(text, freq, cost)
     }
 
+    /**
+     * Typed in lower case, a slip far more likely means an everyday word than an abbreviation
+     * or a little-known name: "ppl" isn't "PPP", "lolol" isn't "Rollo".
+     */
+    private fun unlikelyName(c: Candidate, lowercase: Boolean): Boolean {
+        if (!lowercase || c.kind == Suggestion.Kind.LEARNED || c.text.none { it.isUpperCase() }) return false
+        return (c.text.length > 1 && c.text.all { !it.isLetter() || it.isUpperCase() }) || c.freq < NAME_MIN_FREQ
+    }
+
+    /**
+     * The best guess for a word that isn't one, taken by a space when nothing surer is: a word
+     * put right, or one typed most of the way: two letters short at most of four typed, three
+     * of five ("remem" is "remember").
+     */
+    private fun isBestGuessTaken(c: Candidate, typedLength: Int, lowercase: Boolean): Boolean {
+        if (unlikelyName(c, lowercase)) return false
+        return when (c.kind) {
+            Suggestion.Kind.CORRECTION, Suggestion.Kind.LEARNED -> c.freq >= MIN_AUTOCORRECT_FREQ || c.kind == Suggestion.Kind.LEARNED
+            Suggestion.Kind.COMPLETION -> c.cost == 0f && typedLength >= 4 && c.freq >= MIN_AUTOCORRECT_FREQ &&
+                c.text.length - typedLength <= (if (typedLength >= 5) 3 else 2)
+            else -> false
+        }
+    }
+
     private fun isAutoCorrectable(c: Candidate, typedLength: Int, lowercase: Boolean): Boolean {
         if (c.kind == Suggestion.Kind.SHORTCUT) return c.cost == 0f
         if (typedLength < 2) return false
-        // Typed in lower case, a slip far more likely means an everyday word than an
-        // abbreviation or a little-known name: "ppl" isn't "PPP", "lolol" isn't "Rollo".
-        if (lowercase && c.kind != Suggestion.Kind.LEARNED && c.text.any { it.isUpperCase() }) {
-            if (c.text.length > 1 && c.text.all { !it.isLetter() || it.isUpperCase() }) return false
-            if (c.freq < NAME_MIN_FREQ) return false
-        }
+        if (unlikelyName(c, lowercase)) return false
         val maxAuto = when {
             // One neighbouring key, even squarely on it ("ti" for "to"), or two letters swapped.
             typedLength == 2 -> 0.8f
@@ -401,10 +510,26 @@ class SuggestionEngine(
         return node < 0 || !lexicon.isOffensive(node)
     }
 
-    /** The user undid an autocorrection of [typed]: never correct it again and start learning it. */
-    fun rejectAutoCorrection(typed: String, now: Long) {
+    /**
+     * The user insisted on [typed] over its correction (picked it, or kept it after undoing the
+     * correction): it is never corrected again, and is learned as theirs at once if [learn].
+     */
+    fun rejectAutoCorrection(typed: String, now: Long, learn: Boolean = true) {
         rejected.add(CharFolding.fold(typed))
-        history.record(typed, null, now, weight = LEARNED_THRESHOLD)
+        if (learn) history.record(typed, null, now, weight = LEARNED_THRESHOLD)
+    }
+
+    /**
+     * The user undid an autocorrection of [typed]: it isn't corrected again while they decide.
+     * Keeping it rejects the correction; changing it ([releaseAutoCorrection]) means the undo
+     * was for something else, such as a comma ("thnks" undone, then fixed by hand).
+     */
+    fun holdAutoCorrection(typed: String) {
+        rejected.add(CharFolding.fold(typed))
+    }
+
+    fun releaseAutoCorrection(typed: String) {
+        rejected.remove(CharFolding.fold(typed))
     }
 
     /** Records a committed word so that frequent words and phrases rise to the top. */
@@ -460,7 +585,11 @@ class SuggestionEngine(
         const val SHORTCUT_FREQ = 240
         const val SUGGESTED_SHORTCUT_FREQ = 150
         const val LEARNED_BASE_FREQ = 110
-        const val LEARNED_THRESHOLD = 2
+        /**
+         * A word the dictionary lacks is the user's after this many uses: three, so a slip that
+         * autocorrect missed twice isn't taken for a word. Insisting on it counts this much at once.
+         */
+        const val LEARNED_THRESHOLD = 3
         const val MIN_AUTOCORRECT_FREQ = 40
         /**
          * Frequency points for each bit (doubling) of how much likelier a word is after the one
@@ -478,9 +607,11 @@ class SuggestionEngine(
         const val SPLIT_MIN_FREQ = 80
         /** ...and a lone "a" or "I" pays this much more. */
         const val SPLIT_LETTER_PENALTY = 25f
-        /** One side of a split may be corrected this much ("lastbniggt"), trying this many sides at most. */
+        /** One word of a split may be corrected this much ("lastbniggt"), trying this many at most... */
         const val SPLIT_CORRECTION_COST = 1f
         const val MAX_SPLIT_CORRECTIONS = 3
+        /** ...in a split into this many words at most ("letmeknow"). */
+        const val MAX_SPLIT_WORDS = 3
         /**
          * A real word is weighed against the [CONTEXT_CANDIDATES] best alternatives after the word
          * before only when it fits there this badly (in bits), against one a slip away: a tap

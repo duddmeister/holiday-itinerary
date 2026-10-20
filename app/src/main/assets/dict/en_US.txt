@@ -18090,10 +18090,10 @@ Hyundai	84
 Hyundai's	44
 Héloise	15
 I	196
-I'd	136
+I'd	144
 I'll	164
-I'm	116
-I've	160
+I'm	146
+I've	156
 IAA	70
 IAAF	97
 IAB	62
@@ -48966,7 +48966,7 @@ avenue	120
 avenue's	44
 avenues	99
 aver	0
-average	139
+average	138
 average's	23
 averaged	113
 averagely	48
@@ -50830,7 +50830,7 @@ becomingly	25
 becomings	2
 becquerel	34
 becta	1
-bed	146
+bed	145
 bed's	43
 bedaubed	1
 bedazzle	15
@@ -53811,7 +53811,7 @@ bote	36
 botflies	15
 botfly	38
 botfly's	1
-both	158
+both	157
 bother	90
 bothered	89
 bothering	75
@@ -54062,7 +54062,7 @@ boyhoods	10
 boyish	72
 boyishly	37
 boyishness	36
-boys	144
+boys	143
 boyscout	10
 boysenberries	10
 boysenberry	35
@@ -54519,7 +54519,7 @@ bribers	21
 bribery	96
 bribes	95
 bribing	80
-brick	123
+brick	122
 brick's	21
 brickbat	18
 brickbats	37
@@ -57101,7 +57101,7 @@ cardrooms	51
 cards	125
 cardsharp	31
 cardsharps	10
-care	147
+care	146
 care's	18
 cared	102
 careen	47
@@ -58485,7 +58485,7 @@ chandler	54
 chandler's	33
 chandlers	48
 chandlery	44
-change	148
+change	147
 change's	25
 changeability	43
 changeable	76
@@ -59936,7 +59936,7 @@ citruses	39
 cits	26
 cittern	60
 citterns	37
-city	162
+city	161
 city's	131
 city-state	1
 cityscape	73
@@ -67543,7 +67543,7 @@ dauber's	10
 daubers	39
 daubing	40
 daubs	30
-daughter	146
+daughter	145
 daughter's	99
 daughterly	21
 daughters	127
@@ -67573,7 +67573,7 @@ dawn's	39
 dawned	74
 dawning	67
 dawns	63
-day	163
+day	162
 day's	104
 day-to-day	84
 daybed	28
@@ -67998,7 +67998,7 @@ decibels	74
 decidability	50
 decidable	70
 decide	124
-decided	138
+decided	137
 decidedly	94
 decider	90
 deciders	57
@@ -73644,7 +73644,7 @@ drench	46
 drenched	79
 drenches	39
 drenching	56
-dress	138
+dress	137
 dress's	18
 dressage	87
 dressages	1
@@ -79499,7 +79499,7 @@ famer	64
 famers	54
 familia	67
 familial	92
-familiar	134
+familiar	133
 familiarities	35
 familiarity	94
 familiarization	64
@@ -79622,7 +79622,7 @@ fanzine's	32
 fanzines	81
 faqir's	1
 faqirs	28
-far	152
+far	151
 farad	44
 faradays	10
 farads	44
@@ -83426,7 +83426,7 @@ frescoes	100
 frescoing	25
 frescoist	18
 frescos	78
-fresh	135
+fresh	134
 freshen	54
 freshened	51
 freshener	55
@@ -85673,7 +85673,7 @@ gismo	10
 gist	64
 gists	15
 gittern's	21
-give	158
+give	159
 giveaway	72
 giveaways	67
 giveback	10
@@ -87041,7 +87041,7 @@ greasiest	2
 greasiness	31
 greasing	52
 greasy	77
-great	162
+great	163
 greatcoat	50
 greatcoats	45
 greaten	1
@@ -88663,7 +88663,7 @@ happily	102
 happiness	109
 happinesses	15
 happing	15
-happy	152
+happy	151
 haps	25
 hara	62
 harakiri	33
@@ -99020,7 +99020,7 @@ knotwork	47
 knout	36
 knouted	10
 knouting	1
-know	166
+know	165
 know-all	1
 know-how	1
 knowability	37
@@ -101283,7 +101283,7 @@ lineprinters	15
 liner	111
 liner's	47
 liners	95
-lines	135
+lines	134
 linesman	75
 linesman's	21
 linesmen	57
@@ -102198,7 +102198,7 @@ lotting	1
 lotto	45
 lotus	93
 lotuses	56
-loud	127
+loud	126
 louder	88
 loudest	78
 loudhailer	18
@@ -103690,7 +103690,7 @@ manuring	37
 manuscript	120
 manuscript's	56
 manuscripts	117
-many	166
+many	165
 manzanita	62
 manège	37
 maomao	1
@@ -105841,7 +105841,7 @@ midden	32
 midden's	1
 middens	74
 middies	23
-middle	141
+middle	140
 middle's	10
 middle-class	83
 middlebrow	51
@@ -108349,7 +108349,7 @@ ms	85
 msec	48
 msg	87
 mu's	35
-much	166
+much	165
 muchness	6
 mucilage	64
 mucilages	15
@@ -110455,7 +110455,7 @@ noggins	21
 nohow	10
 noir	101
 noire	63
-noise	139
+noise	138
 noise's	23
 noised	27
 noiseless	57
@@ -111364,7 +111364,7 @@ noviciate	40
 novitiate	82
 novitiates	40
 novo	80
-now	170
+now	169
 now's	75
 nowadays	108
 nowhere	105
@@ -114730,7 +114730,7 @@ packages	111
 packaging	110
 packaging's	1
 packagings	42
-packed	117
+packed	116
 packer	66
 packer's	21
 packers	67
@@ -118264,7 +118264,7 @@ piccolo's	10
 piccolos	53
 pichiciego	1
 pichiciegos	1
-pick	130
+pick	129
 pick's	18
 pickable	10
 pickax	32
@@ -119326,7 +119326,7 @@ playpen	47
 playpens	28
 playroom	59
 playrooms	39
-plays	136
+plays	135
 playschool	42
 playschools	31
 playsuit	1
@@ -129223,7 +129223,7 @@ reputes	1
 reputing	10
 repêchage	43
 reqd	1
-request	132
+request	131
 request's	21
 requested	124
 requester	61
@@ -134284,7 +134284,7 @@ seclusion	89
 seclusionists	1
 seclusions	21
 seclusive	15
-second	161
+second	160
 second's	44
 secondaries	69
 secondarily	77
@@ -137067,7 +137067,7 @@ singer	111
 singer's	91
 singers	120
 singes	46
-singing	131
+singing	130
 singingly	15
 singings	50
 single	138
@@ -139178,7 +139178,7 @@ somersaulted	49
 somersaulting	44
 somersaults	60
 somerset	37
-something	159
+something	160
 something's	55
 sometime	115
 sometimes	148
@@ -139841,7 +139841,7 @@ spears	94
 spearwort	25
 spec	93
 spec's	1
-special	148
+special	147
 special's	45
 specialism	70
 specialism's	1
@@ -140815,7 +140815,7 @@ squanderer	10
 squanderer's	1
 squandering	63
 squanders	46
-square	145
+square	144
 square's	62
 squared	97
 squarely	81
@@ -142916,7 +142916,7 @@ stutters	51
 sty	54
 sty's	10
 stylate	10
-style	146
+style	145
 style's	63
 stylebook	35
 stylebooks	10
@@ -155426,7 +155426,7 @@ usherettes	32
 ushering	78
 ushers	71
 using	139
-usual	131
+usual	130
 usually	136
 usuals	10
 usurer	54
@@ -160533,7 +160533,7 @@ youngster's	51
 youngsters	95
 your	171
 yours	116
-yourself	133
+yourself	132
 yourselfers	38
 yourselves	75
 youth	136

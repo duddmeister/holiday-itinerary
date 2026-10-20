@@ -17,7 +17,8 @@ class KeyGeometry(
     /**
      * What it costs to read a tap at ([x], [y]) that typed [c] as a space instead: a tap on a
      * letter just above the space bar, low on its key, often meant the bar ("sincebthe").
-     * Null when the space bar isn't under that letter, or the tap is not known.
+     * Null when the space bar isn't under that letter, the tap is not known, or it landed too
+     * near the middle of the key to be anything but that letter ("innit").
      */
     fun spaceCost(c: Char, x: Float, y: Float): Float? {
         val s = space ?: return null
@@ -26,6 +27,7 @@ class KeyGeometry(
         // Only the row resting on the bar: its keys' centres are within a row of the bar's top.
         if (s[2] - key[1] > keyHeight) return null
         val below = (y - key[1]) / keyHeight
+        if (below < SPACE_MIN_DROP) return null
         return (SPACE_CENTRE_COST - SPACE_COST_SLOPE * below).coerceIn(SPACE_EDGE_COST, SPACE_CENTRE_COST)
     }
 
@@ -54,9 +56,10 @@ class KeyGeometry(
     }
 
     companion object {
-        /** A tap dead centre on a letter above the space bar, read as a space... */
+        /** A tap on a letter above the space bar may be a space if this far below its centre, in key heights... */
+        const val SPACE_MIN_DROP = 0.15f
+        /** ...costing this, less the slope times how far below the centre it is... */
         const val SPACE_CENTRE_COST = 1.2f
-        /** ...gets cheaper the lower it landed on the key... */
         const val SPACE_COST_SLOPE = 1.6f
         /** ...down to this at the key's edge with the bar. */
         const val SPACE_EDGE_COST = 0.45f
