@@ -11,7 +11,24 @@ class KeyGeometry(
     val keyWidth: Float,
     val keyHeight: Float,
     private val centers: Map<Char, List<FloatArray>>,
+    /** The space bar's left and right edges and its top, when the layout has one. */
+    private val space: FloatArray? = null,
 ) {
+    /**
+     * What it costs to read a tap at ([x], [y]) that typed [c] as a space instead: a tap on a
+     * letter just above the space bar, low on its key, often meant the bar ("sincebthe").
+     * Null when the space bar isn't under that letter, or the tap is not known.
+     */
+    fun spaceCost(c: Char, x: Float, y: Float): Float? {
+        val s = space ?: return null
+        if (x.isNaN() || y.isNaN() || x < s[0] || x > s[1]) return null
+        val key = center(c, x, y) ?: return null
+        // Only the row resting on the bar: its keys' centres are within a row of the bar's top.
+        if (s[2] - key[1] > keyHeight) return null
+        val below = (y - key[1]) / keyHeight
+        return (SPACE_CENTRE_COST - SPACE_COST_SLOPE * below).coerceIn(SPACE_EDGE_COST, SPACE_CENTRE_COST)
+    }
+
     /**
      * Center of a key that types [c] (folded), or null when the layout has none. With
      * a point, the key nearest it; otherwise the first.
@@ -37,7 +54,14 @@ class KeyGeometry(
     }
 
     companion object {
-        /** A plain QWERTY grid, handy for tests and as a fallback before layout. */
+        /** A tap dead centre on a letter above the space bar, read as a space... */
+        const val SPACE_CENTRE_COST = 1.2f
+        /** ...gets cheaper the lower it landed on the key... */
+        const val SPACE_COST_SLOPE = 1.6f
+        /** ...down to this at the key's edge with the bar. */
+        const val SPACE_EDGE_COST = 0.45f
+
+        /** A plain QWERTY grid with the space bar under C to N, handy for tests. */
         fun qwerty(keyWidth: Float = 100f, keyHeight: Float = 140f): KeyGeometry {
             val rows = listOf("qwertyuiop", "asdfghjkl", "zxcvbnm")
             val offsets = floatArrayOf(0f, 0.5f, 1.5f)
@@ -47,7 +71,7 @@ class KeyGeometry(
                     map[c] = listOf(floatArrayOf((offsets[r] + i + 0.5f) * keyWidth, (r + 0.5f) * keyHeight))
                 }
             }
-            return KeyGeometry(keyWidth, keyHeight, map)
+            return KeyGeometry(keyWidth, keyHeight, map, floatArrayOf(3.5f * keyWidth, 7.5f * keyWidth, 3f * keyHeight))
         }
     }
 }
@@ -92,6 +116,9 @@ class TypedWord {
     fun tapX(index: Int): Float = xs[index]
     fun tapY(index: Int): Float = ys[index]
 
+    /** Letters [from] until [to], with their taps. */
+    fun slice(from: Int, to: Int): TypedWord = TypedWord().also { for (i in from until to) it.add(text[i], xs[i], ys[i]) }
+
     val isCapitalized: Boolean get() = text.isNotEmpty() && text[0].isUpperCase()
 
     val isAllCaps: Boolean
@@ -130,10 +157,18 @@ class SpatialQuery(
             val target = g.center(candidate, tx, ty) ?: return 1f
             val typed = g.center(input[index], tx, ty) ?: return 1f
             val excess = g.distanceInKeys(tx, ty, target[0], target[1]) - g.distanceInKeys(tx, ty, typed[0], typed[1])
-            (0.2f + 0.55f * excess).coerceIn(0.2f, 1f)
+            (0.2f + 0.55f * excess).coerceIn(0.2f, MAX_SUBSTITUTION_COST)
         } else {
             val d = g.keysApart(input[index], candidate) ?: return 1f
             if (d < 1.6f) 0.55f + 0.2f * (d - 1f).coerceAtLeast(0f) else 1f
         }
+    }
+
+    private companion object {
+        /**
+         * A tap read as a key well away from it costs up to this: more than a letter left out
+         * or one too many, so "lovk" is "lock" rather than "love", and "lonk" "link" not "long".
+         */
+        const val MAX_SUBSTITUTION_COST = 1.5f
     }
 }

@@ -6,13 +6,18 @@ following projects; their licences are reproduced below.
 | Data | Source | Licence | Used for |
 | --- | --- | --- | --- |
 | English word lists (`app/src/main/assets/dict/en_US.txt`, `en_GB.txt` and their `_shortcuts.txt`) | [AOSP LatinIME](https://android.googlesource.com/platform/packages/inputmethods/LatinIME) `dictionaries/en_US_wordlist.combined.gz` and `en_GB_wordlist.combined.gz` | Apache License 2.0 | Dictionaries, frequencies and typo shortcuts |
+| English word pairs (`app/src/main/assets/dict/en_US_bigrams.txt` and `en_GB_bigrams.txt`) | [Taskmaster-1, -2 and -3](https://github.com/google-research-datasets/Taskmaster) dialogs, Google LLC | CC BY 4.0 | How likely a word is after the one before (autocorrect in context) |
+| English word pairs (as above) | 55 novels from [Project Gutenberg](https://www.gutenberg.org) (listed in `tools/build_bigrams.py`) | Public domain | As above |
 | Emoji list (`app/src/main/assets/emoji/emoji.txt`) | [Unicode emoji-test.txt 16.0](https://unicode.org/Public/emoji/16.0/emoji-test.txt) | Unicode License v3 | Emoji panel, ordering and skin tones |
 | Emoji keywords (`app/src/main/assets/emoji/keywords.txt`) | [GitHub gemoji](https://github.com/github/gemoji) `db/emoji.json` | MIT | Emoji suggestions |
 
-The files were converted with `tools/build_dictionary.py` and `tools/build_emoji.py`.
+The files were converted with `tools/build_dictionary.py`, `tools/build_bigrams.py` and `tools/build_emoji.py`.
 Lumen adds a small list of newer everyday words to the dictionary and writes its own
 starter phrase list (`en_US_predictions.txt`). The British English dictionary is the
 US one in British spelling, using the en_GB list's spellings (see the script).
+The word-pair files hold no text from their sources, only how much more often
+one word follows another there than it occurs in general. The same word counts
+nudge the dictionaries' frequencies toward everyday usage (see the scripts).
 
 ---
 
@@ -211,6 +216,33 @@ Copyright (c) 2008, The Android Open Source Project
 
 Includes Dictionaries © Lexiteria LLC.  Used by permission.
 ```
+
+---
+
+## Taskmaster — Creative Commons Attribution 4.0
+
+Lumen's word-pair statistics, and adjustments to its dictionaries' word frequencies,
+are derived from the Taskmaster dialogs:
+
+- Taskmaster-1: the work of Bill Byrne, Karthik Krishnamoorthi, Chinnadhurai Sankar,
+  Arvind Neelakantan, Amit Dubey, Kyu-Young Kim and Andy Cedilnik from Google LLC.
+- Taskmaster-2: the work of Bill Byrne, Karthik Krishnamoorthi, Saravanan Ganesh,
+  Amit Dubey, Kyu-Young Kim and Andy Cedilnik from Google LLC.
+- Taskmaster-3: the work of Bill Byrne, Karthik Krishnamoorthi and Saravanan Ganesh
+  from Google LLC.
+
+Each is made available under the Creative Commons Attribution 4.0 International
+License: https://creativecommons.org/licenses/by/4.0/. Lumen counted the words and
+word pairs in the dialogs and keeps only figures derived from those counts, combined
+with the books below; it does not include the dialogs themselves.
+
+---
+
+## Project Gutenberg books — public domain
+
+The 55 novels listed in `tools/build_bigrams.py`, from https://www.gutenberg.org, are
+in the public domain in the United States. As with Taskmaster, Lumen keeps only
+figures derived from word and word-pair counts in them.
 
 ---
 

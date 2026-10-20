@@ -487,7 +487,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
                 centers.getOrPut(CharFolding.fold(k.code.toChar())) { ArrayList(1) }.add(floatArrayOf(k.bounds.centerX(), k.bounds.centerY()))
             }
         }
-        return KeyGeometry(l.keyWidth, l.rowHeight, centers).also {
+        val space = l.keys.firstOrNull { it.code == KeyCodes.SPACE }?.bounds?.let { floatArrayOf(it.left, it.right, it.top) }
+        return KeyGeometry(l.keyWidth, l.rowHeight, centers, space).also {
             geometry = it
             geometryLayout = l
             geometryWidth = l.width

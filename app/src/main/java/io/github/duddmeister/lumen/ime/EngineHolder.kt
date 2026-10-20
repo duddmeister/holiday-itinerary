@@ -10,6 +10,7 @@ import io.github.duddmeister.lumen.engine.Shortcut
 import io.github.duddmeister.lumen.engine.Spelling
 import io.github.duddmeister.lumen.engine.SuggestionEngine
 import io.github.duddmeister.lumen.engine.UserHistory
+import io.github.duddmeister.lumen.engine.WordPairs
 import java.io.File
 import java.io.StringWriter
 import java.util.concurrent.Executors
@@ -61,9 +62,10 @@ object EngineHolder {
                 val shortcuts = assets.open("dict/${spelling.locale}_shortcuts.txt").bufferedReader().use { SuggestionEngine.readShortcuts(it) }
                 val predictions = assets.open("dict/${spelling.locale}_predictions.txt").bufferedReader().use { NextWordModel.read(it) }
                 val emoji = assets.open("emoji/keywords.txt").bufferedReader().use { SuggestionEngine.readEmojiKeywords(it) }
+                val pairs = assets.open("dict/${spelling.locale}_bigrams.txt").bufferedReader().use { WordPairs.read(it) }
                 val stored = if (readHistory) readStored(app) else UserHistory()
                 Log.i(TAG, "Dictionary ready: ${lexicon.wordCount} words (${spelling.locale}) in ${System.currentTimeMillis() - started} ms")
-                main.post { publish(app, spelling, lexicon, shortcuts, predictions, emoji, stored) }
+                main.post { publish(app, spelling, lexicon, shortcuts, predictions, emoji, pairs, stored) }
             } catch (e: Exception) {
                 Log.e(TAG, "Could not load the dictionary", e)
                 main.post { loading = false }
@@ -73,7 +75,7 @@ object EngineHolder {
 
     private fun publish(
         app: Context, spelling: Spelling, lexicon: Lexicon, shortcuts: Map<String, Shortcut>,
-        predictions: NextWordModel, emoji: Map<String, List<String>>, stored: UserHistory,
+        predictions: NextWordModel, emoji: Map<String, List<String>>, pairs: WordPairs, stored: UserHistory,
     ) {
         loading = false
         // Another spelling was chosen while this one loaded.
@@ -82,7 +84,7 @@ object EngineHolder {
         restored.forEach { history.merge(it) }
         val restoring = restored.isNotEmpty()
         restored.clear()
-        engine = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
+        engine = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji, pairs)
         this.spelling = spelling
         if (restoring) save(app)
         waiting.forEach { it() }

@@ -25,11 +25,20 @@ words ("connections", "rigorous", "grams"). So the en_GB list adds the words the
 US list lacks, and where one of those is the British spelling of a US word, the
 American spelling makes way for it (see SPELLING_RULES and the lists after it).
 
-Usage:  python3 tools/build_dictionary.py path/to/en_US_wordlist.combined.gz path/to/en_GB_wordlist.combined.gz
+Frequencies: AOSP's lists come from formal writing, so they undersell everyday words
+("little", "you", "know") and oversell bookish ones ("title", "this"). Given the
+Taskmaster dialogs and Project Gutenberg books that tools/build_bigrams.py uses, a word
+moves toward where both put it when both rank it higher than the list does, or both
+lower (see adjust_to_corpora). Words only one source favours (movie tickets, "thou")
+stay put. Run tools/build_bigrams.py afterwards.
+
+Usage:  python3 tools/build_dictionary.py path/to/en_US_wordlist.combined.gz path/to/en_GB_wordlist.combined.gz \
+            [path/to/Taskmaster path/to/books]
 """
 import gzip
 import os
 import sys
+from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -149,6 +158,12 @@ BRITISH_FIRST = [
 BRITISH_LEAD = 15
 
 
+# A word moves toward where both corpora put it by the smaller of their two shifts, at
+# most this far, once each has seen it this often.
+CORPUS_SHIFT = 30
+CORPUS_MIN_COUNT = 20
+
+
 def parse_attrs(line):
     attrs = {}
     for part in line.strip().split(","):
@@ -208,6 +223,50 @@ def read_list(path):
         if source not in have:
             shortcuts.append((source, replacement, "s" if source in words else "a"))
     return locale, words, shortcuts
+
+
+def corpus_ranks(counts, freqs):
+    """{word: the list's frequency at the rank [counts] give the word}, for words seen enough."""
+    seen = [w for w in freqs if counts.get(w, 0) >= CORPUS_MIN_COUNT]
+    ladder = sorted((freqs[w] for w in seen), reverse=True)
+    return {w: ladder[i] for i, w in enumerate(sorted(seen, key=lambda w: (-counts[w], w)))}
+
+
+def adjust_to_corpora(words, other, taskmaster, books):
+    """Moves frequencies in [words] toward where everyday dialogs and books both put them."""
+    from build_bigrams import WEIGHTS, respellings, source_counts  # it imports this module
+    capital = Counter()
+    for word, (freq, _) in words.items():
+        if not word.islower():
+            capital[word.lower()] = max(capital[word.lower()], freq)
+    # Counts can't tell "will" from "Will", so words whose capitalised form is commoner sit
+    # out, as do the chat words above, whose standing is set by hand.
+    freqs = {
+        word: freq for word, (freq, _) in words.items()
+        if word.islower() and freq > capital[word] and word not in CHAT_WORDS and word not in EXTRA_WORDS
+    }
+    vocab = {word.lower(): word.lower() for word in words}
+    counts = source_counts(taskmaster, books, vocab, respellings(vocab, {word.lower(): word.lower() for word in other}))
+    talk = Counter()
+    for source in ("tm12", "tm3"):
+        for word, c in counts[source].items():
+            talk[word] += WEIGHTS[source] * c
+    by_talk = corpus_ranks(talk, freqs)
+    by_books = corpus_ranks(counts["books"], freqs)
+    moved = 0
+    for word, freq in freqs.items():
+        if word not in by_talk or word not in by_books:
+            continue
+        a, b = by_talk[word] - freq, by_books[word] - freq
+        if a > 0 and b > 0:
+            shift = min(a, b, CORPUS_SHIFT)
+        elif a < 0 and b < 0:
+            shift = max(a, b, -CORPUS_SHIFT)
+        else:
+            continue
+        words[word] = (max(1, min(255, freq + shift)), words[word][1])
+        moved += 1
+    return moved
 
 
 def american_forms(word):
@@ -280,9 +339,12 @@ def write_british_predictions(respelled):
             out.write("\t".join(" ".join(respell(t) for t in part.split(" ")) for part in line.rstrip("\n").split("\t")) + "\n")
 
 
-def main(us_path, gb_path):
+def main(us_path, gb_path, taskmaster=None, books=None):
     _, us, us_shortcuts = read_list(us_path)
     _, gb, gb_shortcuts = read_list(gb_path)
+    if taskmaster:
+        moved = adjust_to_corpora(us, gb, taskmaster, books), adjust_to_corpora(gb, us, taskmaster, books)
+        print(f"Frequencies moved toward the corpora: {moved[0]} (en_US list), {moved[1]} (en_GB list)")
     write_dictionary("en_US", us, us_shortcuts)
     words, respelled = british(us, gb)
     write_dictionary("en_GB", words, gb_shortcuts)
@@ -291,6 +353,6 @@ def main(us_path, gb_path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 5):
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    main(*sys.argv[1:])
