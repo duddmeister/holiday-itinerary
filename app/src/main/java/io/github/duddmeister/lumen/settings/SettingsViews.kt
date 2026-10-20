@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
+import android.graphics.Canvas
 import android.graphics.LinearGradient
+import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -13,6 +15,7 @@ import android.os.Build
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -20,8 +23,12 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
+import io.github.duddmeister.lumen.keyboard.Icon
+import io.github.duddmeister.lumen.keyboard.Icons
 import io.github.duddmeister.lumen.ui.Colors
 import io.github.duddmeister.lumen.ui.dp
+import kotlin.math.ceil
+import kotlin.math.hypot
 
 /** The settings app's palette, light or dark with the system. */
 class Palette(context: Context) {
@@ -118,7 +125,8 @@ class SettingsKit(private val context: Context, val palette: Palette) {
         }
     }
 
-    fun chips(title: String?, options: List<String>, selected: Int, onSelect: (Int) -> Unit): View {
+    /** A choice of [options], each chip set in its own typeface from [typefaces] if given. */
+    fun chips(title: String?, options: List<String>, selected: Int, typefaces: List<Typeface>? = null, onSelect: (Int) -> Unit): View {
         val column = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(14), dp(14), dp(14))
@@ -135,6 +143,7 @@ class SettingsKit(private val context: Context, val palette: Palette) {
             val chip = text(option, 14f, bold = true).apply {
                 setPadding(dp(16), dp(9), dp(16), dp(9))
                 gravity = Gravity.CENTER
+                typefaces?.getOrNull(i)?.let { typeface = it }
             }
             views.add(chip)
             row.addView(chip)
@@ -191,12 +200,126 @@ class SettingsKit(private val context: Context, val palette: Palette) {
         ellipsize = TextUtils.TruncateAt.END
     }
 
+    /**
+     * A choice of [count] colours under [title], with the chosen one's name beside it. Each
+     * swatch is the gradient [colors] gives for it: its start, end and ink. The first, marked
+     * with a sparkle, stands for the colours something else (the theme) brings.
+     */
+    fun swatches(title: String, count: Int, colors: (Int) -> IntArray, names: (Int) -> String, selected: Int, onSelect: (Int) -> Unit): SwatchPicker =
+        SwatchPicker(context, this, title, count, colors, names, selected, onSelect)
+
     fun actionRow(title: String, subtitle: String?, action: String, onClick: () -> Unit): View = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         setPadding(dp(20), dp(14), dp(16), dp(14))
         addView(texts(title, subtitle))
         addView(button(action, filled = false, onClick = onClick))
+    }
+}
+
+/** Colour swatches in balanced rows, the chosen one ringed; see [SettingsKit.swatches]. */
+@SuppressLint("ViewConstructor")
+class SwatchPicker(
+    context: Context,
+    kit: SettingsKit,
+    private val title: String,
+    private val count: Int,
+    private val colors: (Int) -> IntArray,
+    private val names: (Int) -> String,
+    private var selected: Int,
+    private val onSelect: (Int) -> Unit,
+) : LinearLayout(context) {
+    private val name = kit.text(names(selected), 14f, kit.palette.accent, bold = true)
+    private val ringColor = kit.palette.text
+    private val circles = Circles()
+
+    init {
+        orientation = VERTICAL
+        setPadding(context.dp(20), context.dp(14), context.dp(14), context.dp(12))
+        addView(LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            addView(kit.text(title, 16f).apply { layoutParams = LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) })
+            addView(name)
+        })
+        addView(circles)
+        circles.contentDescription = "$title: ${names(selected)}"
+    }
+
+    /** Redraws the swatches, for colours that follow something else (the theme's own). */
+    fun refresh() = circles.refresh()
+
+    @SuppressLint("ViewConstructor")
+    private inner class Circles : View(context) {
+        private val size = context.dp(34f)
+        private val minGap = context.dp(10f)
+        private val ringGap = context.dp(4f)
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = context.dp(2.5f) }
+        private val icon = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var columns = 1
+        private val shaders = arrayOfNulls<LinearGradient>(count)
+
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            val width = MeasureSpec.getSize(widthMeasureSpec)
+            val room = width - 2 * ringGap
+            val most = maxOf(1, ((room + minGap) / (size + minGap)).toInt())
+            // As many to a row as fit, spread evenly over as few rows as that needs.
+            val rows = ceil(count / most.toFloat()).toInt()
+            columns = ceil(count / rows.toFloat()).toInt()
+            setMeasuredDimension(width, (rows * (size + 2 * ringGap) + (rows - 1) * minGap + context.dp(10f)).toInt())
+        }
+
+        private fun center(i: Int): Pair<Float, Float> {
+            val cell = (width - 2 * ringGap) / columns.toFloat()
+            val x = ringGap + cell * (i % columns + 0.5f)
+            val y = context.dp(10f) + ringGap + size / 2f + (i / columns) * (size + 2 * ringGap + minGap)
+            return x to y
+        }
+
+        fun refresh() {
+            shaders.fill(null)
+            invalidate()
+        }
+
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = refresh()
+
+        private fun shader(i: Int, x: Float, y: Float): LinearGradient {
+            val r = size / 2f
+            return shaders[i] ?: colors(i).let { LinearGradient(x - r, y - r, x + r, y + r, it[0], it[1], Shader.TileMode.CLAMP) }.also { shaders[i] = it }
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            for (i in 0 until count) {
+                val (x, y) = center(i)
+                val r = size / 2f
+                fill.shader = shader(i, x, y)
+                canvas.drawCircle(x, y, r, fill)
+                fill.shader = null
+                if (i == 0) Icons.draw(canvas, Icon.SPARKLE, x, y, size * 0.5f, colors(0)[2], icon)
+                if (i == selected) {
+                    ring.color = ringColor
+                    canvas.drawCircle(x, y, r + ringGap - ring.strokeWidth / 2f + context.dp(1f), ring)
+                }
+            }
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_UP) {
+                for (i in 0 until count) {
+                    val (x, y) = center(i)
+                    if (hypot(event.x - x, event.y - y) <= size / 2f + minGap / 2f && i != selected) {
+                        selected = i
+                        name.text = names(i)
+                        contentDescription = "$title: ${names(i)}"
+                        invalidate()
+                        onSelect(i)
+                        break
+                    }
+                }
+            }
+            return true
+        }
     }
 }
 

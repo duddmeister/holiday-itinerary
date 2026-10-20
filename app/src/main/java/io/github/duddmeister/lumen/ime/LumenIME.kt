@@ -317,7 +317,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         if (key == null || key.startsWith("emoji_") || key.startsWith("clipboard_pinned")) return
         applySettings()
         when (key) {
-            Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS -> applyTheme()
+            Prefs.THEME, Prefs.KEY_SHAPE, Prefs.KEY_BACKGROUNDS, Prefs.ACCENT, Prefs.KEY_FINISH, Prefs.LABEL_FONT, Prefs.LETTER_SIZE -> applyTheme()
             Prefs.LAYOUT, Prefs.NUMBER_ROW, Prefs.SYMBOL_HINTS, Prefs.SPLIT -> rebuildLayout()
             Prefs.FLOATING -> {
                 applyTheme()
@@ -414,9 +414,8 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     private fun applyTheme() {
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        theme = Themes.resolve(this, prefs.theme, night, blurUsable())
-        painter.shape = prefs.keyShape
-        painter.keyBackgrounds = prefs.keyBackgrounds
+        theme = Themes.resolve(this, prefs.theme, night, blurUsable()).withAccent(prefs.accent)
+        painter.look = prefs.keyLook
         root?.applyTheme(theme)
         themePanel?.let {
             it.selectedId = prefs.theme
@@ -907,7 +906,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private fun openThemes() {
         val r = root ?: return
         val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        val panel = themePanel ?: ThemePanelView(this, painter) { id -> Themes.resolve(this, id, night, blurUsable()) }.also {
+        val panel = themePanel ?: ThemePanelView(this, painter) { id -> Themes.resolve(this, id, night, blurUsable()).withAccent(prefs.accent) }.also {
             it.host = this
             it.onTheme = { id -> prefs.theme = id }
             it.onShape = { s -> prefs.keyShape = s }

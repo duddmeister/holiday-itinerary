@@ -91,6 +91,7 @@ class ThemePanelView(
 
     override fun drawContent(canvas: Canvas, top: Float, bottom: Float) {
         val t = painter.theme ?: return
+        val look = painter.look.copy(shape = shape)
         for ((i, id) in ids.withIndex()) {
             cardBounds(i, rect)
             if (rect.bottom + context.dp(28f) < top || rect.top > bottom) continue
@@ -101,7 +102,7 @@ class ThemePanelView(
                 canvas.save()
                 canvas.scale(0.96f, 0.96f, rect.centerX(), rect.centerY())
             }
-            preview.draw(canvas, rect, theme, shape, corner)
+            preview.draw(canvas, rect, theme, look, corner)
             if (id == selectedId) {
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = context.dp(2.5f)

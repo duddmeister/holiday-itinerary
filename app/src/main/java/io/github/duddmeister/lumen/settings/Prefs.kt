@@ -4,8 +4,13 @@ import android.content.Context
 import android.content.SharedPreferences
 import io.github.duddmeister.lumen.data.GifService
 import io.github.duddmeister.lumen.engine.Spelling
+import io.github.duddmeister.lumen.keyboard.KeyFinish
+import io.github.duddmeister.lumen.keyboard.KeyLook
 import io.github.duddmeister.lumen.keyboard.KeyShape
+import io.github.duddmeister.lumen.keyboard.LabelFont
 import io.github.duddmeister.lumen.keyboard.LetterLayout
+import io.github.duddmeister.lumen.keyboard.LetterSize
+import io.github.duddmeister.lumen.theme.Accent
 import io.github.duddmeister.lumen.theme.Themes
 import java.util.Locale
 
@@ -27,6 +32,21 @@ class Prefs(context: Context) {
     var keyShape: KeyShape
         get() = KeyShape.of(store.getString(KEY_SHAPE, null))
         set(value) = set(KEY_SHAPE, value.id)
+    /** The theme's own accent colour, or one chosen to replace it. */
+    var accent: Accent
+        get() = Accent.of(store.getString(ACCENT, null))
+        set(value) = set(ACCENT, value.id)
+    /** Before there were finishes, a switch for key backgrounds chose between raised and borderless. */
+    var keyFinish: KeyFinish
+        get() = KeyFinish.of(store.getString(KEY_FINISH, null)) ?: if (keyBackgrounds) KeyFinish.RAISED else KeyFinish.BORDERLESS
+        set(value) = store.edit().putString(KEY_FINISH, value.id).putBoolean(KEY_BACKGROUNDS, value != KeyFinish.BORDERLESS).apply()
+    var labelFont: LabelFont
+        get() = LabelFont.of(store.getString(LABEL_FONT, null))
+        set(value) = set(LABEL_FONT, value.id)
+    var letterSize: LetterSize
+        get() = LetterSize.of(store.getString(LETTER_SIZE, null))
+        set(value) = set(LETTER_SIZE, value.id)
+    val keyLook get() = KeyLook(keyShape, keyFinish, labelFont, letterSize)
     var letterLayout: LetterLayout
         get() = LetterLayout.of(store.getString(LAYOUT, null))
         set(value) = set(LAYOUT, value.id)
@@ -93,6 +113,10 @@ class Prefs(context: Context) {
         const val THEME = "theme"
         const val KEY_SHAPE = "key_shape"
         const val KEY_BACKGROUNDS = "key_backgrounds"
+        const val ACCENT = "accent"
+        const val KEY_FINISH = "key_finish"
+        const val LABEL_FONT = "label_font"
+        const val LETTER_SIZE = "letter_size"
         const val LAYOUT = "layout"
         const val SPELLING = "spelling"
         const val HEIGHT = "keyboard_height"

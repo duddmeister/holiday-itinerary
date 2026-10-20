@@ -28,6 +28,54 @@ enum class KeyShape(val id: String, val title: String, val radiusDp: Float) {
     }
 }
 
+/** How keys are surfaced, whatever the theme. */
+enum class KeyFinish(val id: String, val title: String) {
+    /** A soft lip beneath, a sheen along the top and a gentle gradient. */
+    RAISED("raised", "Raised"),
+    /** Solid keys, without depth. */
+    FLAT("flat", "Flat"),
+    /** A hairline around each key, filled only while it's pressed. */
+    OUTLINE("outline", "Outline"),
+    /** No keys at all: the labels float on the background. */
+    BORDERLESS("borderless", "Borderless");
+
+    companion object {
+        fun of(id: String?) = entries.firstOrNull { it.id == id }
+    }
+}
+
+/** The keyboard's typeface: its labels, suggestions and panels. */
+enum class LabelFont(val id: String, val title: String) {
+    REGULAR("regular", "Regular"),
+    LIGHT("light", "Light"),
+    BOLD("bold", "Bold"),
+    CONDENSED("condensed", "Condensed"),
+    MONO("mono", "Mono");
+
+    companion object {
+        fun of(id: String?) = entries.firstOrNull { it.id == id } ?: REGULAR
+    }
+}
+
+/** How large labels are drawn on their keys. */
+enum class LetterSize(val id: String, val title: String, val scale: Float) {
+    SMALL("small", "Small", 0.88f),
+    MEDIUM("medium", "Medium", 1f),
+    LARGE("large", "Large", 1.14f);
+
+    companion object {
+        fun of(id: String?) = entries.firstOrNull { it.id == id } ?: MEDIUM
+    }
+}
+
+/** How keys look on any theme: everything about them but the theme's colours. */
+data class KeyLook(
+    val shape: KeyShape = KeyShape.ROUNDED,
+    val finish: KeyFinish = KeyFinish.RAISED,
+    val font: LabelFont = LabelFont.REGULAR,
+    val letters: LetterSize = LetterSize.MEDIUM,
+)
+
 /**
  * Paints keys and keyboard backgrounds. Shared by the live keyboard, theme
  * previews and the settings gallery so they always look identical.
@@ -35,8 +83,26 @@ enum class KeyShape(val id: String, val title: String, val radiusDp: Float) {
 class KeyPainter(private val context: Context) {
     var theme: KeyboardTheme? = null
     var shape: KeyShape = KeyShape.ROUNDED
-    /** Draw key shapes; when false, labels float on the background (borderless look). */
-    var keyBackgrounds = true
+    var finish: KeyFinish = KeyFinish.RAISED
+    /** Draw key shapes; false for the borderless finish, where labels float on the background. */
+    val keyBackgrounds get() = finish != KeyFinish.BORDERLESS
+    var font: LabelFont = LabelFont.REGULAR
+        set(value) {
+            if (field != value) {
+                field = value
+                labelTypeface = typeface(value, medium = false)
+                mediumTypeface = typeface(value, medium = true)
+            }
+        }
+    var letters: LetterSize = LetterSize.MEDIUM
+    var look: KeyLook
+        get() = KeyLook(shape, finish, font, letters)
+        set(value) {
+            shape = value.shape
+            finish = value.finish
+            font = value.font
+            letters = value.letters
+        }
     /** Multiplies all sizes; used for small previews. */
     var scale = 1f
 
@@ -58,15 +124,29 @@ class KeyPainter(private val context: Context) {
     private var accentGradient: LinearGradient? = null
     private var gradientTheme: KeyboardTheme? = null
 
-    val labelTypeface: Typeface = if (Build.VERSION.SDK_INT >= 28) {
-        Typeface.create(Typeface.SANS_SERIF, 450, false)
-    } else {
-        Typeface.create("sans-serif", Typeface.NORMAL)
-    }
-    val mediumTypeface: Typeface = if (Build.VERSION.SDK_INT >= 28) {
-        Typeface.create(Typeface.SANS_SERIF, 500, false)
-    } else {
-        Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    var labelTypeface: Typeface = typeface(LabelFont.REGULAR, medium = false)
+        private set
+    /** A step heavier than [labelTypeface]: functional keys, the space bar and emphasis. */
+    var mediumTypeface: Typeface = typeface(LabelFont.REGULAR, medium = true)
+        private set
+
+    private fun typeface(font: LabelFont, medium: Boolean): Typeface {
+        if (font == LabelFont.MONO) return Typeface.create(Typeface.MONOSPACE, if (medium) Typeface.BOLD else Typeface.NORMAL)
+        val family = if (font == LabelFont.CONDENSED) Typeface.create("sans-serif-condensed", Typeface.NORMAL) else Typeface.SANS_SERIF
+        if (Build.VERSION.SDK_INT >= 28) {
+            val weight = when (font) {
+                LabelFont.LIGHT -> if (medium) 400 else 300
+                LabelFont.BOLD -> 700
+                else -> if (medium) 500 else 450
+            }
+            return Typeface.create(family, weight, false)
+        }
+        return when (font) {
+            LabelFont.LIGHT -> Typeface.create(if (medium) "sans-serif" else "sans-serif-light", Typeface.NORMAL)
+            LabelFont.BOLD -> Typeface.create(family, Typeface.BOLD)
+            LabelFont.CONDENSED -> Typeface.create(family, if (medium) Typeface.BOLD else Typeface.NORMAL)
+            else -> Typeface.create(if (medium) "sans-serif-medium" else "sans-serif", Typeface.NORMAL)
+        }
     }
 
     private companion object {
@@ -129,10 +209,13 @@ class KeyPainter(private val context: Context) {
             else -> { base = t.key; pressed = t.keyPressed }
         }
         val drawShape = keyBackgrounds || key.style == KeyStyle.ACCENT || press > 0f
+        val raised = finish == KeyFinish.RAISED
+        // Outlined keys are a hairline until pressed; the accent key stays solid in every finish.
+        val outlined = finish == KeyFinish.OUTLINE && key.style != KeyStyle.ACCENT
 
         if (drawShape) {
             // Soft lip under opaque keys gives depth; glassy translucent keys skip it.
-            if (Color.alpha(t.shadow) > 0 && Color.alpha(base) == 255 && keyBackgrounds) {
+            if (raised && Color.alpha(t.shadow) > 0 && Color.alpha(base) == 255) {
                 fill.shader = null
                 fill.color = t.shadow
                 val lip = context.dp(1.3f) * scale
@@ -140,12 +223,14 @@ class KeyPainter(private val context: Context) {
                 canvas.drawRoundRect(rect, radius, radius, fill)
                 rect.offset(0f, -lip)
             }
-            val shapeAlpha = if (keyBackgrounds || key.style == KeyStyle.ACCENT) 1f else press
+            val shapeAlpha = if ((keyBackgrounds && !outlined) || key.style == KeyStyle.ACCENT) 1f else press
             val gradient = when (key.style) {
                 KeyStyle.ACCENT -> accentGradient
-                KeyStyle.CHARACTER, KeyStyle.SPACE -> if (press <= 0f && keyBackgrounds) keyGradient else null
+                KeyStyle.CHARACTER, KeyStyle.SPACE -> if (press <= 0f && raised) keyGradient else null
                 KeyStyle.FUNCTIONAL -> null
             }
+            // Flat keys take the middle of a raised key's gradient.
+            val rest = if (finish == KeyFinish.FLAT && key.style != KeyStyle.FUNCTIONAL && key.style != KeyStyle.ACCENT) Colors.lerp(t.keyTop, base, 0.5f) else base
             if (gradient != null) {
                 // The gradient colors carry their own alpha; the paint must stay opaque.
                 place(gradient, rect, diagonal = key.style == KeyStyle.ACCENT)
@@ -153,16 +238,25 @@ class KeyPainter(private val context: Context) {
                 fill.color = Color.WHITE
             } else {
                 fill.shader = null
-                fill.color = Colors.fade(Colors.lerp(base, pressed, press), shapeAlpha)
+                fill.color = Colors.fade(Colors.lerp(rest, pressed, press), shapeAlpha)
             }
-            canvas.drawRoundRect(rect, radius, radius, fill)
+            if (Color.alpha(fill.color) > 0 || fill.shader != null) canvas.drawRoundRect(rect, radius, radius, fill)
             fill.shader = null
             if (gradient != null && key.style == KeyStyle.ACCENT && press > 0f) {
                 fill.color = Colors.withAlpha(Color.WHITE, 0.2f * press)
                 canvas.drawRoundRect(rect, radius, radius, fill)
             }
+            if (outlined && keyBackgrounds) {
+                stroke.shader = null
+                stroke.color = Colors.withAlpha(if (key.style == KeyStyle.FUNCTIONAL) t.functionalLabel else t.label, if (t.dark) 0.3f else 0.26f)
+                stroke.strokeWidth = context.dp(1.2f) * scale
+                val inset = stroke.strokeWidth / 2f
+                rect.inset(inset, inset)
+                canvas.drawRoundRect(rect, radius - inset, radius - inset, stroke)
+                rect.inset(-inset, -inset)
+            }
             val sheen = sheenGradient
-            if (sheen != null && keyBackgrounds && key.style != KeyStyle.ACCENT) {
+            if (sheen != null && raised && key.style != KeyStyle.ACCENT) {
                 place(sheen, rect)
                 stroke.shader = sheen
                 stroke.strokeWidth = context.dp(1f) * scale
@@ -200,7 +294,7 @@ class KeyPainter(private val context: Context) {
         val functionalText = key.style == KeyStyle.FUNCTIONAL && display.length > 1
         text.color = labelColor
         text.typeface = if (functionalText) mediumTypeface else labelTypeface
-        text.textSize = when {
+        text.textSize = letters.scale * when {
             functionalText -> h * 0.3f
             key.caption != null -> h * 0.42f
             display.length > 1 -> h * 0.36f
