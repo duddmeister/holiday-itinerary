@@ -3,9 +3,9 @@ package io.github.duddmeister.lumen.engine
 import kotlin.math.sqrt
 
 /**
- * Where each letter sits on the current layout, in pixels. Shared by the tap
- * spatial model (autocorrect) and the glide-typing decoder. A letter can have
- * more than one key: a split keyboard puts the middle keys on both halves.
+ * Where each letter sits on the current layout, in pixels, for the tap spatial
+ * model (autocorrect). A letter can have more than one key: a split keyboard
+ * puts the middle keys on both halves.
  */
 class KeyGeometry(
     val keyWidth: Float,
@@ -34,17 +34,6 @@ class KeyGeometry(
         val dx = (x1 - x2) / keyWidth
         val dy = (y1 - y2) / keyHeight
         return sqrt(dx * dx + dy * dy)
-    }
-
-    /** The letters closest to a point, nearest first. */
-    fun nearestLetters(x: Float, y: Float, maxCount: Int, maxDistanceKeys: Float): List<Char> {
-        val scored = ArrayList<Pair<Char, Float>>()
-        for ((c, all) in centers) {
-            val d = all.minOf { distanceInKeys(x, y, it[0], it[1]) }
-            if (d <= maxDistanceKeys) scored.add(c to d)
-        }
-        scored.sortBy { it.second }
-        return scored.take(maxCount).map { it.first }
     }
 
     companion object {

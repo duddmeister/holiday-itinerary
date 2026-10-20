@@ -2,13 +2,12 @@
 
 **A keyboard for Android that glows.**
 
-![Lumen keyboard in three themes: gliding a word in Aurora, autocorrect in Frost, emoji in Sunset](docs/screenshots/hero.png)
+![Lumen keyboard in three themes: typing in Aurora, autocorrect in Frost, emoji in Sunset](docs/screenshots/hero.png)
 
 Lumen is a fast, private, beautifully drawn keyboard. Every key, icon and effect
 is painted in code: keys squash and spring back under your fingers, a soft bloom
-of light spreads from each press, glide typing leaves a glowing comet trail, and
-fifteen hand-tuned themes (including Material You and a real frosted-glass theme)
-make it feel at home on any phone.
+of light spreads from each press, and fifteen hand-tuned themes (including
+Material You and a real frosted-glass theme) make it feel at home on any phone.
 
 ## Highlights
 
@@ -17,10 +16,6 @@ make it feel at home on any phone.
 - **Swipe the cursor.** Swipe left anywhere on the keys to jump back a word.
   Swipe right to finish the word you're typing with the middle suggestion, jump
   forward a word or, with no words ahead, add the next word Lumen suggests.
-- **Glide typing.** Turn it on and slide across the letters: Lumen matches the
-  shape and position of your path against 60,000 words, with a live preview as
-  you glide. The letters then glide rather than swipe, so cursor swipes move to
-  the space bar.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, so a slip is fixed even when it spells another word
   (`bur` → `but`), as is a letter that never registered (`wich` → `which`). It adds
@@ -49,9 +44,9 @@ make it feel at home on any phone.
   Android 12+), Graphite, Midnight (AMOLED), Carbon, Slate, Frost, Paper, Sakura,
   Lilac, Ocean, Forest, Sunset and Neon, all switchable from the keyboard.
 - **Make it yours.** Give any theme one of eight accent colours for the enter key,
-  highlights and glide trail. Keys come raised, flat, outlined or borderless, in
-  four shapes, with five fonts (regular, light, bold, condensed and mono) and three
-  letter sizes.
+  highlights and the glow of each press. Keys come raised, flat, outlined or
+  borderless, in four shapes, with five fonts (regular, light, bold, condensed and
+  mono) and three letter sizes.
 - **Everything at hand.** A toolbar with search, emoji, GIFs, clipboard and voice
   up front, and themes, one-handed and settings behind its ⋯. Emoji with skin
   tones and recents, clipboard history with pins and a one-tap paste chip, swipe
@@ -77,7 +72,7 @@ make it feel at home on any phone.
 
 ![Every Lumen theme](docs/screenshots/themes.png)
 
-![Glide trail, accents, key pop-ups, paste chip, clipboard and theme panels](docs/screenshots/features.png)
+![Cursor swipes, accents, key pop-ups, paste chip, clipboard and theme panels](docs/screenshots/features.png)
 
 ![Searching emoji by name, and searching GIFs, from the keyboard](docs/screenshots/search.png)
 
@@ -149,15 +144,15 @@ You need JDK 17+ and the Android SDK (Android Studio is the easiest way).
 
 ```sh
 ./gradlew assembleRelease        # app/build/outputs/apk/release/app-release.apk
-./gradlew testDebugUnitTest      # typing engine tests and the glide benchmark
+./gradlew testDebugUnitTest      # typing engine tests
 ```
 
 ## How it works
 
 | Package | What lives there |
 | --- | --- |
-| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words (in American or British spelling), a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning, the glide decoder and emoji search. Unit-tested on the JVM. |
-| `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, cursor and delete swipes, animations) and the glide trail. |
+| `engine/` | Pure-Kotlin typing engine: a compact trie of 160,000 words (in American or British spelling), a weighted Damerau–Levenshtein search driven by a tap spatial model, next-word prediction, on-device learning and emoji search. Unit-tested on the JVM. |
+| `keyboard/` | Layouts, the key painter, the icon set, `KeyboardView` (touch handling, rollover, long-press panels, flicks, cursor and delete swipes, animations). |
 | `ime/` | `LumenIME` (the input method service), `InputLogic` (composing, autocorrect with undo, smart spacing, cursor tracking), haptics and the engine loader. |
 | `update/` | The in-app updater: finds the latest GitHub release, downloads it and hands it to Android's package installer. |
 | `ui/` | The suggestion strip, the search bar, the emoji, GIF, clipboard and theme panels, and the root view that handles window insets and the one-handed and floating keyboards. |

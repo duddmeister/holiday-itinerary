@@ -17,9 +17,8 @@ import io.github.duddmeister.lumen.keyboard.KeyPainter
 /**
  * The bar above the keys. Shows three suggestions (the best guess in the
  * middle, emphasised when a space will commit it), a paste chip for freshly
- * copied text, a live preview while glide typing, or — when there is nothing
- * to suggest — a toolbar with Lumen's panels, the less used ones behind its
- * ⋯ button.
+ * copied text, or — when there is nothing to suggest — a toolbar with Lumen's
+ * panels, the less used ones behind its ⋯ button.
  */
 @SuppressLint("ViewConstructor")
 class SuggestionStripView(context: Context, private val painter: KeyPainter) : View(context) {
@@ -52,7 +51,6 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     /** Left, middle and right slots. */
     private var slots: Array<Item?> = arrayOfNulls(3)
     private var clipText: String? = null
-    private var gesturePreview: String? = null
     private var message: String? = null
     private var messageUntil = 0L
     var toolbarRequested = false
@@ -152,14 +150,6 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         }
     }
 
-    fun setGesturePreview(word: String?) {
-        if (gesturePreview != word) {
-            gesturePreview = word
-            settle()
-            invalidate()
-        }
-    }
-
     /** Briefly shows a note in place of suggestions ("Removed "word""). */
     fun flash(note: String) {
         message = note
@@ -195,7 +185,7 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
     }
 
     private val hasSuggestions get() = slots.any { it != null }
-    private val showingToolbar get() = toolbarRequested || (!hasSuggestions && clipText == null && gesturePreview == null)
+    private val showingToolbar get() = toolbarRequested || (!hasSuggestions && clipText == null)
 
     override fun onDraw(canvas: Canvas) {
         val t = painter.theme ?: return
@@ -219,12 +209,6 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
         val alpha = 0.35f + 0.65f * fade
         when {
-            gesturePreview != null -> {
-                text.color = t.stripText
-                text.typeface = painter.mediumTypeface
-                text.textSize = context.dp(17f)
-                drawEllipsized(canvas, gesturePreview!!, width / 2f, cy, width - 2 * buttonSize)
-            }
             showingToolbar -> drawToolbar(canvas, t.stripSecondary, alpha)
             hasSuggestions -> drawSlots(canvas, alpha)
             clipText != null -> drawChip(canvas, alpha)
@@ -388,7 +372,6 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
         pressedChip = false
         if (x < buttonSize + context.dp(4f)) { pressedAction = Action.TOGGLE; return }
         when {
-            gesturePreview != null -> Unit
             showingToolbar -> pressedAction = when {
                 x > width - buttonSize - context.dp(4f) -> Action.HIDE
                 !moreOpen -> everyday.getOrNull(((x - toolbarLeft) / toolbarStep).toInt())

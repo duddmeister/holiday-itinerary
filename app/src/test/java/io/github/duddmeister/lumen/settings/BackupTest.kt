@@ -31,7 +31,7 @@ class BackupTest {
             Prefs.THEME to "midnight",
             Prefs.HEIGHT to 115,
             Prefs.FLOAT_X to 0.25f,
-            Prefs.GLIDE to false,
+            Prefs.DELETE_SWIPE to false,
             Prefs.SPELLING to "uk",
         )
         val words = history("Zorblax", "rocks", "Zorblax", "rocks")
@@ -67,6 +67,8 @@ class BackupTest {
             "setting\tfloat_y\tfloat\tNaN",
             "setting\tsound\tbool\ttrue",
             "setting\tfrom_a_newer_version\tbool\ttrue",
+            // Glide typing, from an older version that had it.
+            "setting\tglide_typing\tbool\ttrue",
             "setting\tbroken",
         ).joinToString("\n")
         assertEquals(mapOf(Prefs.THEME to "sakura", Prefs.SOUND to true), read(text).settings)

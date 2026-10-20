@@ -53,8 +53,6 @@ object Backup {
         Prefs.AUTO_CORRECT to Kind.BOOL,
         Prefs.SUGGESTIONS to Kind.BOOL,
         Prefs.DOUBLE_SPACE to Kind.BOOL,
-        Prefs.GLIDE to Kind.BOOL,
-        Prefs.GLIDE_TRAIL to Kind.BOOL,
         Prefs.VOICE to Kind.BOOL,
         Prefs.EMOJI_SUGGESTIONS to Kind.BOOL,
         Prefs.HAPTICS to Kind.BOOL,

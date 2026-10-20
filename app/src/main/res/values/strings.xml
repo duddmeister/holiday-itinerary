@@ -36,9 +36,6 @@
     <string name="autocorrect_summary">Fixes typos when you press space. Backspace to undo.</string>
     <string name="suggestions">Suggestion strip</string>
     <string name="suggestions_summary">Completions and next-word predictions</string>
-    <string name="glide">Glide typing</string>
-    <string name="glide_summary">Slide across the letters to type a word. While it\'s on, cursor swipes work along the space bar only.</string>
-    <string name="glide_trail">Show glide trail</string>
     <string name="emoji_suggestions">Emoji suggestions</string>
     <string name="emoji_suggestions_summary">Offers 🍕 when you type “pizza”</string>
     <string name="auto_caps">Auto-capitalisation</string>

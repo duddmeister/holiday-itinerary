@@ -21,7 +21,7 @@ import kotlin.math.abs
 /**
  * Everything Lumen does to the text field: composing the current word,
  * autocorrecting it (with one-tap undo), smart spacing around punctuation,
- * double-space period, glide-typed words, cursor control and deletion.
+ * double-space period, cursor control and deletion.
  *
  * Editors report selection changes asynchronously, so the logic remembers
  * where its own edits should leave the cursor and only treats other moves as
@@ -56,14 +56,9 @@ class InputLogic(private val host: Host) {
 
     /** The word being typed, shown underlined in the editor. */
     val composing = TypedWord()
-    var composingFromGesture = false
-        private set
-    /** Alternatives for the glided word currently composing. */
-    var gestureAlternatives: List<String> = emptyList()
-        private set
     private var composingRestored = false
 
-    /** A word is being typed or was just glided, as opposed to one the cursor came to rest on. */
+    /** A word is being typed, as opposed to one the cursor came to rest on. */
     val typingWord: Boolean get() = composing.isNotEmpty && !composingRestored
     private var composeStart = -1
     private var composingContext: List<String> = emptyList()
@@ -76,8 +71,6 @@ class InputLogic(private val host: Host) {
     var predictionsAtSentenceStart = false
         private set
 
-    /** A glided word wants a space before whatever comes next, unless that is punctuation. */
-    private var phantomSpace = false
     /** We inserted a space after a picked word; closing punctuation swaps with it. */
     private var autoSpaceInserted = false
     private var lastSpaceAt = 0L
@@ -124,7 +117,6 @@ class InputLogic(private val host: Host) {
         this.editor = editor
         handler.removeCallbacks(resume)
         resetComposing()
-        phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
         lastSpaceAt = 0
@@ -163,7 +155,6 @@ class InputLogic(private val host: Host) {
         continuing = null
         if (composing.isNotEmpty) host.connection?.finishComposingText()
         resetComposing()
-        phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
         result = SuggestionResult.EMPTY
@@ -172,9 +163,7 @@ class InputLogic(private val host: Host) {
 
     private fun resetComposing() {
         composing.clear()
-        composingFromGesture = false
         composingRestored = false
-        gestureAlternatives = emptyList()
         composeStart = -1
         result = SuggestionResult.EMPTY
     }
@@ -195,15 +184,12 @@ class InputLogic(private val host: Host) {
         lastCorrection = null
         lastSpaceAt = 0
         if (!useComposing) {
-            consumePhantomSpace(ic)
             commitText(ic, text)
             autoSpaceInserted = false
             host.onInputChanged()
             return
         }
         ic.beginBatchEdit()
-        if (composingFromGesture) finishComposing(ic)
-        consumePhantomSpace(ic)
         autoSpaceInserted = false
         if (composing.isEmpty) {
             val before = ic.getTextBeforeCursor(64, 0) ?: ""
@@ -233,28 +219,15 @@ class InputLogic(private val host: Host) {
                     if (autoSpaceInserted && charBefore(ic) == ' ') deleteBefore(ic, 1)
                     commitText(ic, sep)
                 }
-                phantomSpace = false
                 autoSpaceInserted = false
             }
-            composing.isNotEmpty -> {
-                if (composingFromGesture && !swaps) {
-                    finishComposing(ic)
-                    consumePhantomSpace(ic)
-                    commitText(ic, sep)
-                } else {
-                    val autocorrect = !composingFromGesture && sep.length == 1 && sep[0] in AUTOCORRECT_TRIGGERS
-                    val gesture = composingFromGesture
-                    commitComposing(ic, sep, autocorrect)
-                    if (!gesture) phantomSpace = false
-                }
-            }
+            composing.isNotEmpty -> commitComposing(ic, sep, autocorrect = sep.length == 1 && sep[0] in AUTOCORRECT_TRIGGERS)
             autoSpaceInserted && swaps && charBefore(ic) == ' ' -> {
                 // "word |" + "." becomes "word. |"
                 deleteBefore(ic, 1)
                 commitText(ic, "$sep ")
             }
             else -> {
-                if (!swaps) consumePhantomSpace(ic)
                 commitText(ic, sep)
                 autoSpaceInserted = false
             }
@@ -272,7 +245,6 @@ class InputLogic(private val host: Host) {
         val ic = host.connection ?: return
         ic.beginBatchEdit()
         if (composing.isNotEmpty) finishComposing(ic)
-        consumePhantomSpace(ic)
         commitText(ic, text)
         ic.endBatchEdit()
         autoSpaceInserted = false
@@ -294,7 +266,6 @@ class InputLogic(private val host: Host) {
         val ic = host.connection ?: return
         ic.beginBatchEdit()
         if (composing.isNotEmpty) finishComposing(ic)
-        phantomSpace = false
         val before = ic.getTextBeforeCursor(64, 0) ?: ""
         val spaced = before.isNotEmpty() && !before.last().isWhitespace()
         val sentence = settings.autoCaps && editor.capitalisation &&
@@ -326,14 +297,8 @@ class InputLogic(private val host: Host) {
         ic.beginBatchEdit()
         when {
             composing.isNotEmpty -> {
-                commitComposing(ic, " ", autocorrect = !composingFromGesture)
-                phantomSpace = false
+                commitComposing(ic, " ", autocorrect = true)
                 autoSpaceInserted = false
-                lastSpaceAt = now
-            }
-            phantomSpace -> {
-                phantomSpace = false
-                commitText(ic, " ")
                 lastSpaceAt = now
             }
             autoSpaceInserted && charBefore(ic) == ' ' -> {
@@ -370,8 +335,7 @@ class InputLogic(private val host: Host) {
         val ic = host.connection
         if (editor.isRaw || ic == null) { host.sendKey(KeyEvent.KEYCODE_ENTER); return }
         ic.beginBatchEdit()
-        if (composing.isNotEmpty) commitComposing(ic, "", autocorrect = !composingFromGesture)
-        phantomSpace = false
+        if (composing.isNotEmpty) commitComposing(ic, "", autocorrect = true)
         autoSpaceInserted = false
         lastCorrection = null
         lastSpaceAt = 0
@@ -407,7 +371,6 @@ class InputLogic(private val host: Host) {
             deleteBefore(ic, undo.committed.length + undo.separator.length)
             composingContext = readContext(ic)
             composing.set(undo.typed)
-            composingFromGesture = false
             composingRestored = true
             setComposing(ic, undo.typed)
             ic.endBatchEdit()
@@ -418,16 +381,10 @@ class InputLogic(private val host: Host) {
         }
         autoSpaceInserted = false
         if (composing.isNotEmpty) {
-            if (composingFromGesture) {
-                // A glided word goes in one tap, like it came in.
-                composing.clear()
-            } else {
-                composing.removeLast(lastGraphemeLength(composing.chars))
-            }
+            composing.removeLast(lastGraphemeLength(composing.chars))
             if (composing.isEmpty) {
                 commitText(ic, "")
                 resetComposing()
-                phantomSpace = false
                 refreshPredictions(ic)
                 host.onInputChanged()
             } else {
@@ -436,7 +393,6 @@ class InputLogic(private val host: Host) {
             }
             return
         }
-        phantomSpace = false
         val before = ic.getTextBeforeCursor(64, 0)
         when {
             // The editor won't say what's before the cursor: delete with key events.
@@ -477,7 +433,6 @@ class InputLogic(private val host: Host) {
         if (swipeAnchor < 0) {
             if (done) return
             if (composing.isNotEmpty) finishComposing(ic)
-            phantomSpace = false
             autoSpaceInserted = false
             lastCorrection = null
             // A swipe right after typing comes before the editor reports the last keys.
@@ -512,7 +467,7 @@ class InputLogic(private val host: Host) {
         host.onInputChanged()
     }
 
-    // ------------------------------------------------------------ suggestions & gestures
+    // ------------------------------------------------------------ suggestions
 
     /** A suggestion from the strip was tapped. */
     fun onPick(text: String, emoji: Boolean) {
@@ -520,16 +475,8 @@ class InputLogic(private val host: Host) {
         val now = System.currentTimeMillis()
         ic.beginBatchEdit()
         if (emoji) {
-            if (composing.isNotEmpty) commitComposing(ic, " ", autocorrect = !composingFromGesture)
-            consumePhantomSpace(ic)
+            if (composing.isNotEmpty) commitComposing(ic, " ", autocorrect = true)
             commitText(ic, "$text ")
-        } else if (composing.isNotEmpty && composingFromGesture) {
-            // Swap the glided word for an alternative; it stays editable.
-            composing.set(text)
-            setComposing(ic, text)
-            ic.endBatchEdit()
-            host.onInputChanged()
-            return
         } else if (composing.isNotEmpty) {
             val typed = composing.toString()
             // Mid-sentence corrections keep the space that is already there.
@@ -544,7 +491,6 @@ class InputLogic(private val host: Host) {
             learn(text)
             resetComposing()
         } else {
-            consumePhantomSpace(ic)
             val before = charBefore(ic)
             if (before != null && !before.isWhitespace()) commitText(ic, " ")
             composingContext = readContext(ic)
@@ -552,38 +498,9 @@ class InputLogic(private val host: Host) {
             learn(text)
         }
         ic.endBatchEdit()
-        phantomSpace = false
         autoSpaceInserted = true
         lastSpaceAt = 0
         refreshPredictions(ic)
-        host.onInputChanged()
-    }
-
-    /** A glide gesture produced [words] (best first, already cased). */
-    fun onGesture(words: List<String>) {
-        if (words.isEmpty()) return
-        val ic = host.connection ?: return
-        ic.beginBatchEdit()
-        if (composing.isNotEmpty) {
-            if (composingFromGesture) finishComposing(ic) else commitComposing(ic, "", autocorrect = true)
-            phantomSpace = true
-        }
-        lastCorrection = null
-        val before = charBefore(ic)
-        val needSpace = phantomSpace || (before != null && !before.isWhitespace() && before !in "([{\"“‘'/@#\n")
-        phantomSpace = false
-        if (needSpace) commitText(ic, " ")
-        composingContext = readContext(ic)
-        composing.set(words[0])
-        composingFromGesture = true
-        composingRestored = false
-        gestureAlternatives = words
-        result = SuggestionResult.EMPTY
-        setComposing(ic, words[0])
-        ic.endBatchEdit()
-        phantomSpace = true
-        autoSpaceInserted = false
-        lastSpaceAt = 0
         host.onInputChanged()
     }
 
@@ -591,7 +508,6 @@ class InputLogic(private val host: Host) {
     fun onCursorSteps(steps: Int) {
         val ic = host.connection ?: return
         if (composing.isNotEmpty) finishComposing(ic)
-        phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
         val pos = if (steps < 0) cursorStart else cursorEnd
@@ -623,7 +539,6 @@ class InputLogic(private val host: Host) {
             return
         }
         if (composing.isNotEmpty) finishComposing(ic)
-        phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
         val reach = WORD_JUMP_REACH * abs(words)
@@ -658,7 +573,7 @@ class InputLogic(private val host: Host) {
 
     fun updateSuggestions() {
         val engine = host.engine
-        result = if (composing.isNotEmpty && !composingFromGesture && engine != null && useComposing) {
+        result = if (composing.isNotEmpty && engine != null && useComposing) {
             engine.suggest(
                 composing, composingContext, host.keyGeometry(),
                 SuggestionOptions(
@@ -691,10 +606,6 @@ class InputLogic(private val host: Host) {
         if (editor.inputType and InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS != 0) return true
         if (composing.isNotEmpty) return false
         val ic = host.connection ?: return false
-        if (phantomSpace) {
-            val before = ic.getTextBeforeCursor(32, 0) ?: return false
-            return TextContext.atSentenceStart("$before ")
-        }
         return ic.getCursorCapsMode(editor.inputType) != 0
     }
 
@@ -722,7 +633,6 @@ class InputLogic(private val host: Host) {
             ic?.finishComposingText()
             resetComposing()
         }
-        phantomSpace = false
         autoSpaceInserted = false
         lastCorrection = null
         lastSpaceAt = 0
@@ -805,7 +715,6 @@ class InputLogic(private val host: Host) {
             composing.add(c, center?.get(0) ?: Float.NaN, center?.get(1) ?: Float.NaN)
         }
         composingRestored = !carryOn
-        composingFromGesture = false
         composingContext = TextContext.contextWords(before.subSequence(0, before.length - word.length))
         updateSuggestions()
     }
@@ -859,22 +768,12 @@ class InputLogic(private val host: Host) {
         composingContext = TextContext.contextWords(before.subSequence(0, before.length - word.length))
     }
 
-    /** Ends composition, keeping the word as it stands. Only finished (glided) words are learned. */
+    /** Ends composition, keeping the word as it stands. */
     private fun finishComposing(ic: InputConnection) {
-        val word = composing.toString()
-        val complete = composingFromGesture
         ic.finishComposingText()
         if (composeStart >= 0 && expectedEnd >= 0) expect(expectedStart, expectedEnd)
         composeStart = -1
-        if (complete && word.isNotEmpty()) learn(word)
         resetComposing()
-    }
-
-    private fun consumePhantomSpace(ic: InputConnection) {
-        if (!phantomSpace) return
-        phantomSpace = false
-        val before = charBefore(ic)
-        if (before != null && !before.isWhitespace()) commitText(ic, " ")
     }
 
     private fun learn(word: String) {

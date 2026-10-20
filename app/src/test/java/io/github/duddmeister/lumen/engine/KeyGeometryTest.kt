@@ -41,9 +41,6 @@ class KeyGeometryTest {
         assertEquals("the two Gs are apart", 2.74f, split.distanceInKeys(leftG[0], leftG[1], rightG[0], rightG[1]), 1e-3f)
         assertSame(leftG, split.center('g'))
         assertSame(rightG, split.center('g', rightG[0] + 30f, rightG[1]))
-        // Neighbours are found on the side that was touched.
-        assertEquals(setOf('g', 'h', 'y', 'v'), split.nearestLetters(rightG[0], rightG[1], 4, 1.25f).toSet())
-        assertEquals(setOf('g', 'f', 't', 'v'), split.nearestLetters(leftG[0], leftG[1], 4, 1.25f).toSet())
         assertEquals(1f, split.keysApart('g', 'h')!!, 1e-3f)
         assertEquals(1f, split.keysApart('f', 'g')!!, 1e-3f)
     }
