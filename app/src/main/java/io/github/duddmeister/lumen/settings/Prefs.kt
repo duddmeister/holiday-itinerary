@@ -77,9 +77,6 @@ class Prefs(context: Context) {
     val autoCorrect get() = bool(AUTO_CORRECT, true)
     val suggestions get() = bool(SUGGESTIONS, true)
     val doubleSpacePeriod get() = bool(DOUBLE_SPACE, true)
-    /** Off by default: swipes across the letters move the cursor instead (they can't do both). */
-    val glideTyping get() = bool(GLIDE, false)
-    val glideTrail get() = bool(GLIDE_TRAIL, true)
     /** Shows the microphone in the toolbar. */
     val voiceTyping get() = bool(VOICE, true)
     val emojiSuggestions get() = bool(EMOJI_SUGGESTIONS, true)
@@ -89,7 +86,7 @@ class Prefs(context: Context) {
     val soundVolume get() = int(SOUND_VOLUME, 40).coerceIn(0, 100)
     val learnWords get() = bool(LEARN, true)
     val clipboardHistory get() = bool(CLIPBOARD, true)
-    /** Sideways swipes move by words and finish words: anywhere on the keys, or just the space bar while gliding. */
+    /** Sideways swipes anywhere on the keys move by words and finish words. */
     val spaceCursor get() = bool(SPACE_CURSOR, true)
     val deleteSwipe get() = bool(DELETE_SWIPE, true)
     val longPressDelay get() = int(LONG_PRESS, 300).coerceIn(150, 700)
@@ -136,8 +133,6 @@ class Prefs(context: Context) {
         const val AUTO_CORRECT = "auto_correct"
         const val SUGGESTIONS = "suggestions"
         const val DOUBLE_SPACE = "double_space_period"
-        const val GLIDE = "glide_typing"
-        const val GLIDE_TRAIL = "glide_trail"
         const val VOICE = "voice_typing"
         const val EMOJI_SUGGESTIONS = "emoji_suggestions"
         const val HAPTICS = "haptics"

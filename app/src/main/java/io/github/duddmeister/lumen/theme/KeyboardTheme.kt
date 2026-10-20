@@ -38,8 +38,6 @@ class KeyboardTheme(
     val popupLabel: Int = label,
     /** Color of the light bloom that spreads from a pressed key. */
     val glow: Int,
-    val trailStart: Int = accent,
-    val trailEnd: Int = accentEnd,
     /** Wants the app behind to show through, blurred (Android 12+). */
     val translucent: Boolean = false,
 ) {
@@ -48,12 +46,12 @@ class KeyboardTheme(
         id, name, dark, background.map { Colors.opaque(Colors.lerp(0xFF0F111A.toInt(), Colors.opaque(it), 0.55f)) }.toIntArray(),
         glows, key, keyTop, keyPressed, functional, functionalPressed, accent, accentEnd, accentPressed, onAccent,
         label, functionalLabel, hint, highlight, shadow, stripText, stripSecondary, divider, popup, popupLabel,
-        glow, trailStart, trailEnd, translucent = false,
+        glow, translucent = false,
     )
 
     /**
-     * This theme in [choice]'s colours instead of its own: the enter key, highlights, the
-     * light that blooms from a pressed key and the glide trail. [Accent.THEME] keeps its own.
+     * This theme in [choice]'s colours instead of its own: the enter key, highlights and the
+     * light that blooms from a pressed key. [Accent.THEME] keeps its own.
      */
     fun withAccent(choice: Accent): KeyboardTheme {
         if (choice == Accent.THEME) return this
@@ -66,7 +64,7 @@ class KeyboardTheme(
             onAccent = choice.on(dark),
             label = label, functionalLabel = functionalLabel, hint = hint, highlight = highlight, shadow = shadow,
             stripText = stripText, stripSecondary = stripSecondary, divider = divider, popup = popup, popupLabel = popupLabel,
-            glow = start, trailStart = start, trailEnd = end, translucent = translucent,
+            glow = start, translucent = translucent,
         )
     }
 }
@@ -119,7 +117,7 @@ object Themes {
         highlight = c(0x30FFFFFF), shadow = c(0x59000000),
         stripText = c(0xFFEEF0FF), stripSecondary = c(0xFFA3A9DA), divider = c(0x1FFFFFFF),
         popup = c(0xFF242B5E), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFF8B7CFF), trailStart = c(0xFF9D8BFF), trailEnd = c(0xFF2DD4BF),
+        glow = c(0xFF8B7CFF),
     )
 
     val glass = KeyboardTheme(
@@ -132,7 +130,7 @@ object Themes {
         highlight = c(0x3DFFFFFF), shadow = c(0x2E000000),
         stripText = c(0xFFFFFFFF), stripSecondary = c(0xB3FFFFFF), divider = c(0x26FFFFFF),
         popup = c(0xF2262A36), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFFFFFFFF), trailStart = c(0xFFFFFFFF), trailEnd = c(0xFFA5B4FC),
+        glow = c(0xFFFFFFFF),
         translucent = true,
     )
 
@@ -146,7 +144,7 @@ object Themes {
         highlight = c(0x14FFFFFF), shadow = c(0x8C000000),
         stripSecondary = c(0xFF98989F), divider = c(0x1FFFFFFF),
         popup = c(0xFF4A4A50), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFF0A84FF), trailStart = c(0xFF0A84FF), trailEnd = c(0xFF64D2FF),
+        glow = c(0xFF0A84FF),
     )
 
     val midnight = KeyboardTheme(
@@ -159,7 +157,7 @@ object Themes {
         highlight = c(0x12FFFFFF),
         stripSecondary = c(0xFF8B8B93), divider = c(0x1AFFFFFF),
         popup = c(0xFF1E1E22), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFF3B82F6), trailStart = c(0xFF3B82F6), trailEnd = c(0xFFA855F7),
+        glow = c(0xFF3B82F6),
     )
 
     val frost = KeyboardTheme(
@@ -172,7 +170,7 @@ object Themes {
         shadow = c(0x6694A3B8),
         stripSecondary = c(0xFF64748B), divider = c(0x1F0F172A),
         popup = c(0xFFFFFFFF), popupLabel = c(0xFF0F172A),
-        glow = c(0xFF60A5FA), trailStart = c(0xFF2563EB), trailEnd = c(0xFF7C3AED),
+        glow = c(0xFF60A5FA),
     )
 
     val paper = KeyboardTheme(
@@ -185,7 +183,7 @@ object Themes {
         shadow = c(0x59B5AC9A),
         stripSecondary = c(0xFF78716C), divider = c(0x1F1C1917),
         popup = c(0xFFFFFDF8), popupLabel = c(0xFF1C1917),
-        glow = c(0xFFF59E0B), trailStart = c(0xFF292524), trailEnd = c(0xFFA8A29E),
+        glow = c(0xFFF59E0B),
     )
 
     val sakura = KeyboardTheme(
@@ -198,7 +196,7 @@ object Themes {
         shadow = c(0x66E9A5BE),
         stripSecondary = c(0xFF9C5C7C), divider = c(0x1F4A1530),
         popup = c(0xFFFFFFFF), popupLabel = c(0xFF4A1530),
-        glow = c(0xFFF472B6), trailStart = c(0xFFEC4899), trailEnd = c(0xFFA855F7),
+        glow = c(0xFFF472B6),
     )
 
     val ocean = KeyboardTheme(
@@ -212,7 +210,7 @@ object Themes {
         highlight = c(0x29FFFFFF), shadow = c(0x4D000000),
         stripSecondary = c(0xFF8CC3D4), divider = c(0x1FFFFFFF),
         popup = c(0xFF0E4A63), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFF22D3EE), trailStart = c(0xFF22D3EE), trailEnd = c(0xFF3B82F6),
+        glow = c(0xFF22D3EE),
     )
 
     val forest = KeyboardTheme(
@@ -226,7 +224,7 @@ object Themes {
         highlight = c(0x14FFFFFF), shadow = c(0x66000000),
         stripSecondary = c(0xFF8DB7A2), divider = c(0x1FFFFFFF),
         popup = c(0xFF254231), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFF34D399), trailStart = c(0xFF34D399), trailEnd = c(0xFFA3E635),
+        glow = c(0xFF34D399),
     )
 
     val sunset = KeyboardTheme(
@@ -240,7 +238,7 @@ object Themes {
         highlight = c(0x33FFFFFF), shadow = c(0x40000000),
         stripSecondary = c(0xFFF3C6DE), divider = c(0x26FFFFFF),
         popup = c(0xFF6B1E5E), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFFFFB86B), trailStart = c(0xFFFFB86B), trailEnd = c(0xFFFF7EB3),
+        glow = c(0xFFFFB86B),
     )
 
     /** Monochrome and crisp: near-black, with white for the accent. */
@@ -254,7 +252,7 @@ object Themes {
         highlight = c(0x17FFFFFF), shadow = c(0x99000000),
         stripText = c(0xFFF4F4F5), stripSecondary = c(0xFFA1A1AA), divider = c(0x1AFFFFFF),
         popup = c(0xFF2C2C31), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFFE4E4E7), trailStart = c(0xFFFFFFFF), trailEnd = c(0xFF71717A),
+        glow = c(0xFFE4E4E7),
     )
 
     /** Cool blue-greys with a frosty accent. */
@@ -268,7 +266,7 @@ object Themes {
         highlight = c(0x14FFFFFF), shadow = c(0x66000000),
         stripText = c(0xFFECEFF4), stripSecondary = c(0xFF9AA5BA), divider = c(0x1FFFFFFF),
         popup = c(0xFF434C5E), popupLabel = c(0xFFECEFF4),
-        glow = c(0xFF88C0D0), trailStart = c(0xFF88C0D0), trailEnd = c(0xFFB48EAD),
+        glow = c(0xFF88C0D0),
     )
 
     /** Night-city colour: magenta and cyan light over near-black glass. */
@@ -283,7 +281,7 @@ object Themes {
         highlight = c(0x2EFFFFFF), shadow = c(0x59000000),
         stripText = c(0xFFF5F3FF), stripSecondary = c(0xFFB4A7E6), divider = c(0x1FFFFFFF),
         popup = c(0xFF1E1236), popupLabel = c(0xFFFFFFFF),
-        glow = c(0xFFFF2BD6), trailStart = c(0xFFFF2BD6), trailEnd = c(0xFF00E5FF),
+        glow = c(0xFFFF2BD6),
     )
 
     /** Soft lavender and white, with a violet accent. */
@@ -297,7 +295,7 @@ object Themes {
         shadow = c(0x59B9A6E8),
         stripText = c(0xFF2E1065), stripSecondary = c(0xFF7C6BA8), divider = c(0x1F2E1065),
         popup = c(0xFFFFFFFF), popupLabel = c(0xFF2E1065),
-        glow = c(0xFFA78BFA), trailStart = c(0xFF7C3AED), trailEnd = c(0xFFEC4899),
+        glow = c(0xFFA78BFA),
     )
 
     /** Display order in pickers; the dynamic theme is resolved per device. */
@@ -327,7 +325,6 @@ object Themes {
                 base.functional, base.functionalPressed, base.accent, base.accentEnd, base.accentPressed,
                 base.onAccent, base.label, base.functionalLabel, base.hint, base.highlight, base.shadow,
                 base.stripText, base.stripSecondary, base.divider, base.popup, base.popupLabel, base.glow,
-                base.trailStart, base.trailEnd,
             )
         }
         val r = context.resources
@@ -349,7 +346,6 @@ object Themes {
             stripSecondary = s(android.R.color.system_neutral2_600), divider = Colors.withAlpha(n1[4], 0.12f),
             popup = n1[0], popupLabel = n1[4],
             glow = s(android.R.color.system_accent1_300),
-            trailStart = s(android.R.color.system_accent1_500), trailEnd = s(android.R.color.system_accent3_400),
         ) else KeyboardTheme(
             DYNAMIC, "Material You", true,
             background = intArrayOf(n1[4], s(android.R.color.system_neutral1_1000).let { Colors.lerp(n1[4], it, 0.35f) }),
@@ -363,7 +359,6 @@ object Themes {
             stripSecondary = s(android.R.color.system_neutral2_300), divider = Colors.withAlpha(n1[1], 0.12f),
             popup = n1[2], popupLabel = n1[1],
             glow = s(android.R.color.system_accent1_300),
-            trailStart = s(android.R.color.system_accent1_200), trailEnd = s(android.R.color.system_accent3_200),
         )
     }
 }

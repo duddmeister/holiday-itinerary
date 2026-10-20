@@ -39,7 +39,6 @@ import io.github.duddmeister.lumen.engine.CharFolding
 import io.github.duddmeister.lumen.engine.KeyGeometry
 import io.github.duddmeister.lumen.engine.SuggestionEngine
 import io.github.duddmeister.lumen.keyboard.FieldKind
-import io.github.duddmeister.lumen.keyboard.GestureTrail
 import io.github.duddmeister.lumen.keyboard.Icon
 import io.github.duddmeister.lumen.keyboard.Key
 import io.github.duddmeister.lumen.keyboard.KeyCodes
@@ -68,7 +67,6 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.Executors
 import java.util.function.Consumer
-import kotlin.math.hypot
 
 /** Lumen's input method service: wires the views, the input logic and the settings together. */
 class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripView.Listener, PanelView.Host,
@@ -87,7 +85,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private val painter by lazy { KeyPainter(this) }
     private val logic = InputLogic(this)
     private val main = Handler(Looper.getMainLooper())
-    private val gestureWorker = Executors.newSingleThreadExecutor { r -> Thread(r, "lumen-glide") }
 
     private var root: InputRootView? = null
     private var emojiPanel: EmojiPanelView? = null
@@ -124,8 +121,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     private var lastShiftFrom = Shift.OFF
     private var autoCapsSuppressed = false
     private var symbolTyped = false
-    private var gestureActive = false
-    private var previewPending = false
     private var carry: Carry? = null
 
     // ------------------------------------------------------------ lifecycle
@@ -171,7 +166,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         if (Build.VERSION.SDK_INT >= 31) {
             blurListener?.let { getSystemService(WindowManager::class.java)?.removeCrossWindowBlurEnabledListener(it) }
         }
-        gestureWorker.shutdown()
         gifWorker.shutdownNow()
         gifImages.shutdown()
         super.onDestroy()
@@ -240,7 +234,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         autoCapsSuppressed = false
         // A new input view has no touches in progress, whatever the old one had.
         shiftHeld = false
-        gestureActive = false
         // Back to the keys before the window shows, without a fade.
         search = null
         searchQuery.setLength(0)
@@ -368,8 +361,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         val typingIntoApp = search == null
         root?.keyboard?.apply {
             previewsEnabled = prefs.keyPreviews
-            gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && typingIntoApp
-            trailEnabled = prefs.glideTrail
             cursorSwipesEnabled = prefs.spaceCursor && typingIntoApp
             deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
             flickEnabled = prefs.flickSymbols
@@ -467,7 +458,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             it.setKeyboard(l)
             it.spaceLabel = if (mode == KeyboardMode.TEXT) prefs.spelling.language else null
             it.enterIcon = enterIcon()
-            it.gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && search == null
         }
         updateShift()
     }
@@ -669,8 +659,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             direction < 0 || onward -> logic.onCursorWords(direction)
             logic.composing.isNotEmpty -> {
                 autoCapsSuppressed = false
-                // A glided word is already the best match: just finish it.
-                if (logic.composingFromGesture) logic.onSpace() else logic.onPick(bestSuggestion(), emoji = false)
+                logic.onPick(bestSuggestion(), emoji = false)
             }
             next != null -> {
                 autoCapsSuppressed = false
@@ -697,68 +686,11 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
         if (!done) feedback.tick()
     }
 
-    override fun onGestureStart() {
-        gestureActive = true
-        root?.strip?.setGesturePreview("")
-    }
-
-    override fun onGestureMove(trail: GestureTrail) {
-        val decoder = EngineHolder.decoder ?: return
-        val g = keyGeometry() ?: return
-        if (previewPending) return
-        previewPending = true
-        val n = trail.count
-        val xs = trail.xs.copyOf(n)
-        val ys = trail.ys.copyOf(n)
-        gestureWorker.execute {
-            val best = try { decoder.decode(xs, ys, n, g, 1).firstOrNull()?.text } catch (e: RuntimeException) { null }
-            main.post {
-                previewPending = false
-                if (gestureActive && best != null) root?.strip?.setGesturePreview(cased(best))
-            }
-        }
-    }
-
-    override fun onGestureEnd(trail: GestureTrail) {
-        gestureActive = false
-        root?.strip?.setGesturePreview(null)
-        if (search != null) return
-        val decoder = EngineHolder.decoder
-        val g = keyGeometry()
-        val words = if (decoder == null || g == null) emptyList() else {
-            decoder.decode(trail.xs, trail.ys, trail.count, g, 5).map { cased(it.text) }.distinct()
-        }
-        if (words.isEmpty()) {
-            if (!tapInstead(trail)) refreshStrip()
-            return
-        }
-        autoCapsSuppressed = false
-        consumeShift()
-        logic.onGesture(words)
-    }
-
-    /**
-     * A glide too short to spell anything was a tap that slid (a thumb rolling as it lifts):
-     * types the key it started on, rather than losing the letter.
-     */
-    private fun tapInstead(trail: GestureTrail): Boolean {
-        val l = layout ?: return false
-        if (trail.count == 0 || l.keyWidth <= 0f) return false
-        val x = trail.xs[0]
-        val y = trail.ys[0]
-        val key = l.keyAt(x, y)?.takeIf { it.isLetter } ?: return false
-        var length = 0f
-        for (i in 1 until trail.count) length += hypot(trail.xs[i] - trail.xs[i - 1], trail.ys[i] - trail.ys[i - 1])
-        if (length > l.keyWidth * TAP_SLIDE_KEYS) return false
-        onKeyTap(key, x, y)
-        return true
-    }
-
     // ------------------------------------------------------------ strip
 
     private fun refreshStrip() {
         val strip = root?.strip ?: return
-        if (gestureActive || search != null) return
+        if (search != null) return
         val clip = if (logic.composing.isEmpty) clipboard.freshClip() else null
         strip.setClip(clip)
         if (!prefs.suggestions || !editor.suggestionsAllowed) {
@@ -766,15 +698,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             return
         }
         when {
-            logic.composingFromGesture -> {
-                val current = logic.composing.toString()
-                val others = logic.gestureAlternatives.filter { it != current }
-                strip.setSuggestions(
-                    others.getOrNull(0)?.let { SuggestionStripView.Item(it) },
-                    SuggestionStripView.Item(current, primary = true),
-                    others.getOrNull(1)?.let { SuggestionStripView.Item(it) },
-                )
-            }
             logic.composing.isNotEmpty -> {
                 val r = logic.result
                 val typed = logic.composing.toString()
@@ -1272,8 +1195,6 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
 
     private companion object {
         const val DOUBLE_TAP_MS = 320L
-        /** A "glide" no longer than this many key widths that spells nothing was a tap. */
-        const val TAP_SLIDE_KEYS = 1f
         const val NEVER = Long.MIN_VALUE / 2
         /** Smallest width of large screens (Android's tablet breakpoint). */
         const val LARGE_SCREEN_DP = 600

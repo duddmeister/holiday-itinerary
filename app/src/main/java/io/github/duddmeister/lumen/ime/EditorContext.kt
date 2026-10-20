@@ -52,7 +52,6 @@ class EditorContext(info: EditorInfo?) {
     val autoCorrectAllowed: Boolean = suggestionsAllowed && variation != InputType.TYPE_TEXT_VARIATION_PERSON_NAME
     /** Nothing is learned from address fields, where much of what's typed is addresses, or from fields asking for no suggestions. */
     val learningAllowed: Boolean = suggestionsAllowed && !incognito && !isUrl && !askedNoSuggestions
-    val gesturesAllowed: Boolean = isText && !isPassword && !isEmail
     val capitalisation: Boolean = isText && flags and CAPS_FLAGS != 0
 
     val mode: KeyboardMode = when (inputClass) {

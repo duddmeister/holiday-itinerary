@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import io.github.duddmeister.lumen.engine.GestureDecoder
 import io.github.duddmeister.lumen.engine.Lexicon
 import io.github.duddmeister.lumen.engine.NextWordModel
 import io.github.duddmeister.lumen.engine.Shortcut
@@ -31,8 +30,6 @@ object EngineHolder {
     private val restored = ArrayList<UserHistory>()
 
     @Volatile var engine: SuggestionEngine? = null
-        private set
-    @Volatile var decoder: GestureDecoder? = null
         private set
 
     /** How [engine] spells; while another spelling loads, still the old one. */
@@ -85,20 +82,11 @@ object EngineHolder {
         restored.forEach { history.merge(it) }
         val restoring = restored.isNotEmpty()
         restored.clear()
-        val built = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
-        val gestures = GestureDecoder(lexicon, history)
-        // Snapshot learned words here, on the thread that owns the history.
-        val learned = gestures.learnedWords()
-        engine = built
-        decoder = null
+        engine = SuggestionEngine(lexicon, shortcuts, predictions, history, emoji)
         this.spelling = spelling
         if (restoring) save(app)
         waiting.forEach { it() }
         waiting.clear()
-        io.execute {
-            gestures.buildIndex(learned)
-            main.post { if (engine === built) decoder = gestures }
-        }
     }
 
     /** Saves learned words if anything changed. Serialises on the caller's (main) thread, writes in the background. */
@@ -136,11 +124,6 @@ object EngineHolder {
             running != null -> {
                 running.history.merge(words)
                 save(app)
-                // Built again around the same words, so glide typing knows the new ones too.
-                if (!loading) {
-                    wanted = spelling
-                    start(app)
-                }
             }
             loading -> restored.add(words)
             // Nothing loaded: add them to the saved words (a later load reads after this).
