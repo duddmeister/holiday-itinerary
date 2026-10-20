@@ -140,6 +140,9 @@ class SuggestionStripView(context: Context, private val painter: KeyPainter) : V
 
     fun clearSuggestions() = setSuggestions(null, null, null)
 
+    /** The suggestion showing in the middle slot, or null when the toolbar shows instead. */
+    val middle: Item? get() = if (showingToolbar) null else slots[1]
+
     fun setClip(text: String?) {
         if (clipText != text) {
             clipText = text

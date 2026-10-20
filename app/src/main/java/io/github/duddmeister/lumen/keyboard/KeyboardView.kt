@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
+import android.os.Build
 import android.os.SystemClock
 import android.util.SparseArray
 import android.view.MotionEvent
@@ -19,9 +21,9 @@ import kotlin.math.hypot
 
 /**
  * The keyboard surface: draws keys with Lumen's light effects and turns touches
- * into key events, long-press alternatives, glide gestures, space-bar swipes
- * control and swipe-to-delete. All text semantics live in the IME; this view
- * only reports what the fingers did.
+ * into key events, long-press alternatives, glide gestures, cursor swipes and
+ * swipe-to-delete. All text semantics live in the IME; this view only reports
+ * what the fingers did.
  */
 @SuppressLint("ViewConstructor")
 class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
@@ -41,8 +43,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         fun onLongPress(key: Key): Boolean
         /** The long-press panel opened (for haptic feedback). */
         fun onPanelOpened()
-        /** A swipe along the space bar, once the finger lifts: [direction] is -1 for left, 1 for right. */
-        fun onSpaceSwipe(direction: Int)
+        /** A sideways swipe across the keys, once the finger lifts: [direction] is -1 for left, 1 for right. */
+        fun onCursorSwipe(direction: Int)
         /** Swipe left on delete selects [words] words; [done] once the finger lifts. */
         fun onDeleteSwipe(words: Int, done: Boolean)
         fun onGestureStart()
@@ -67,7 +69,11 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     var previewsEnabled = true
     var gesturesEnabled = true
     var trailEnabled = true
-    var spaceSwipesEnabled = true
+    /**
+     * Sideways swipes move the cursor: anywhere on the keys, or only along the space bar
+     * while the letters glide-type (a glide and a swipe across them are the same motion).
+     */
+    var cursorSwipesEnabled = true
     var deleteSwipeEnabled = true
     /** A quick flick down on a key types the symbol in its corner. */
     var flickEnabled = true
@@ -89,7 +95,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
     /** When a character or space was last tapped. */
     private var typedAt = 0L
 
-    private enum class Mode { PRESS, PANEL, GESTURE, SPACE_SWIPE, DELETE_SWIPE, FLICK, DONE }
+    private enum class Mode { PRESS, PANEL, GESTURE, SWIPE, DELETE_SWIPE, FLICK, DONE }
 
     private inner class Pointer(val id: Int) : Runnable {
         var key: Key? = null
@@ -99,8 +105,9 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         var y = 0f
         var mode = Mode.PRESS
         var panel: PopupPanel? = null
-        var anchorX = 0f
         var words = 0
+        /** The most words a delete swipe has reached. */
+        var reached = 0
         var repeats = 0
         var moved = false
         /** Slid off the key it came down on, to the one it's on now. */
@@ -201,6 +208,14 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         layoutKeys()
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        // Swipes from keys by the screen's edges (delete, and the letters at either end) stay
+        // with the keys. Android's back gesture would take a quick one, letting a touch through
+        // only once it had been held still for a moment. A keyboard may claim its full height.
+        if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(Rect(0, 0, w, h))
+    }
+
     private fun layoutKeys() {
         val l = layout ?: return
         val w = width.toFloat()
@@ -234,9 +249,10 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
             }
         }
 
-        val cursorKey = activeKey(Mode.SPACE_SWIPE)
-        val deleteKey = activeKey(Mode.DELETE_SWIPE)
         val labelledSpace = l.keys.firstOrNull { it.code == KeyCodes.SPACE }
+        // A cursor swipe shows its arrows on the space bar, wherever on the keys it began.
+        val cursorKey = if (activeKey(Mode.SWIPE) != null) labelledSpace else null
+        val deleteKey = activeKey(Mode.DELETE_SWIPE)
         for (key in l.keys) {
             val press = pressAmount(key, now)
             if ((key.pressed && now - key.pressedAt < PRESS_MS) || key.releasedAt > 0) animating = true
@@ -453,24 +469,37 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 if (glideable) p.record(x, y, time)
                 // Heading down a key with a symbol in its corner: a flick, until it goes too far.
                 val flickShaped = flickEnabled && key.hint != null && !p.flickOff && dy > 0f && abs(dx) < dy * FLICK_SLANT
+                // Heading sideways over keys that don't glide-type: a cursor swipe, once it goes far enough.
+                val sx = x - p.startX
+                val swipeShaped = cursorSwipesEnabled && !gesturesEnabled && pointers.size() == 1 &&
+                    key.code != KeyCodes.SHIFT && key.code != KeyCodes.DELETE && abs(y - p.startY) < abs(sx) * SWIPE_SLANT
                 when {
-                    key.code == KeyCodes.SPACE && spaceSwipesEnabled && abs(dx) > touchSlop * 1.5f -> {
+                    key.code == KeyCodes.SPACE && cursorSwipesEnabled && abs(dx) > touchSlop * 1.5f -> {
                         // A swipe, not a space: it acts once, when the finger lifts.
                         removeCallbacks(p)
-                        p.mode = Mode.SPACE_SWIPE
+                        p.mode = Mode.SWIPE
                         invalidate()
                     }
                     key.code == KeyCodes.DELETE && deleteSwipeEnabled && dx < -touchSlop * 2f -> {
                         removeCallbacks(p)
                         p.mode = Mode.DELETE_SWIPE
-                        p.anchorX = p.downX - touchSlop
                         p.words = 0
+                        p.reached = 0
+                        selectWords(l, p, x)
                     }
                     flickShaped && dy > flickStart(key) -> {
                         // Flicking down for the symbol in the corner; the preview shows it.
                         removeCallbacks(p)
                         p.mode = Mode.FLICK
                         relabelPreview(key, key.hint)
+                    }
+                    swipeShaped && abs(sx) > swipeStart(l, p, time) -> {
+                        // Not a key after all: the swipe acts once, when the finger lifts.
+                        removeCallbacks(p)
+                        hidePreview(key)
+                        releaseVisual(key)
+                        p.mode = Mode.SWIPE
+                        invalidate()
                     }
                     glideable && !flickShaped && p.travel > glideStart(l, p, time) -> {
                         removeCallbacks(p)
@@ -483,7 +512,8 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                         listener?.onGestureStart()
                         invalidate()
                     }
-                    p.moved && key.isCharacter -> {
+                    // Sideways, the finger is on its way to a swipe rather than to another key.
+                    p.moved && key.isCharacter && !swipeShaped -> {
                         val under = l.keyAt(x, y)
                         // A thumb rolling over the edge as it lifts stays on its key.
                         if (under != null && under !== key && under.isCharacter && wellInside(under, x, y)) {
@@ -510,7 +540,7 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 }
                 invalidate()
             }
-            Mode.SPACE_SWIPE -> Unit
+            Mode.SWIPE -> Unit
             Mode.FLICK -> {
                 val dx = x - p.downX
                 val dy = y - p.downY
@@ -538,18 +568,26 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                     relabelPreview(key, if (dy > flickStart(key)) key.hint ?: keyLabel(key) else keyLabel(key))
                 }
             }
-            Mode.DELETE_SWIPE -> {
-                val words = ((p.anchorX - x) / (l.keyWidth * 0.9f)).toInt().coerceAtLeast(0)
-                if (words != p.words) {
-                    p.words = words
-                    listener?.onDeleteSwipe(words, false)
-                }
-            }
+            Mode.DELETE_SWIPE -> selectWords(l, p, x)
             Mode.DONE -> Unit
         }
     }
 
+    /** A delete swipe selects a word for each [DELETE_WORD_KEYS] key widths it has come left of where it landed. */
+    private fun selectWords(l: KeyboardLayout, p: Pointer, x: Float) {
+        val words = ((p.downX - x) / (l.keyWidth * DELETE_WORD_KEYS)).toInt().coerceAtLeast(0)
+        if (words == p.words) return
+        p.words = words
+        p.reached = maxOf(p.reached, words)
+        listener?.onDeleteSwipe(words, false)
+    }
+
     private fun up(p: Pointer, x: Float, y: Float, time: Long) {
+        // A quick flick can outrun the moves: where it lifts counts as one more (it may make a
+        // tap a swipe, or reach another word to delete).
+        val l = layout
+        val moving = p.mode == Mode.PRESS || p.mode == Mode.DELETE_SWIPE
+        if (moving && l != null && (x != p.x || y != p.y)) move(l, p, x, y, time)
         removeCallbacks(p)
         pointers.remove(p.id)
         val key = p.key ?: return
@@ -582,16 +620,22 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
                 listener?.onGestureEnd(trail)
                 invalidate()
             }
-            Mode.SPACE_SWIPE -> {
+            Mode.SWIPE -> {
                 releaseVisual(key)
                 // One word, however far or slowly it went; drifting back first cancels it.
-                val dx = x - p.downX
+                val dx = x - p.startX
                 val keyWidth = layout?.keyWidth ?: 0f
-                if (abs(dx) >= maxOf(touchSlop * 1.5f, keyWidth * SWIPE_MIN_KEYS)) listener?.onSpaceSwipe(if (dx > 0) 1 else -1)
+                val reach = if (key.code == KeyCodes.SPACE) maxOf(touchSlop * 1.5f, keyWidth * SWIPE_MIN_KEYS) else keyWidth * SWIPE_KEEP_KEYS
+                if (abs(dx) >= reach) listener?.onCursorSwipe(if (dx > 0) 1 else -1)
             }
             Mode.DELETE_SWIPE -> {
                 releaseVisual(key)
-                listener?.onDeleteSwipe(p.words, true)
+                when {
+                    p.reached > 0 -> listener?.onDeleteSwipe(p.words, true)
+                    // Never far enough for a word: a tap that slid, deleting a letter as a tap does.
+                    p.repeats > 0 -> listener?.onKeyRelease(key)
+                    else -> listener?.onKeyTap(key, p.downX, p.downY)
+                }
             }
             Mode.FLICK -> {
                 releaseVisual(key)
@@ -628,6 +672,19 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         val held = time - p.downAt
         if (!p.afterTyping || held >= GLIDE_SETTLE_MS) return near
         val far = l.keyWidth * GLIDE_AFTER_TYPING_KEYS
+        return far - (far - near) * held / GLIDE_SETTLE_MS
+    }
+
+    /**
+     * How far sideways a finger must go from where it landed for a cursor swipe: further than a
+     * thumb rolls as it lifts, and just after a tap, while the user is typing, further still,
+     * coming down to the usual over half a second as for a glide.
+     */
+    private fun swipeStart(l: KeyboardLayout, p: Pointer, time: Long): Float {
+        val near = l.keyWidth * SWIPE_START_KEYS
+        val held = time - p.downAt
+        if (!p.afterTyping || held >= GLIDE_SETTLE_MS) return near
+        val far = l.keyWidth * SWIPE_AFTER_TYPING_KEYS
         return far - (far - near) * held / GLIDE_SETTLE_MS
     }
 
@@ -733,6 +790,16 @@ class KeyboardView(context: Context, val painter: KeyPainter) : View(context) {
         private const val GESTURE_NOTIFY_MS = 90L
         /** How far, in key widths, a space-bar swipe must end from where it began to count. */
         internal const val SWIPE_MIN_KEYS = 0.4f
+        /** A cursor swipe from any other key starts this many key widths sideways... */
+        internal const val SWIPE_START_KEYS = 1.2f
+        /** ...or this many just after a tap, coming down to the usual over [GLIDE_SETTLE_MS]... */
+        private const val SWIPE_AFTER_TYPING_KEYS = 1.6f
+        /** ...and counts if it ends at least this many from where it began. */
+        private const val SWIPE_KEEP_KEYS = 0.8f
+        /** A cursor swipe may lean this far up or down for each step sideways. */
+        private const val SWIPE_SLANT = 0.5f
+        /** A delete swipe selects another word for each this many key widths it goes left. */
+        internal const val DELETE_WORD_KEYS = 0.7f
         /**
          * A flick down counts past this share of the key's height (about 4 mm on a phone)...
          * A thumb typing fast often rolls a couple of millimetres down a key as it lifts, and

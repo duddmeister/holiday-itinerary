@@ -370,7 +370,7 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
             previewsEnabled = prefs.keyPreviews
             gesturesEnabled = prefs.glideTyping && editor.gesturesAllowed && mode == KeyboardMode.TEXT && typingIntoApp
             trailEnabled = prefs.glideTrail
-            spaceSwipesEnabled = prefs.spaceCursor && typingIntoApp
+            cursorSwipesEnabled = prefs.spaceCursor && typingIntoApp
             deleteSwipeEnabled = prefs.deleteSwipe && typingIntoApp
             flickEnabled = prefs.flickSymbols
             lightEffects = prefs.lightEffects
@@ -655,17 +655,26 @@ class LumenIME : InputMethodService(), KeyboardView.Listener, SuggestionStripVie
     override fun onPanelOpened() = feedback.tick()
 
     /**
-     * A swipe along the space bar. Right finishes the word being typed with the
-     * suggestion; otherwise the cursor jumps a word that way.
+     * A sideways swipe across the keys. Left jumps back a word. Right finishes the word being
+     * typed with the suggestion in the middle of the strip, or jumps forward a word; with no
+     * word ahead, it takes the strip's middle suggestion (the next word, when none is typed).
      */
-    override fun onSpaceSwipe(direction: Int) {
+    override fun onCursorSwipe(direction: Int) {
         if (search != null) return
         feedback.tick()
+        // A word that's being typed gets finished rather than skipped.
+        val onward = direction > 0 && !logic.typingWord && logic.wordAhead()
+        val next = root?.strip?.middle?.takeIf { !it.emoji }
         when {
-            direction > 0 && logic.typingWord -> {
+            direction < 0 || onward -> logic.onCursorWords(direction)
+            logic.composing.isNotEmpty -> {
                 autoCapsSuppressed = false
                 // A glided word is already the best match: just finish it.
                 if (logic.composingFromGesture) logic.onSpace() else logic.onPick(bestSuggestion(), emoji = false)
+            }
+            next != null -> {
+                autoCapsSuppressed = false
+                logic.onPick(next.text, emoji = false)
             }
             else -> logic.onCursorWords(direction)
         }
