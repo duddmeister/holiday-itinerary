@@ -56,7 +56,7 @@ EXTRA_WORDS = {
     "smartphones": 90, "TikTok": 110, "Uber": 110, "Lyft": 80, "Zoom": 120, "Venmo": 90,
     "Gmail": 100, "Reddit": 100, "Discord": 100, "Slack": 100, "Airbnb": 100,
     "ChatGPT": 100, "COVID": 120, "vax": 70, "livestream": 90, "unfollow": 80, "vlog": 80,
-    "memes": 110, "gif": 100, "GIF": 90, "FaceTime": 100, "Siri": 90, "Bitcoin": 100,
+    "memes": 110, "gif": 100, "GIF": 90, "FaceTime": 100, "bluetooth": 120, "Siri": 90, "Bitcoin": 100,
     "crypto": 100, "NFT": 80, "bestie": 90, "besties": 70, "sus": 80, "woohoo": 90,
     "awww": 90, "aww": 100, "meh": 90, "mhm": 80, "hm": 90, "omw": 90, "tmrw": 80,
     "tmr": 60, "bday": 90, "gf": 80, "bff": 80, "hbd": 70, "lmk": 100, "np": 90, "ty": 100,
@@ -88,6 +88,10 @@ CHAT_WORDS = {
     "sorta": 80, "dunno": 90, "lemme": 90, "gimme": 80, "oof": 70, "yikes": 80, "okie": 60,
     "ugh": 90, "oops": 90, "whoops": 70, "yay": 100, "ooh": 80, "bro": 100, "sis": 80,
     "babe": 80, "aw": 100, "ya": 90, "ha": 90, "ow": 70, "hi": 130, "Hi": 120,
+    # How people talk, not how they write reports.
+    "okay": 150, "definitely": 140, "awesome": 130, "amazing": 135, "totally": 130,
+    "seriously": 130, "basically": 125, "honestly": 125, "obviously": 125, "hopefully": 125,
+    "brilliant": 125, "literally": 120, "annoying": 115, "ridiculous": 115, "gorgeous": 115,
     # Apps everyone names, which the list predates or undersells.
     "Instagram": 110, "WhatsApp": 110, "Spotify": 100, "Netflix": 100, "Facebook": 110,
     "Twitter": 100, "YouTube": 120, "Google": 120, "iPhone": 110,

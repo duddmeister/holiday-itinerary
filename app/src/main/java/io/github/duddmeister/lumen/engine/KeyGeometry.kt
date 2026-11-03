@@ -140,7 +140,8 @@ class TypedWord {
 /**
  * Tap spatial model: substituting a typed letter with a neighbour is cheap when
  * the tap landed near that neighbour, and expensive when it was dead center on
- * the typed key or the neighbour is far away.
+ * the typed key or the neighbour is far away. With [spelling], it also knows how
+ * words are misspelt: one vowel for another is cheap wherever the keys are.
  */
 class SpatialQuery(
     private val word: TypedWord,
@@ -149,9 +150,28 @@ class SpatialQuery(
     maxCost: Float,
     completionCost: Float,
     completionLimit: Int,
+    private val spelling: Boolean = false,
 ) : FuzzyQuery(input, maxCost, completionCost, completionLimit) {
 
+    /** Costs already worked out, by typed letter and the letter a-z read there; NaN until asked. */
+    private val known = FloatArray(input.length * 26) { Float.NaN }
+
     override fun substitutionCost(index: Int, candidate: Char): Float {
+        val slot = candidate - 'a'
+        if (slot !in 0..25) return cost(index, candidate)
+        val at = index * 26 + slot
+        val cached = known[at]
+        if (!cached.isNaN()) return cached
+        return cost(index, candidate).also { known[at] = it }
+    }
+
+    private fun cost(index: Int, candidate: Char): Float {
+        val tapped = tapCost(index, candidate)
+        // Not a slip of the thumb but of spelling: "inconsistant", "definately", "seperate".
+        return if (spelling && input[index] in VOWELS && candidate in VOWELS) minOf(tapped, VOWEL_COST) else tapped
+    }
+
+    private fun tapCost(index: Int, candidate: Char): Float {
         val g = geometry ?: return 1f
         val tx = word.tapX(index)
         val ty = word.tapY(index)
@@ -173,5 +193,8 @@ class SpatialQuery(
          * or one too many, so "lovk" is "lock" rather than "love", and "lonk" "link" not "long".
          */
         const val MAX_SUBSTITUTION_COST = 1.5f
+        /** One vowel written for another, the commonest way to misspell a word, costs this. */
+        const val VOWEL_COST = 0.6f
+        const val VOWELS = "aeiou"
     }
 }

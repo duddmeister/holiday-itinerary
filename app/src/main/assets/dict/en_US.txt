@@ -45338,7 +45338,7 @@ amazed	92
 amazement	80
 amazements	15
 amazes	55
-amazing	106
+amazing	135
 amazingly	82
 amazon	70
 amazonian	36
@@ -46088,7 +46088,7 @@ annoy	77
 annoyance	91
 annoyances	59
 annoyed	97
-annoying	85
+annoying	115
 annoyingly	53
 annoys	76
 annual	142
@@ -48966,7 +48966,7 @@ avenue	120
 avenue's	44
 avenues	99
 aver	0
-average	138
+average	139
 average's	23
 averaged	113
 averagely	48
@@ -49096,7 +49096,7 @@ aweary	15
 awed	67
 aweigh	1
 awes	28
-awesome	86
+awesome	130
 awesomely	43
 awesomeness	36
 awestruck	55
@@ -50366,7 +50366,7 @@ bashibazouk	1
 bashing	78
 bashings	28
 basic	136
-basically	113
+basically	125
 basics	93
 basifying	15
 basil	75
@@ -50830,7 +50830,7 @@ becomingly	25
 becomings	2
 becquerel	34
 becta	1
-bed	145
+bed	146
 bed's	43
 bedaubed	1
 bedazzle	15
@@ -52989,6 +52989,7 @@ bluesy	77
 bluet	1
 bluetongue	32
 bluetongues	1
+bluetooth	120
 bluets	15
 bluey	35
 blueys	21
@@ -53811,7 +53812,7 @@ bote	36
 botflies	15
 botfly	38
 botfly's	1
-both	157
+both	158
 bother	90
 bothered	89
 bothering	75
@@ -54519,7 +54520,7 @@ bribers	21
 bribery	96
 bribes	95
 bribing	80
-brick	122
+brick	123
 brick's	21
 brickbat	18
 brickbats	37
@@ -54629,7 +54630,7 @@ brilliance	91
 brilliance's	1
 brilliancies	30
 brilliancy	61
-brilliant	115
+brilliant	125
 brilliantine	10
 brilliantines	1
 brilliantly	89
@@ -57101,7 +57102,7 @@ cardrooms	51
 cards	125
 cardsharp	31
 cardsharps	10
-care	146
+care	147
 care's	18
 cared	102
 careen	47
@@ -58456,7 +58457,7 @@ championship's	61
 championships	127
 champs	76
 chams	18
-chance	133
+chance	134
 chanced	68
 chancel	101
 chancel's	28
@@ -59766,7 +59767,7 @@ cipolin	10
 circa	115
 circadian	81
 circassians	23
-circle	131
+circle	132
 circle's	60
 circled	85
 circler	1
@@ -59936,7 +59937,7 @@ citruses	39
 cits	26
 cittern	60
 citterns	37
-city	161
+city	162
 city's	131
 city-state	1
 cityscape	73
@@ -62535,7 +62536,7 @@ concerto	102
 concerto's	48
 concertos	95
 concerts	128
-concession	85
+concession	84
 concession's	10
 concessionaire	64
 concessionaires	58
@@ -67573,7 +67574,7 @@ dawn's	39
 dawned	74
 dawning	67
 dawns	63
-day	162
+day	163
 day's	104
 day-to-day	84
 daybed	28
@@ -68556,7 +68557,7 @@ definers	32
 defines	117
 defining	115
 definite	109
-definitely	107
+definitely	140
 definiteness	67
 definition	132
 definition's	30
@@ -70660,7 +70661,7 @@ dichotomy's	1
 dicier	1
 diciest	1
 dicing	58
-dick	83	o
+dick	82	o
 dick's	0	o
 dickens	27
 dicker	28
@@ -73419,7 +73420,7 @@ drachmas	62
 draconian	75
 draconians	53
 draconic	62
-draft	112
+draft	113
 draft's	50
 draftable	23
 drafted	125
@@ -73644,7 +73645,7 @@ drench	46
 drenched	79
 drenches	39
 drenching	56
-dress	137
+dress	138
 dress's	18
 dressage	87
 dressages	1
@@ -76763,7 +76764,7 @@ entrusted	107
 entrusting	70
 entrustment	44
 entrusts	69
-entry	109
+entry	108
 entry's	41
 entry-level	1
 entryway	71
@@ -79622,7 +79623,7 @@ fanzine's	32
 fanzines	81
 faqir's	1
 faqirs	28
-far	151
+far	152
 farad	44
 faradays	10
 farads	44
@@ -79779,7 +79780,7 @@ fasteners	78
 fastening	74
 fastenings	57
 fastens	54
-faster	122
+faster	123
 fasters	28
 fastest	119
 fastidious	68
@@ -79790,7 +79791,7 @@ fastings	32
 fastness	58
 fastnesses	39
 fasts	73
-fat	128
+fat	129
 fat's	25
 fatal	116
 fatale	76
@@ -83426,7 +83427,7 @@ frescoes	100
 frescoing	25
 frescoist	18
 frescos	78
-fresh	134
+fresh	135
 freshen	54
 freshened	51
 freshener	55
@@ -86450,7 +86451,7 @@ gores	55
 gorge	101
 gorge's	40
 gorged	58
-gorgeous	86
+gorgeous	115
 gorgeously	54
 gorgeousness	33
 gorger	1
@@ -88663,7 +88664,7 @@ happily	102
 happiness	109
 happinesses	15
 happing	15
-happy	151
+happy	152
 haps	25
 hara	62
 harakiri	33
@@ -89173,7 +89174,7 @@ hbu	70
 he	187
 he'd	107
 he'll	102
-he's	132
+he's	133
 head	152
 head's	62
 head-butted	54
@@ -90960,7 +90961,7 @@ honers	1
 hones	46
 honest	107
 honester	10
-honestly	107
+honestly	125
 honesty	97
 honewort	15
 honey	108
@@ -91126,7 +91127,7 @@ hope	147
 hope's	10
 hoped	121
 hopeful	91
-hopefully	92
+hopefully	125
 hopefulness	45
 hopefuls	75
 hopeless	92
@@ -99660,7 +99661,7 @@ landsmen	46
 landsmen's	1
 landward	74
 landwards	39
-lane	125
+lane	126
 lane's	37
 lanes	118
 laneway	55
@@ -100425,7 +100426,7 @@ legato	72
 legator's	1
 legators	1
 legatos	21
-legend	114
+legend	115
 legend's	49
 legendaries	30
 legendarily	55
@@ -101432,7 +101433,7 @@ liquidized	10
 liquidizing	10
 liquidly	15
 liquids	99
-liquor	97
+liquor	98
 liquor's	25
 liquored	23
 liquorice	70
@@ -101490,7 +101491,7 @@ literalism	57
 literalist	56
 literalistic	37
 literalists	43
-literally	101
+literally	126
 literalness	39
 literals	72
 literarily	48
@@ -102060,7 +102061,7 @@ look-in	1
 lookahead	58
 lookalike	72
 lookalikes	56
-looked	135
+looked	136
 looker	43
 looker's	1
 lookers	48
@@ -102198,7 +102199,7 @@ lotting	1
 lotto	45
 lotus	93
 lotuses	56
-loud	126
+loud	127
 louder	88
 loudest	78
 loudhailer	18
@@ -102267,7 +102268,7 @@ lovelocks	10
 lovelorn	61
 lovely	127
 lovemaking	0	o
-lover	126
+lover	127
 lover's	88
 lovers	120
 loves	124
@@ -103690,7 +103691,7 @@ manuring	37
 manuscript	120
 manuscript's	56
 manuscripts	117
-many	165
+many	166
 manzanita	62
 manège	37
 maomao	1
@@ -106877,7 +106878,7 @@ misrule	60
 misruled	18
 misrules	1
 misruling	18
-miss	123
+miss	124
 missal	60
 missals	51
 missed	125
@@ -107387,7 +107388,7 @@ momentary	82
 momentous	80
 momentously	10
 momentousness	18
-moments	129
+moments	130
 momentum	115
 momentum's	10
 momentums	23
@@ -111977,7 +111978,7 @@ obviates	55
 obviating	62
 obviation	40
 obvious	121
-obviously	107
+obviously	125
 obviousness	58
 obvs	60
 ocarina	55
@@ -112393,7 +112394,7 @@ oka	50
 okapi	55
 okapi's	10
 okapis	33
-okay	132
+okay	150
 okayed	39
 okays	21
 okey	30
@@ -119326,7 +119327,7 @@ playpen	47
 playpens	28
 playroom	59
 playrooms	39
-plays	135
+plays	136
 playschool	42
 playschools	31
 playsuit	1
@@ -123269,7 +123270,7 @@ proverbs	83
 provers	56
 proves	108
 provide	144
-provided	127
+provided	128
 providence	77
 providences	32
 provident	56
@@ -128481,7 +128482,7 @@ reminder	98
 reminders	82
 remindful	21
 reminding	90
-reminds	102
+reminds	103
 reminisce	74
 reminisced	69
 reminiscence	73
@@ -130736,7 +130737,7 @@ ridicule	93
 ridiculed	94
 ridicules	70
 ridiculing	74
-ridiculous	96
+ridiculous	115
 ridiculously	71
 ridiculousness	53
 riding	127
@@ -131131,7 +131132,7 @@ roared	73
 roarer	36
 roarer's	1
 roarers	21
-roaring	86
+roaring	85
 roaringly	10
 roarings	15
 roars	70
@@ -134284,7 +134285,7 @@ seclusion	89
 seclusionists	1
 seclusions	21
 seclusive	15
-second	160
+second	161
 second's	44
 secondaries	69
 secondarily	77
@@ -135176,7 +135177,7 @@ serigraphy	39
 seriocomic	40
 seriography	1
 serious	135
-seriously	122
+seriously	130
 seriousness	91
 sermon	101
 sermon's	21
@@ -135982,7 +135983,7 @@ shinguards	37
 shinier	43
 shiniest	15
 shininess	34
-shining	106
+shining	107
 shinleaf	1
 shinned	51
 shinnied	15
@@ -139841,7 +139842,7 @@ spears	94
 spearwort	25
 spec	93
 spec's	1
-special	147
+special	148
 special's	45
 specialism	70
 specialism's	1
@@ -140815,7 +140816,7 @@ squanderer	10
 squanderer's	1
 squandering	63
 squanders	46
-square	144
+square	145
 square's	62
 squared	97
 squarely	81
@@ -142916,7 +142917,7 @@ stutters	51
 sty	54
 sty's	10
 stylate	10
-style	145
+style	146
 style's	63
 stylebook	35
 stylebooks	10
@@ -149092,7 +149093,7 @@ totalized	38
 totalizer	15
 totalizers	1
 totalizing	48
-totally	120
+totally	130
 totals	105
 tote	67
 toted	35
@@ -155426,7 +155427,7 @@ usherettes	32
 ushering	78
 ushers	71
 using	139
-usual	130
+usual	131
 usually	136
 usuals	10
 usurer	54
@@ -160533,7 +160534,7 @@ youngster's	51
 youngsters	95
 your	171
 yours	116
-yourself	132
+yourself	133
 yourselfers	38
 yourselves	75
 youth	136

@@ -19,14 +19,14 @@ Material You and a real frosted-glass theme) make it feel at home on any phone.
 - **Autocorrect that knows the keyboard.** It weighs which keys are neighbours and
   exactly where you tapped, so a slip is fixed even when it spells another word
   (`bur` → `but`), as is a letter that never registered (`wich` → `which`, `th` →
-  `the`). It reads the word before (`thank tou` → `thank you`, `I jeep` → `I keep`)
-  and pulls apart words run together, whether the spaces were missed (`letmeknow`)
-  or landed on a letter just above the space bar (`imnnotn` → `I'm not`). From the
-  second letter on, the middle word in the suggestion strip is what a space will type.
-  It adds missing apostrophes (`theyre` → `they're`), leaves chat shorthand alone
-  (`ngl`, `ppl`, `nah`), corrects searches typed in the browser's address bar but
-  never web addresses, and one tap of backspace undoes it: keep your word and Lumen
-  learns it.
+  `the`) or a spelling mistake (`inconsistant` → `inconsistent`). It reads the word
+  before (`thank tou` → `thank you`, `I jeep` → `I keep`) and pulls apart words run
+  together, whether the spaces were missed (`letmeknow`) or landed on a letter just
+  above the space bar (`imnnotn` → `I'm not`). From the second letter on, the middle
+  word in the suggestion strip is what a space will type. It adds missing apostrophes
+  (`theyre` → `they're`), leaves chat shorthand alone (`ngl`, `ppl`, `nah`), corrects
+  searches typed in the browser's address bar but never web addresses, and one tap of
+  backspace undoes it: keep your word and Lumen learns it.
 - **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
   as you speak, then land in the text with the right spaces and capitals. It
   listens in British or American English to match your spelling.

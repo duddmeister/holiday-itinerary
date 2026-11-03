@@ -68,6 +68,28 @@ class SuggestionEngineTest {
         assertTrue(failures.joinToString("\n"), failures.isEmpty())
     }
 
+    /** Mistakes of spelling, not of the thumb: in a long word, one vowel for another is a near miss. */
+    @Test
+    fun correctsSpellingMistakes() {
+        val cases = mapOf(
+            "inconsistant" to "inconsistent", "inconsitant" to "inconsistent", "inconsistan" to "inconsistent",
+            "seperate" to "separate", "definatly" to "definitely", "visable" to "visible",
+            "independant" to "independent", "existance" to "existence",
+        )
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed)))
+        // Short words are mostly slips: "summee" is "summer", not "same".
+        assertEquals("summer", corrected(tapped("summee")))
+        assertEquals("helping", corrected(tapped("heping")))
+    }
+
+    /** "bluetooth", as people write it, is a word, and slips of it are put right. */
+    @Test
+    fun knowsBluetooth() {
+        assertNull(corrected(tapped("bluetooth")))
+        assertEquals("bluetooth", corrected(tapped("blutooth")))
+        assertEquals("bluetooth", corrected(tapped("bluetoth")))
+    }
+
     @Test
     fun addsApostrophesAndFixesCapitalisation() {
         assertEquals("don't", corrected("dont"))
