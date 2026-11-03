@@ -55,7 +55,13 @@ class SuggestionEngine(
     /** Typed words whose autocorrection the user undid; respected for the rest of the session. */
     private val rejected = HashSet<String>()
 
-    private class Candidate(val text: String, var score: Float, var cost: Float, var kind: Suggestion.Kind, val freq: Int)
+    private class Candidate(val text: String, var score: Float, var cost: Float, var kind: Suggestion.Kind, val freq: Int) {
+        /**
+         * What reading every typed letter as this word costs, when it can be read so: a word
+         * finished from a slip ("inconsisten…") is also a word put right ("inconsistan").
+         */
+        var fixCost = Float.POSITIVE_INFINITY
+    }
 
     fun suggest(
         word: TypedWord,
@@ -78,12 +84,11 @@ class SuggestionEngine(
         fun consider(text: String, freq: Int, cost: Float, kind: Suggestion.Kind, penalty: Float = 0f) {
             if (text == typed) return
             val score = freq - COST_WEIGHT * cost - penalty + pairBonus(previous, text)
-            val old = candidates[text]
-            if (old == null) {
-                candidates[text] = Candidate(text, score, cost, kind, freq)
-            } else if (score > old.score) {
-                old.score = score; old.cost = cost; old.kind = kind
+            val c = candidates[text] ?: Candidate(text, score, cost, kind, freq).also { candidates[text] = it }
+            if (score > c.score) {
+                c.score = score; c.cost = cost; c.kind = kind
             }
+            if (kind == Suggestion.Kind.CORRECTION && cost < c.fixCost) c.fixCost = cost
         }
 
         val maxCost = when {
@@ -94,7 +99,8 @@ class SuggestionEngine(
             n <= 7 -> 2f
             else -> 2.5f
         }
-        val query = SpatialQuery(word, geometry, folded, maxCost, minOf(1f, maxCost), 3)
+        // A long word that isn't one may be misspelt rather than mistyped; a word typed right isn't.
+        val query = SpatialQuery(word, geometry, folded, maxCost, minOf(1f, maxCost), 3, spelling = !typedIsWord && n >= SPELLING_MIN_LENGTH)
         lexicon.fuzzySearch(query) { found, cost, isCompletion ->
             if (lexicon.isSuggestable(found)) {
                 val text = lexicon.wordAt(found)
@@ -325,7 +331,7 @@ class SuggestionEngine(
 
     /** Each word a small slip away from letters [from] until [to] that can be a side of a split. */
     private fun correctedParts(word: TypedWord, folded: String, from: Int, to: Int, geometry: KeyGeometry?, lowercase: Boolean, block: (Part) -> Unit) {
-        val query = SpatialQuery(word.slice(from, to), geometry, folded.substring(from, to), SPLIT_CORRECTION_COST, -1f, 0)
+        val query = SpatialQuery(word.slice(from, to), geometry, folded.substring(from, to), SPLIT_CORRECTION_COST, -1f, 0, spelling = to - from >= SPELLING_MIN_LENGTH)
         lexicon.fuzzySearch(query) { found, cost, isCompletion ->
             if (!isCompletion && lexicon.isSuggestable(found)) part(lexicon.wordAt(found), lexicon.frequency(found), cost, lowercase)?.let(block)
         }
@@ -363,8 +369,10 @@ class SuggestionEngine(
         if (unlikelyName(c, lowercase)) return false
         return when (c.kind) {
             Suggestion.Kind.CORRECTION, Suggestion.Kind.LEARNED -> c.freq >= MIN_AUTOCORRECT_FREQ || c.kind == Suggestion.Kind.LEARNED
-            Suggestion.Kind.COMPLETION -> c.cost == 0f && typedLength >= 4 && c.freq >= MIN_AUTOCORRECT_FREQ &&
-                c.text.length - typedLength <= (if (typedLength >= 5) 3 else 2)
+            Suggestion.Kind.COMPLETION -> c.freq >= MIN_AUTOCORRECT_FREQ && (
+                if (c.cost > 0f) c.fixCost.isFinite()
+                else typedLength >= 4 && c.text.length - typedLength <= (if (typedLength >= 5) 3 else 2)
+                )
             else -> false
         }
     }
@@ -380,6 +388,8 @@ class SuggestionEngine(
             typedLength <= 7 -> 1.6f
             else -> 2.2f
         }
+        // Finished from a slip, but just as well a word put right: "inconsistan" is "inconsistent".
+        if (c.kind == Suggestion.Kind.COMPLETION && c.cost > 0f && c.fixCost <= maxAuto) return c.freq >= MIN_AUTOCORRECT_FREQ
         if (c.cost > maxAuto) return false
         if (c.kind == Suggestion.Kind.COMPLETION) {
             if (c.cost > 0f) return false
@@ -630,6 +640,11 @@ class SuggestionEngine(
         const val CONTEXT_MARGIN_COMMON = 60f
         /** Typed in lower case, a word the dictionary only knows as a name counts as this much rarer. */
         const val CONTEXT_NAME_DISCOUNT = 30f
+        /**
+         * Words this long and longer that aren't words are read as possibly misspelt as well as
+         * mistyped ("inconsistant"); shorter ones are mostly slips ("summee" is "summer", not "same").
+         */
+        const val SPELLING_MIN_LENGTH = 7
         /** How far behind the best guess a correction may score (measured on simulated typing). */
         const val AUTOCORRECT_MARGIN = 20f
         /** Lower-case typing is corrected to a name only this common ("London", not "Rollo"). */
