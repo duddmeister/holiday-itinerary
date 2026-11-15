@@ -149,6 +149,7 @@ ASEAN	93
 ASLEF	56
 ASME	73
 ASN	72
+ASOS	90
 ASP's	38
 ASPCA	63
 ASSR	78
@@ -179,6 +180,7 @@ Aalborg	69
 Aalen	39
 Aalesund	49
 Aalesund's	1
+Aaliyah	70
 Aalst	53
 Aalst's	1
 Aalto	60
@@ -671,6 +673,7 @@ Ainslie's	30
 Ainu	73
 Ainu's	1
 AirAsia	71
+AirPods	90
 Airbnb	100
 Airbrick	1
 Airbus	92
@@ -843,6 +846,7 @@ Aldermaston	60
 Alderney	66
 Aldershot	81
 Aldershot's	30
+Aldi	110
 Aldin	39
 Aldine	54
 Aldine's	1
@@ -1745,6 +1749,7 @@ Anzac	79
 Anzac's	1
 Anzio	67
 Anzio's	1
+Aoife	70
 Aoli	1
 Aorangi	35
 Aosta	67
@@ -2078,6 +2083,7 @@ Arlin	39
 Arline's	1
 Arlington	98
 Arlington's	42
+Arlo	70
 Armada	82
 Armada's	36
 Armageddon	79
@@ -2202,6 +2208,7 @@ Ascham's	23
 Aschheim	25
 Ascot	77
 Ascot's	25
+Asda	110
 Asgard	74
 Asgard's	27
 Ash's	60
@@ -3156,6 +3163,7 @@ Barcelona's	63
 Barclay	83
 Barclay's	52
 Barclaycard	48
+Barclays	90
 Bard	80
 Bard's	53
 Bardee	1
@@ -4106,6 +4114,7 @@ Bete's	1
 Betelgeuse	58
 Betelgeuse's	21
 Beth's	54
+Bethan	60
 Bethanne	1
 Bethany	80
 Bethany's	34
@@ -6625,6 +6634,7 @@ Canty	56
 Canute	69
 Canute's	47
 Canvasback's	1
+Caoimhe	50
 Capek	30
 Capek's	10
 Capella	69
@@ -7226,6 +7236,7 @@ Cerise's	1
 Certifier's	1
 Cervantes	76
 Cervantes's	39
+Cerys	60
 Cesar	81
 Cesar's	34
 Cesare	80
@@ -7893,6 +7904,7 @@ Churn's	1
 Chute's	15
 Chutzpa	1
 Chuvash	61
+Ciara	65
 Ciba	49
 Cibber	61
 Cibber's	47
@@ -7905,6 +7917,7 @@ Cid	0	o
 Cid's	37
 Cienfuegos	61
 Cienfuegos's	18
+Cillian	60
 Cimabue	40
 Cimabue's	18
 Cimmerian	55
@@ -9721,6 +9734,7 @@ Daffy	78
 Daffy's	47
 Dafne	39
 Dafoe	60
+Dafydd	55
 Dag's	18
 Dagenham	74
 Dagestan	69
@@ -10214,6 +10228,7 @@ Delius	62
 Delius's	49
 Deliverance's	1
 Deliverer's	1
+Deliveroo	100
 Dell	88
 Dell's	55
 Della	76
@@ -10333,6 +10348,7 @@ Depardieu	56
 Dependant	21
 Dependants	28
 Dependence's	1
+Depop	70
 Deprecators	1
 Dept	76
 Dept's	10
@@ -11297,6 +11313,7 @@ Dundreary	31
 Dundreary's	1
 Dunedin	88
 Dunedin's	52
+Dunelm	70
 Dunfermline	79
 Dunfermline's	34
 Dung's	18	o
@@ -11333,7 +11350,7 @@ Duntroon	58
 Dunwoody	61
 Duodecimals	1
 Duodenums	1
-Duolingo	25
+Duolingo	70
 Duomo's	10
 Dupleix	50
 Dupleix's	15
@@ -12315,6 +12332,7 @@ Enugu's	27
 Enviers	1
 Envy's	15
 Eocene	77
+Eoin	60
 Eos's	1
 Epaminondas	56
 Epaminondas's	21
@@ -13431,6 +13449,7 @@ Fez	68
 Fez's	27
 Fezzan	53
 Fezzan's	1
+Ffion	55
 FiOS	69
 Fianna	87
 Fiasco's	43
@@ -13899,6 +13918,7 @@ Forth's	21
 Fortier	57
 Fortin	56
 Fortin's	1
+Fortnite	80
 Fortran	71
 Fortuna's	23
 Fortunateness	1
@@ -15101,6 +15121,7 @@ Gestapo's	34
 Gestapos	1
 Geste's	1
 GetUp's	18
+Gethin	55
 Gethsemane	56
 Getter's	10
 Getty	79
@@ -15807,6 +15828,7 @@ Grails	39
 Grainer's	18
 Grainger	75
 Grainger's	48
+Grainne	50
 Gram	84
 Gram's	31
 Gramercy	61
@@ -15968,6 +15990,7 @@ Greg	106
 Greg's	55
 Gregg	88
 Gregg's	56
+Greggs	100
 Gregoire	59
 Gregoire's	27
 Gregor	80
@@ -16592,6 +16615,7 @@ Haleakala	46
 Halesowen	65
 Haley	85
 Haley's	63
+Halfords	70
 Halibut's	1
 Halicarnassus	60
 Halie's	10
@@ -17906,6 +17930,7 @@ Homagers	1
 Homan	47
 Homan's	1
 Homburg's	23
+Homebase	70
 Homebody's	1
 Homebuilder's	1
 Homecoming's	1
@@ -19118,6 +19143,7 @@ Isidro's	1
 Ising's	21
 Isis	83
 Isis's	25
+Isla	80
 Islam	114
 Islam's	62
 Islamabad	81
@@ -19574,12 +19600,14 @@ Javier's	33
 Jawbone's	1
 Jawbreaker's	18
 Jaxartes	18
+Jaxon	60
 Jay	110
 Jay's	63
 Jayapura	48
 Jayasuriya	55
 Jaycee	42
 Jaycees	57
+Jayden	70
 Jaye	59
 Jaye's	18
 Jayme	46
@@ -20658,6 +20686,7 @@ Kawasaki's	42
 Kay	97
 Kay's	65
 Kaycee	33
+Kayden	60
 Kaye	83
 Kaye's	51
 Kayes	44
@@ -21238,6 +21267,7 @@ Klansman	44
 Klansman's	1
 Klansmen's	1
 Klara	60
+Klarna	80
 Klatch	37
 Klaus	89
 Klaus's	32
@@ -22500,6 +22530,7 @@ Leighton	81
 Leighton's	38
 Leila	72
 Leila's	32
+Leilani	60
 Leinster	94
 Leipzig	97
 Leipzig's	39
@@ -22807,6 +22838,7 @@ Liddell's	41
 Lidia	57
 Lidia's	30
 Lidice	44
+Lidl	110
 Lie's	37
 Lieberman	79
 Lieberman's	48
@@ -23128,6 +23160,7 @@ Llewellyn	74
 Llewellyn's	39
 Lloyd	108
 Lloyd's	78
+Lloyds	85
 Llywellyn	1
 LoJack	45
 LoJack's	1
@@ -25137,6 +25170,7 @@ Mata's	27
 Matabele	56
 Matabeleland	60
 Matadi	40
+Matalan	70
 Matamoros	66
 Matanzas	63
 Matawan	52
@@ -26451,7 +26485,7 @@ Mindszenty	37
 Mindszenty's	10
 Mindy	68
 Mindy's	30
-Minecraft	25
+Minecraft	80
 Miner	76
 Miner's	60
 Mineralogy's	1
@@ -26951,6 +26985,7 @@ Monty's	45
 Mony's	1
 Monza	79
 Monza's	27
+Monzo	90
 Moocher's	1
 Moody	90
 Moody's	68
@@ -27076,6 +27111,7 @@ Morris	112
 Morris's	65
 Morrison	102
 Morrison's	78
+Morrisons	100
 Morrissey	81
 Morrissey's	59
 Morristown	75
@@ -27708,6 +27744,7 @@ Nanci's	1
 Nancie	21
 Nancy	106
 Nancy's	65
+Nando's	105
 Nanette	62
 Nanette's	18
 Nanjing	86
@@ -28063,6 +28100,7 @@ Nevada	109
 Nevada's	64
 Nevadan	30
 Nevadans	23
+Nevaeh	60
 Neverland	65
 Nevers	66
 Nevers's	1
@@ -28149,6 +28187,7 @@ Niagara	98
 Niagara's	35
 Niall's	41
 Niamey	56
+Niamh	70
 Nibbler's	10
 Nibelung	44
 Nibelung's	1
@@ -28948,6 +28987,7 @@ Obstructor	1
 Obtainers	1
 Obtenebration	1
 Oby	15
+Ocado	80
 Occam	29
 Occam's	32
 Occident	51
@@ -29062,6 +29102,7 @@ Oilheat	1
 Oilily	1
 Oinking	1
 Oise	66
+Oisin	60
 Oistrakh	50
 Oistrakh's	10
 Oita	51
@@ -31456,6 +31497,7 @@ Poulenc	61
 Poulenc's	45
 Pound	87
 Pound's	59
+Poundland	80
 Poussette's	1
 Poussin	61
 Poussin's	35
@@ -31589,6 +31631,7 @@ Pricky	1
 Priestley	78
 Priestley's	60
 Prig's	1
+Primark	100
 Prime's	65
 Primerica	41
 Primero's	1
@@ -32922,6 +32965,7 @@ Reviction	1
 Revlon	60
 Revlon's	31
 Revocatory	1
+Revolut	90
 Rex	98
 Rex's	60
 Rey	93
@@ -33118,6 +33162,7 @@ Riggs	80
 Riggs's	27
 Right	108
 Righter's	1
+Rightmove	70
 Rights	114
 Rigmaroles	1
 Rigoletto	66
@@ -33272,6 +33317,7 @@ Robinson's	81
 Robinsonville	21
 Robles	70
 Robles's	15
+Roblox	80
 RoboCop	82
 RoboCop's	49
 RoboCops	27
@@ -34303,6 +34349,7 @@ Saharanpur's	1
 Saida's	1
 Saigon	89
 Saigon's	40
+Sainsbury's	110
 Sainte	90
 Saintsbury	39
 Saintsbury's	1
@@ -34568,6 +34615,7 @@ Santorini's	1
 Santos	98
 Santos's	37
 Sanz	67
+Saoirse	60
 Sapir	64
 Sapir's	38
 Sapo's	1
@@ -35053,6 +35101,7 @@ Screech's	25
 Screevers	1
 Screwball's	1
 Screweyes	10
+Screwfix	75
 Scriabin	61
 Scriabin's	47
 Scribblenauts	25
@@ -35226,6 +35275,7 @@ Seleucia's	1
 Seleucid	75
 Selfridge	64
 Selfridge's	25
+Selfridges	70
 Selig	67
 Selig's	31
 Selim	73
@@ -36040,6 +36090,7 @@ Sinclairs	35
 Sindbad's	1
 Sindhi	78
 Sindhi's	15
+Sinead	60
 Sinecurist's	1
 Sinfonietta's	1
 Singapore	118
@@ -36353,7 +36404,7 @@ Snaggy	1
 Snake	96
 Snake's	55
 Snap's	10
-Snapchat	25
+Snapchat	90
 Snapdragon's	1
 Snape	69
 Snapple	54
@@ -36734,6 +36785,7 @@ Spearmints	1
 Spears	90
 Speck's	33
 Specking	10
+Specsavers	75
 Spector	77
 Spector's	53
 Spectra's	1
@@ -37578,6 +37630,7 @@ Superboy's	54
 Supercargos	1
 Superdads	1
 Superdome	67
+Superdrug	80
 Superegos	1
 Superfortress	67
 Superfortresses	51
@@ -38604,6 +38657,7 @@ Terry's	70
 Terrys	15
 Terrytoons	48
 Tertiary	85
+Tesco	120
 Tesla	82
 Tesla's	58
 Tess	80
@@ -39422,6 +39476,7 @@ Traherne	38
 Traherne's	15
 Trailblazer's	1
 Trailways	54
+Trainline	70
 Trainmasters	1
 Trainmen's	1
 Trajan	70
@@ -40977,6 +41032,7 @@ Vinny's	21
 Vino's	10
 Vinson	72
 Vinson's	32
+Vinted	80
 Vinton	69
 Vinton's	43
 Viola	81
@@ -41336,6 +41392,7 @@ Waite	76
 Waite's	39
 Waiter	51
 Waiter's	15
+Waitrose	100
 Wajda	52
 Wajda's	35
 Wakayama	66
@@ -41561,6 +41618,7 @@ Waters's	44
 Waterside's	1
 Waterston	55
 Waterston's	18
+Waterstones	75
 Watertown	78
 Watertown's	25
 Watford	89
@@ -41866,6 +41924,7 @@ Westwards	39
 Westwood	88
 Westwood's	44
 Westworld	44
+Wetherspoons	90
 Wetterhorn	23
 Wexford	87
 Wexford's	39
@@ -42136,6 +42195,7 @@ Wilkins	86
 Wilkins's	35
 Wilkinson	91
 Wilkinson's	60
+Wilko	70
 Will	113
 Will's	69
 Willa	64
@@ -42490,6 +42550,7 @@ WordStar's	18
 Worden	67
 Worden's	30
 Wordiest	1
+Wordle	80
 Wordplay's	1
 Wordsworth	76
 Wordsworth's	56
@@ -43003,6 +43064,7 @@ Zaria's	1
 Zarqawi	63
 Zarqawi's	44
 Zarzuela's	1
+Zayn	70
 Zea's	1
 Zeal's	1
 Zealand	128
@@ -43172,6 +43234,7 @@ Zoomania	1
 Zoon's	1
 Zooper	25
 Zoophilia's	1
+Zoopla	60
 Zora	64
 Zora's	21
 Zorine	1
@@ -49620,7 +49683,12 @@ autoclaved	42
 autoclaves	44
 autoclaving	45
 autocollimator	23
-autocorrect	60
+autocorrect	80
+autocorrected	60
+autocorrecting	55
+autocorrection	60
+autocorrections	35
+autocorrects	45
 autocorrelated	38
 autocorrelating	10
 autocorrelation	74
@@ -50846,6 +50914,7 @@ banteringly	1
 banters	40
 banti	10
 bantoid	1
+bants	70
 bantustan	56
 bantustan's	10
 bantustans	46
@@ -52484,6 +52553,8 @@ beverage	103
 beverage's	35
 beverages	103
 bevies	15
+bevvies	50
+bevvy	60
 bevy	65
 bewail	42
 bewailed	40
@@ -55433,6 +55504,7 @@ breezily	39
 breeziness	18
 breezing	35
 breezy	72
+brekkie	70
 brekky	1
 brenna	10
 brennen	23
@@ -55583,6 +55655,7 @@ brightly	100
 brightness	99
 brights	35
 brigs	70
+brill	70
 brilliance	91
 brilliance's	1
 brilliancies	30
@@ -55763,6 +55836,7 @@ brokering	70
 brokers	94
 broking	60
 brolgas	18
+brolly	50
 bromeliad	53
 bromide	88
 bromide's	10
@@ -55963,6 +56037,7 @@ brutified	10
 brutish	71
 brutishly	25
 brutishness	25
+bruv	80
 bruxism	53
 bruxism's	10
 bryon	10
@@ -60359,7 +60434,7 @@ chippie	28
 chippies	18
 chipping	75
 chippings	45
-chippy	39
+chippy	60
 chips	110
 chiquita	21
 chirographer	15
@@ -60705,7 +60780,7 @@ chuckwalla's	1
 chuckwallas	28
 chufa	21
 chuff	28
-chuffed	41
+chuffed	70
 chug	51
 chugged	35
 chugger	21
@@ -67153,6 +67228,7 @@ cringe	64
 cringed	36
 cringer	10
 cringes	35
+cringey	60
 cringing	46
 cringle	10
 cringles	21
@@ -67930,6 +68006,7 @@ cupola	90
 cupola's	18
 cupolaed	15
 cupolas	69
+cuppa	90
 cupped	63
 cupper	18
 cuppers	32
@@ -69743,6 +69820,7 @@ deferred	96
 deferring	69
 defers	61
 defervescence	1
+deffo	70
 defiance	95
 defiances	15
 defiant	85
@@ -69833,6 +69911,7 @@ deflowered	44
 deflowering	42
 deflowers	15
 defluxion	1
+defo	70
 defoam	1
 defoamer	18
 defoamers	18
@@ -70207,6 +70286,7 @@ deluge	78
 deluged	60
 deluges	34
 deluging	25
+delulu	50
 delusion	84
 delusional	82
 delusionally	15
@@ -80743,7 +80823,8 @@ faerie's	18
 faeries	61
 faery	45
 faery's	1
-faffing	1
+faff	60
+faffing	50
 fag	0	o
 fag's	1
 fagged	23	o
@@ -82626,7 +82707,7 @@ five-star	1
 fivefold	73
 fivepence	27
 fivepenny	1
-fiver	40
+fiver	70
 fivers	18
 fives	79
 fivesome	36
@@ -83912,7 +83993,7 @@ footwear's	15
 footwork	82
 footwork's	10
 footworks	1
-footy	66
+footy	75
 foozle	1
 foozled	10
 fop	58
@@ -87746,6 +87827,7 @@ goblins	83
 gobo	51
 gobos	45
 gobs	46
+gobsmacked	70
 gobstopper	35
 goby	70
 goby's	18
@@ -88973,7 +89055,7 @@ grotto	84
 grotto's	21
 grottoes	67
 grottos	62
-grotty	1
+grotty	45
 grouch	39
 grouches	21
 grouchiest	1
@@ -90233,6 +90315,7 @@ hangout	79
 hangouts	55
 hangover	74
 hangovers	57
+hangry	70
 hangs	101
 hangtag	15
 hangul	80
@@ -92162,6 +92245,7 @@ hive's	39
 hived	51
 hives	81
 hiving	30
+hiya	90
 hm	90
 hmm	100
 hmmm	70
@@ -94061,6 +94145,7 @@ icily	41
 iciness	25
 icing	88
 icings	35
+ick	60
 icky	42
 icon	112
 icon's	44
@@ -96731,6 +96816,7 @@ inning	114
 inning's	18
 innings	126
 innis	32
+innit	100
 innkeeper	77
 innkeeper's	51
 innkeepers	56
@@ -100678,7 +100764,7 @@ klystron's	1
 km	155
 knack	83
 knacker	30
-knackered	39
+knackered	70
 knackeries	1
 knackers	30
 knackery	10
@@ -105371,6 +105457,7 @@ mandatory	117
 mandatum	36
 mandavi	1
 mande	18
+mandem	50
 mandi	57
 mandible	89
 mandible's	10
@@ -108346,6 +108433,7 @@ mineworkers	54
 ming	66
 ming's	28
 minge	18	o
+minging	60
 mingle	78
 mingled	81
 minglers	1
@@ -111262,7 +111350,7 @@ nacreous	51
 nadir	79
 nadirs	15
 nae	52
-naff	44
+naff	55
 naffness	15
 nag	61
 nag's	1
@@ -118748,7 +118836,7 @@ pecked	60
 pecker	40	o
 peckers	10	o
 pecking	81
-peckish	31
+peckish	55
 pecks	54
 pecky	15
 pecorino	42
@@ -133540,6 +133628,7 @@ rivulet	63
 rivulets	64
 riyal	53
 riyals	37
+rizz	60
 rly	70
 rn	100
 roach	72
@@ -133569,6 +133658,7 @@ roadkill	59
 roadkills	27
 roadless	63
 roadlessness	10
+roadman	50
 roadmap	73
 roadmaster	21
 roadrunner	49
@@ -135344,6 +135434,7 @@ sarita	21
 sark	39
 sarmatia	1
 sarmentose	1
+sarnie	60
 sarong	63
 sarong's	1
 sarongs	49
@@ -136263,6 +136354,7 @@ scramjets	48
 scrammed	30
 scramming	18
 scrams	21
+scran	60
 scrap	105
 scrapboard	1
 scrapbook	69
@@ -137833,6 +137925,7 @@ servomotors	38
 servos	64
 sesame	87
 sesames	15
+sesh	70
 sesquicentennial	66
 sessile	78
 session	129
@@ -139830,6 +139923,7 @@ situational	85
 situationally	43
 situationist	58
 situations	123
+situationship	50
 situp	18
 sitz	37
 sivan	31
@@ -140068,6 +140162,7 @@ skinniness	1
 skinning	71
 skinny	83
 skins	99
+skint	80
 skintight	53
 skip	97
 skip's	1
@@ -142651,6 +142746,8 @@ spellbound	59
 spellcaster	55
 spellcasters	58
 spellcasting	59
+spellcheck	60
+spellchecker	40
 spelled	117
 speller	50
 spellers	45
@@ -146654,6 +146751,7 @@ summarizations	1
 summarizers	15
 summary	123
 summary's	18
+summat	50
 summate	30
 summated	27
 summating	15
@@ -149524,7 +149622,7 @@ telluric	51
 telluride	68
 tellurium	51
 tellurium's	1
-telly	55
+telly	70
 telnet	68
 telnets	1
 telocentric	30
@@ -149683,7 +149781,7 @@ tenencies	1
 tenet	82
 tenets	94
 tenfold	76
-tenner	37
+tenner	70
 tenners	1
 tennis	126
 tennis's	34
@@ -151462,6 +151560,7 @@ tomography	85
 tomorrow	128
 tomorrow's	68
 tomorrows	36
+tomoz	50
 toms	70
 tomtit	15
 tomtoms	18
@@ -160203,6 +160302,7 @@ wagons	108
 wags	54
 wagtail	50
 wagtails	69
+wagwan	50
 wah	0	o
 wahine	38
 wahines	10

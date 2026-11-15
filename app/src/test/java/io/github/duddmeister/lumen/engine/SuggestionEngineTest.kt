@@ -1,6 +1,7 @@
 package io.github.duddmeister.lumen.engine
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -352,6 +353,55 @@ class SuggestionEngineTest {
         // Not for a single letter, nor a name typed mid-sentence.
         assertNull(result("o").autoCorrection)
         assertNull(shared.suggest(tapped("Saoirse"), listOf("with"), geometry).autoCorrection)
+    }
+
+    /**
+     * A word Lumen doesn't know may be one it should: a shop, a name, slang. Only a likely fix
+     * replaces it, though a long word a small slip from one it knows is still put right.
+     */
+    @Test
+    fun leavesUnknownWordsWithoutALikelyFix() {
+        // Shops only the British dictionary knows: not "fresco", "waitress", "avocado" or "band's".
+        for (w in listOf("tesco", "waitrose", "ocado", "nandos")) {
+            assertNull("$w was changed to ${corrected(tapped(w))}", corrected(tapped(w)))
+        }
+        assertEquals("disappear", corrected(tapped("dissapear")))
+        assertEquals("restaurant", corrected(tapped("restaraunt")))
+        // A slip in "autocorrected" puts it right; reading it as two words was too far-fetched to offer.
+        val r = shared.suggest(tapped("Sutocorrected"), emptyList(), geometry)
+        assertEquals("Autocorrected", r.autoCorrection)
+        assertTrue(r.candidates.toString(), r.candidates.none { ' ' in it.text })
+        assertNull(corrected(tapped("autocorrected")))
+    }
+
+    /** Enter sends or searches before a correction can be undone, so it makes only sure ones. */
+    @Test
+    fun onlySureCorrectionsAreMadeByEnter() {
+        val sure = mapOf("teh" to "the", "seperate" to "separate", "inconsistant" to "inconsistent", "dont" to "don't", "monday" to "Monday")
+        for ((typed, fixed) in sure) {
+            val r = shared.suggest(tapped(typed), emptyList(), geometry)
+            assertEquals(typed, fixed, r.autoCorrection)
+            assertTrue("$typed -> $fixed should be sure", r.sure)
+        }
+        // A space makes these, but enter doesn't: a fix only just likely enough, words read
+        // apart, a word finished, the best of guesses.
+        val unsure = mapOf("dissapear" to "disappear", "thelink" to "the link", "remem" to "remember", "wjyy" to "why")
+        for ((typed, fixed) in unsure) {
+            val r = shared.suggest(tapped(typed), emptyList(), geometry)
+            assertEquals(typed, fixed, r.autoCorrection)
+            assertFalse("$typed -> $fixed shouldn't be sure", r.sure)
+        }
+    }
+
+    /** In British English, the shops, slang and names people use every day are words. */
+    @Test
+    fun knowsBritishShopsSlangAndNames() {
+        val british = TestAssets.engine(spelling = Spelling.BRITISH)
+        val cases = mapOf("tesco" to "Tesco", "aldi" to "Aldi", "sainsburys" to "Sainsbury's", "nandos" to "Nando's", "greggs" to "Greggs")
+        for ((typed, fixed) in cases) assertEquals(typed, fixed, corrected(tapped(typed), british))
+        for (w in listOf("innit", "skint", "cuppa", "Isla", "Aoife")) assertNull(w, corrected(tapped(w), british))
+        // And slips of them are put right.
+        assertEquals("Tesco", corrected(tapped("tescp"), british))
     }
 
     @Test
