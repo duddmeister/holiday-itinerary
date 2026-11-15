@@ -37,7 +37,7 @@
     <string name="suggestions">Suggestion strip</string>
     <string name="suggestions_summary">Completions and next-word predictions</string>
     <string name="emoji_suggestions">Emoji suggestions</string>
-    <string name="emoji_suggestions_summary">Offers 🍕 when you type “pizza”</string>
+    <string name="emoji_suggestions_summary">Offers 🍕 to take the place of “pizza”</string>
     <string name="auto_caps">Auto-capitalisation</string>
     <string name="double_space">Double-space full stop</string>
     <string name="double_space_summary">Tap space twice to end a sentence</string>

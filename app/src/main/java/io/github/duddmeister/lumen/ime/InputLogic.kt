@@ -340,7 +340,8 @@ class InputLogic(private val host: Host) {
         val ic = host.connection
         if (editor.isRaw || ic == null) { host.sendKey(KeyEvent.KEYCODE_ENTER); return }
         ic.beginBatchEdit()
-        if (composing.isNotEmpty) commitComposing(ic, "", autocorrect = true)
+        // Enter sends or searches before a correction could be undone: it makes only sure ones.
+        if (composing.isNotEmpty) commitComposing(ic, "", autocorrect = true, sureOnly = true)
         autoSpaceInserted = false
         lastCorrection = null
         lastSpaceAt = 0
@@ -480,8 +481,16 @@ class InputLogic(private val host: Host) {
         val ic = host.connection ?: return
         ic.beginBatchEdit()
         if (emoji) {
-            if (composing.isNotEmpty) commitComposing(ic, " ", autocorrect = true)
-            commitText(ic, "$text ")
+            // An emoji takes the place of the word it was suggested for ("haha" becomes "😂"),
+            // and backspace brings the word back. Mid-sentence, the space already there stays.
+            val typed = composing.toString()
+            val after = if (typed.isEmpty()) null else ic.getTextAfterCursor(1, 0)
+            val space = if (after.isNullOrEmpty()) " " else ""
+            commitText(ic, text + space)
+            if (typed.isNotEmpty()) {
+                lastCorrection = Correction(typed, text, space, expectedEnd)
+                resetComposing()
+            }
         } else if (composing.isNotEmpty) {
             val typed = composing.toString()
             // Mid-sentence corrections keep the space that is already there.
@@ -730,12 +739,13 @@ class InputLogic(private val host: Host) {
 
     // ------------------------------------------------------------ editing primitives
 
-    private fun commitComposing(ic: InputConnection, separator: String, autocorrect: Boolean) {
+    /** Commits the word being typed, corrected if [autocorrect] (and if [sureOnly], only when the correction is sure). */
+    private fun commitComposing(ic: InputConnection, separator: String, autocorrect: Boolean, sureOnly: Boolean = false) {
         val typed = composing.toString()
         // Where addresses are typed, "." and "/" carry one on: a word is corrected by a space,
         // or by searching (the address bar's enter goes to what was typed).
         val trigger = !editor.takesAddresses || separator == " " || (separator.isEmpty() && !editor.isUrl)
-        val correction = if (autocorrect && trigger && settings.autoCorrect && editor.autoCorrectAllowed) {
+        val correction = if (autocorrect && trigger && settings.autoCorrect && editor.autoCorrectAllowed && (!sureOnly || result.sure)) {
             result.autoCorrection
         } else null
         val word = correction ?: typed

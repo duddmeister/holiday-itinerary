@@ -22,6 +22,11 @@ class SuggestionResult(
     val emoji: List<String>,
     /** Whether a space may correct this word: then it makes [autoCorrection], or keeps the typed word if that's null. */
     val corrects: Boolean = false,
+    /**
+     * Whether [autoCorrection] is sure enough to make where it can't be undone: enter, which
+     * sends or searches straight away. Otherwise enter keeps the word as typed.
+     */
+    val sure: Boolean = false,
 ) {
     /** The same, but a space keeps the typed word (a word put back to edit, typed on purpose). */
     fun keepingTyped() = SuggestionResult(typed, typedIsWord, candidates, null, emoji, corrects = false)
@@ -145,33 +150,43 @@ class SuggestionEngine(
         // A capital typed mid-sentence marks a name: it isn't read apart ("Isla" isn't "Is a"),
         // nor taken for a guess.
         val named = word.isCapitalized && previous != null && previous != NextWordModel.SENTENCE_START
-        // Words run together, read apart: "thelink", "sincebthe".
-        val split = if (!typedIsWord && !hasDigits && n >= 3 && !named) splitReading(word, folded, geometry, lowercase, previous) else null
+        // Words run together, read apart: "thelink", "sincebthe". Not too far-fetched a reading,
+        // though: "autocorected" isn't "auto corrected".
+        val split = if (!typedIsWord && !hasDigits && n >= 3 && !named) {
+            splitReading(word, folded, geometry, lowercase, previous)?.takeIf { it.score >= MIN_SPLIT_SCORE }
+        } else null
         val ranked = if (split == null) singles else (singles + split).sortedByDescending { it.score }
         val shortcut = shortcuts[folded]
+        var sure = false
         val autoCorrection = when {
             !options.autoCorrect || folded in rejected -> null
             shortcut != null && shortcut.autoCorrect && lexicon.findExact(typed) < 0 ->
-                applyCase(shortcut.replacement, word)
+                applyCase(shortcut.replacement, word).also { sure = true }
             !typedIsWord && !hasDigits -> {
                 // Only a close second to the best guess, or the best way to finish what was
                 // typed: a guess far behind is usually wrong ("gir" isn't "air" or "girt", and
                 // "tomor" isn't "to more").
                 val best = ranked.firstOrNull()?.score ?: 0f
                 val bestFinish = singles.firstOrNull { CharFolding.fold(it.text).startsWith(folded) }
+                // And only a likely one: a word Lumen doesn't know may be one it should ("tesco").
+                val floor = correctionFloor(n)
                 val single = singles.firstOrNull {
-                    isAutoCorrectable(it, n, lowercase) && (it === bestFinish || best - it.score <= AUTOCORRECT_MARGIN)
+                    it.score >= floor && isAutoCorrectable(it, n, lowercase) && (it === bestFinish || best - it.score <= AUTOCORRECT_MARGIN)
                 }
                 val close = split?.takeIf { best - it.score <= AUTOCORRECT_MARGIN }
                 val pick = if (close != null && (single == null || close.score > single.score)) close else single
+                // Sure enough to make where it can't be undone: a word put right, well clear of the
+                // floor. Not words read apart, nor a word finished, which may have been cut short.
+                sure = pick != null && pick === single && pick.score >= floor + SURE_MARGIN &&
+                    !(pick.kind == Suggestion.Kind.COMPLETION && pick.cost == 0f)
                 // Nothing that sure: the best guess, shown in the middle of the strip, still beats
-                // keeping a slip, if it is a word put right or one typed most of the way.
-                (pick ?: ranked.firstOrNull()?.takeIf { n >= 2 && !named && isBestGuessTaken(it, n, lowercase) })
+                // keeping a slip, if it is a word put right or one typed most of the way, and likely.
+                (pick ?: ranked.firstOrNull()?.takeIf { n >= 2 && !named && it.score >= floor + GUESS_MARGIN && isBestGuessTaken(it, n, lowercase) })
                     ?.let { applyCase(it.text, word) }
             }
             // A slip first, so "tue" (meant "the") isn't taken for "Tue".
             node >= 0 -> (slipFix(node, word, learnedCount, ranked, predicted) ?: contextFix(node, word, learnedCount, ranked, previous))
-                ?.let { applyCase(it.text, word) } ?: caseFix(typed, node, word)
+                ?.let { applyCase(it.text, word) } ?: caseFix(typed, node, word)?.also { sure = true }
             else -> null
         }?.takeIf { it != typed }
 
@@ -184,7 +199,7 @@ class SuggestionEngine(
             if (out.size == options.maxResults) break
         }
         val emoji = if (options.emojiSuggestions) emojiFor(folded, autoCorrection) else emptyList()
-        return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji, corrects = options.autoCorrect)
+        return SuggestionResult(typed, typedIsWord, out, autoCorrection, emoji, corrects = options.autoCorrect, sure = sure && autoCorrection != null)
     }
 
     /** One word of a split: the word read there, how common it is, and what reading it cost. */
@@ -309,6 +324,12 @@ class SuggestionEngine(
         val bits = previous?.let { pairs.score(it, text) } ?: return 0f
         return PAIR_WEIGHT * bits.coerceIn(PAIR_MIN_BITS, PAIR_MAX_BITS)
     }
+
+    /**
+     * How well a correction of a word [n] letters long that isn't one must score. Less for a
+     * longer word: a small slip from a word Lumen knows is rarely anything else ("dissapoint").
+     */
+    private fun correctionFloor(n: Int) = MIN_CORRECTION_SCORE - FLOOR_DROP_PER_LETTER * (n - FLOOR_FULL_LENGTH).coerceAtLeast(0)
 
     /** Single letters stand alone only as "a" and "I", and even those are a stretch, but for "I" first ("iloveyou"). */
     private fun shortPenalty(p: Part, lead: Boolean) = if (p.text.length == 1 && !(lead && p.text == "I")) SPLIT_LETTER_PENALTY else 0f
@@ -647,6 +668,24 @@ class SuggestionEngine(
         const val SPELLING_MIN_LENGTH = 7
         /** How far behind the best guess a correction may score (measured on simulated typing). */
         const val AUTOCORRECT_MARGIN = 20f
+        /**
+         * What a correction of a word Lumen doesn't know must score (how common it is, less what
+         * reading the taps as it costs): a weaker guess is more often a name, a shop or slang it
+         * lacks than a slip ("tesco" isn't "fresco", nor "lidl" "lid")...
+         */
+        const val MIN_CORRECTION_SCORE = 40f
+        /** ...less this for each letter past this many... */
+        const val FLOOR_DROP_PER_LETTER = 5f
+        const val FLOOR_FULL_LENGTH = 6
+        /** ...and this much more for the best guess, taken when no correction is that sure. */
+        const val GUESS_MARGIN = 20f
+        /** Enter, which sends or searches at once, makes only corrections this far above the floor. */
+        const val SURE_MARGIN = 40f
+        /**
+         * Words read apart score below one word by design (each extra word pays [SPLIT_WORD_OFFSET]):
+         * below this, a reading is too far-fetched to make ("autocorected" isn't "auto corrected").
+         */
+        const val MIN_SPLIT_SCORE = -80f
         /** Lower-case typing is corrected to a name only this common ("London", not "Rollo"). */
         const val NAME_MIN_FREQ = 100
         /** Three letters short of an everyday word by one ("wil", "hav") are finished as it... */

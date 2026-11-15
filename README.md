@@ -24,18 +24,21 @@ Material You and a real frosted-glass theme) make it feel at home on any phone.
   together, whether the spaces were missed (`letmeknow`) or landed on a letter just
   above the space bar (`imnnotn` → `I'm not`). From the second letter on, the middle
   word in the suggestion strip is what a space will type. It adds missing apostrophes
-  (`theyre` → `they're`), leaves chat shorthand alone (`ngl`, `ppl`, `nah`), corrects
-  searches typed in the browser's address bar but never web addresses, and one tap of
-  backspace undoes it: keep your word and Lumen learns it.
+  (`theyre` → `they're`), leaves chat shorthand alone (`ngl`, `ppl`, `nah`), and changes a
+  word it doesn't know only for a likely fix, so names, shops and slang stay as you typed
+  them. It corrects searches typed in the browser's address bar but never web addresses,
+  and enter, which sends or searches straight away, makes only the corrections Lumen is
+  sure of. One tap of backspace undoes a correction: keep your word and Lumen learns it.
 - **Voice typing.** Tap the microphone in the toolbar and talk: your words appear
   as you speak, then land in the text with the right spaces and capitals. It
   listens in British or American English to match your spelling.
 - **British or American English.** Lumen spells the way your phone's region does
   (or the way you pick in settings): in British English, colour, favourite, realise
-  and programme are words it suggests, not typos it fixes.
-- **Predictions.** Word completions, next-word predictions, emoji suggestions
-  (🍕 when you type “pizza”), smart punctuation spacing, double-space full stop and
-  auto-capitalisation.
+  and programme are words it suggests, not typos it fixes, and it knows the shops and
+  slang of home (Tesco, Sainsbury's, Greggs, innit, cuppa).
+- **Predictions.** Word completions, next-word predictions, emoji suggestions that
+  take the place of the word (“pizza” becomes 🍕), smart punctuation spacing,
+  double-space full stop and auto-capitalisation.
 - **Search from the keyboard.** Find any emoji by name (“pizza”, “lol”), search
   GIFs and send them straight into the conversation, or look something up on the
   web with the text you've selected already filled in.

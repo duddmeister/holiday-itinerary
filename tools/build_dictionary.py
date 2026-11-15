@@ -62,6 +62,16 @@ EXTRA_WORDS = {
     "tmr": 60, "bday": 90, "gf": 80, "bff": 80, "hbd": 70, "lmk": 100, "np": 90, "ty": 100,
     "tysm": 80, "ily": 80, "wyd": 80, "hbu": 70, "wbu": 70, "idc": 80, "ikr": 80, "rn": 100,
     "ofc": 90, "vid": 90, "vids": 80,
+    # Talking about the keyboard itself ("it autocorrected", not "it auto corrected").
+    "autocorrected": 60, "autocorrecting": 55, "autocorrects": 45, "autocorrection": 60,
+    "autocorrections": 35, "spellcheck": 60, "spellchecker": 40,
+    # Apps, shops and slang newer than the list.
+    "Wordle": 80, "Vinted": 80, "Depop": 70, "AirPods": 90, "Fortnite": 80, "Roblox": 80,
+    "Klarna": 80, "Aldi": 100, "Lidl": 90, "rizz": 60, "delulu": 50, "situationship": 50,
+    "ick": 60, "cringey": 60, "hangry": 70,
+    # Names now given to many children that the list predates.
+    "Jaxon": 60, "Kayden": 60, "Jayden": 70, "Nevaeh": 60, "Aaliyah": 70, "Zayn": 70,
+    "Leilani": 60, "Arlo": 70,
     "nah": 120, "yea": 110, "ppl": 110, "rly": 70, "obv": 80, "obvs": 60, "iirc": 70,
     "convo": 90, "convos": 70, "lolol": 70, "lolz": 50, "hmu": 70, "ngl": 90, "istg": 60,
     "idek": 50, "imma": 90, "ima": 70, "tryna": 80, "finna": 60, "bruh": 100, "fam": 80,
@@ -70,7 +80,7 @@ EXTRA_WORDS = {
     "hahah": 60, "lmaoo": 70, "lmaooo": 50, "omgg": 40, "plss": 40, "thanx": 50, "nw": 60,
     "gn": 80, "gnight": 40, "tbf": 70, "tbt": 50, "ftw": 60, "smth": 80, "sth": 50,
     "atm": 90, "tmi": 60, "afk": 70, "gg": 80, "ez": 50, "txt": 80, "txting": 50,
-    "insta": 80, "Snapchat": 90, "fb": 70, "tldr": 50, "srsly": 50, "cya": 80, "gtg": 70,
+    "insta": 80, "fb": 70, "tldr": 50, "srsly": 50, "cya": 80, "gtg": 70,
     "otw": 60, "wya": 70, "xoxo": 70, "xo": 60, "bae": 70, "hun": 70, "luv": 60,
     "aight": 70, "ight": 60, "alr": 60, "bcuz": 50, "kk": 80, "k": 80, "tyvm": 50,
     "ilysm": 50, "yh": 50, "dw": 50, "xd": 60, "mb": 60, "abt": 70, "res": 60,
@@ -94,7 +104,29 @@ CHAT_WORDS = {
     "brilliant": 125, "literally": 120, "annoying": 115, "ridiculous": 115, "gorgeous": 115,
     # Apps everyone names, which the list predates or undersells.
     "Instagram": 110, "WhatsApp": 110, "Spotify": 100, "Netflix": 100, "Facebook": 110,
-    "Twitter": 100, "YouTube": 120, "Google": 120, "iPhone": 110,
+    "Twitter": 100, "YouTube": 120, "Google": 120, "iPhone": 110, "Snapchat": 90,
+    "Duolingo": 70, "Minecraft": 80, "autocorrect": 80,
+}
+
+# Words of English (UK) the lists lack or undersell: the shops, banks and chains people
+# name every day ("at tesco" isn't "at fresco"), slang, and names, raised to at least
+# this frequency. Lower-case typing finds them too ("tesco" becomes "Tesco").
+BRITISH_WORDS = {
+    "Tesco": 120, "Asda": 110, "Aldi": 110, "Lidl": 110, "Sainsbury's": 110, "Morrisons": 100,
+    "Waitrose": 100, "Ocado": 80, "Primark": 100, "Greggs": 100, "Superdrug": 80, "Wilko": 70,
+    "Poundland": 80, "Matalan": 70, "Halfords": 70, "Screwfix": 75, "Dunelm": 70,
+    "Homebase": 70, "Nando's": 105, "Wetherspoons": 90, "Deliveroo": 100, "ASOS": 90,
+    "Selfridges": 70, "Waterstones": 75, "Specsavers": 75, "Rightmove": 70, "Zoopla": 60,
+    "Trainline": 70, "Monzo": 90, "Revolut": 90, "Barclays": 90, "Lloyds": 85,
+    "innit": 100, "bruv": 80, "cuppa": 90, "brekkie": 70, "sesh": 70, "bevvy": 60,
+    "bevvies": 50, "skint": 80, "minging": 60, "mandem": 50, "wagwan": 50, "deffo": 70,
+    "defo": 70, "tomoz": 50, "brolly": 50, "sarnie": 60, "scran": 60, "bants": 70,
+    "gobsmacked": 70, "summat": 50, "hiya": 90, "brill": 70, "roadman": 50, "tenner": 70,
+    "fiver": 70, "knackered": 70, "chuffed": 70, "chippy": 60, "peckish": 55, "faff": 60,
+    "faffing": 50, "grotty": 45, "naff": 55, "telly": 70, "footy": 75,
+    "Isla": 80, "Aoife": 70, "Niamh": 70, "Saoirse": 60, "Oisin": 60, "Caoimhe": 50,
+    "Ciara": 65, "Sinead": 60, "Grainne": 50, "Cillian": 60, "Eoin": 60, "Ffion": 55,
+    "Gethin": 55, "Cerys": 60, "Bethan": 60, "Dafydd": 55,
 }
 
 # Contractions typed without the apostrophe, beyond those in AOSP's list. Where the
@@ -359,6 +391,8 @@ def main(us_path, gb_path, taskmaster=None, books=None):
         print(f"Frequencies moved toward the corpora: {moved[0]} (en_US list), {moved[1]} (en_GB list)")
     write_dictionary("en_US", us, us_shortcuts)
     words, respelled = british(us, gb)
+    for word, freq in BRITISH_WORDS.items():
+        words[word] = (max(words.get(word, (0, False))[0], freq), False)
     write_dictionary("en_GB", words, gb_shortcuts)
     write_british_predictions(respelled)
     print(f"en_GB: {len(respelled)} American spellings ranked under or replaced by British ones")

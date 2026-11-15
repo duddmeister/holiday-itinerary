@@ -163,6 +163,7 @@ Aalborg	69
 Aalen	39
 Aalesund	49
 Aalesund's	1
+Aaliyah	70
 Aalst	53
 Aalst's	1
 Aalto	60
@@ -650,6 +651,7 @@ Ainslie's	30
 Ainu	73
 Ainu's	1
 AirAsia	71
+AirPods	90
 Airbnb	100
 Airbrick	1
 Airbus	92
@@ -821,6 +823,7 @@ Aldermaston	60
 Alderney	66
 Aldershot	81
 Aldershot's	30
+Aldi	100
 Aldin	39
 Aldine	54
 Aldine's	1
@@ -2035,6 +2038,7 @@ Arlin	39
 Arline's	1
 Arlington	98
 Arlington's	42
+Arlo	70
 Armada	82
 Armada's	36
 Armageddon	79
@@ -10179,6 +10183,7 @@ Depardieu	56
 Dependant	21
 Dependants	28
 Dependence's	1
+Depop	70
 Deprecators	1
 Dept	76
 Dept's	10
@@ -11165,7 +11170,7 @@ Duntroon	58
 Dunwoody	61
 Duodecimals	1
 Duodenums	1
-Duolingo	25
+Duolingo	70
 Duomo's	10
 Dupleix	50
 Dupleix's	15
@@ -13666,6 +13671,7 @@ Fortescue's	33
 Fortier	57
 Fortin	56
 Fortin's	1
+Fortnite	80
 Fortran	71
 Fortuna's	23
 Fortunateness	1
@@ -19282,12 +19288,14 @@ Javier's	33
 Jawbone's	1
 Jawbreaker's	18
 Jaxartes	18
+Jaxon	60
 Jay	110
 Jay's	63
 Jayapura	48
 Jayasuriya	55
 Jaycee	42
 Jaycees	57
+Jayden	70
 Jaye	59
 Jaye's	18
 Jayme	46
@@ -20355,6 +20363,7 @@ Kawasaki's	42
 Kay	97
 Kay's	65
 Kaycee	33
+Kayden	60
 Kaye	83
 Kaye's	51
 Kayes	44
@@ -20932,6 +20941,7 @@ Klansman	44
 Klansman's	1
 Klansmen's	1
 Klara	60
+Klarna	80
 Klatch	37
 Klaus	89
 Klaus's	32
@@ -22174,6 +22184,7 @@ Leighton	81
 Leighton's	38
 Leila	72
 Leila's	32
+Leilani	60
 Leinster	94
 Leipzig	97
 Leipzig's	39
@@ -22479,6 +22490,7 @@ Liddell's	41
 Lidia	57
 Lidia's	30
 Lidice	44
+Lidl	90
 Lie's	37
 Lieberman	79
 Lieberman's	48
@@ -26081,7 +26093,7 @@ Mindszenty	37
 Mindszenty's	10
 Mindy	68
 Mindy's	30
-Minecraft	25
+Minecraft	80
 Miner	76
 Miner's	60
 Mineralogy's	1
@@ -27662,6 +27674,7 @@ Nevada	109
 Nevada's	64
 Nevadan	30
 Nevadans	23
+Nevaeh	60
 Neverland	65
 Nevers	66
 Nevers's	1
@@ -32788,6 +32801,7 @@ Robinson's	81
 Robinsonville	21
 Robles	70
 Robles's	15
+Roblox	80
 RoboCop	82
 RoboCop's	49
 RoboCops	27
@@ -35810,7 +35824,7 @@ Snaggy	1
 Snake	96
 Snake's	55
 Snap's	10
-Snapchat	25
+Snapchat	90
 Snapdragon's	1
 Snape	69
 Snapple	54
@@ -40367,6 +40381,7 @@ Vinny's	21
 Vino's	10
 Vinson	72
 Vinson's	32
+Vinted	80
 Vinton	69
 Vinton's	43
 Viola	81
@@ -41846,6 +41861,7 @@ WordStar's	18
 Worden	67
 Worden's	30
 Wordiest	1
+Wordle	80
 Wordplay's	1
 Wordsworth	76
 Wordsworth's	56
@@ -42349,6 +42365,7 @@ Zaria's	1
 Zarqawi	63
 Zarqawi's	44
 Zarzuela's	1
+Zayn	70
 Zea's	1
 Zeal's	1
 Zealand	128
@@ -48784,7 +48801,12 @@ autoclaved	42
 autoclaves	44
 autoclaving	45
 autocollimator	23
-autocorrect	60
+autocorrect	80
+autocorrected	60
+autocorrecting	55
+autocorrection	60
+autocorrections	35
+autocorrects	45
 autocorrelated	38
 autocorrelating	10
 autocorrelation	74
@@ -65975,6 +65997,7 @@ cringe	64
 cringed	36
 cringer	10
 cringes	35
+cringey	60
 cringing	46
 cringle	10
 cringles	21
@@ -68974,6 +68997,7 @@ deluge	78
 deluged	60
 deluges	34
 deluging	25
+delulu	50
 delusion	84
 delusional	82
 delusionally	15
@@ -88619,6 +88643,7 @@ hangout	79
 hangouts	55
 hangover	74
 hangovers	57
+hangry	70
 hangs	101
 hangtag	15
 hangup	37
@@ -92384,6 +92409,7 @@ icily	41
 iciness	25
 icing	88
 icings	35
+ick	60
 icky	42
 icon	112
 icon's	44
@@ -131069,6 +131095,7 @@ rivulet	63
 rivulets	64
 riyal	53
 riyals	37
+rizz	60
 rly	70
 rn	100
 roach	72
@@ -137241,6 +137268,7 @@ situational	85
 situationally	43
 situationist	58
 situations	123
+situationship	50
 situp	18
 sitz	37
 six	146
@@ -140029,6 +140057,8 @@ spellbound	59
 spellcaster	55
 spellcasters	58
 spellcasting	59
+spellcheck	60
+spellchecker	40
 spelled	117
 speller	50
 spellers	45
